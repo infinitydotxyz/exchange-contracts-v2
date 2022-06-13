@@ -47,11 +47,15 @@ Token contract defines the Infinity ($NFT) token. It comes with a timelock confi
 
 Our contracts are the most efficient NFT exchange contracts in the world. Users save upto 60% gas compared to Opensea and Looksrare. We achieve these gas savings via contract supported batch execution.
 
-Match orders gas table (auto sniped):
+Match orders gas table (auto sniped by our matching engine):
+
+Min gas is for autosniping single NFTs and max gas is for multiple NFTs (10 in the highest case). 
 
 ![Match_Orders](./static/matchOrdersGas.png)
 
 Take orders gas table (user initiated):
+
+The min gas of 121176 units is for exchanging one NFT (33% less gas than Opensea). The max gas of 764129 is for exchanging a batch of 10 NFTs making the per NFT exchange gas cost a mere 76412.9 (60% less gas than performing 10 individual NFT exchanges on Opensea)
 
 ![Take_Orders](./static/takeOrdersGas.png)
 
