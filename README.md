@@ -71,7 +71,7 @@ Coming soon.
 
 [Discord](https://discord.gg/invite/infinitydotxyz)
 
-[Github](https://github.com/infinitydotxyz/exchange-contracts-v2)
+[Github](https://github.com/infinitydotxyz)
 
 [Medium](https://medium.com/@infinitydotxyz)
 
