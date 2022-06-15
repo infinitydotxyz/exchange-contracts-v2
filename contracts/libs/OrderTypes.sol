@@ -7,7 +7,7 @@ pragma solidity 0.8.14;
  * @notice This library contains the order types used by the main exchange and complications
  */
 library OrderTypes {
-  /// @dev the tokenId and numTokens (=1 for ERC721 and >=1 for ERC1155)
+  /// @dev the tokenId and numTokens (==1 for ERC721)
   struct TokenInfo {
     uint256 tokenId;
     uint256 numTokens;

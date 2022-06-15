@@ -6,7 +6,6 @@ import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {IERC165} from '@openzeppelin/contracts/interfaces/IERC165.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IERC20, SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -1034,7 +1033,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   }
 
   /**
-   * @notice Transfers multiple NFTs in a loop and ERC1155s in a batch
+   * @notice Transfers multiple NFTs in a loop
    * @param from the from address
    * @param to the to address
    * @param nfts nfts to transfer
@@ -1064,11 +1063,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address to,
     OrderTypes.OrderItem calldata item
   ) internal {
-    if (IERC165(item.collection).supportsInterface(0x80ac58cd)) {
-      _transferERC721s(from, to, item);
-    } else if (IERC165(item.collection).supportsInterface(0xd9b67a26)) {
-      _transferERC1155s(from, to, item);
-    }
+    require(IERC165(item.collection).supportsInterface(0x80ac58cd), 'only erc721');
+    _transferERC721s(from, to, item);
   }
 
   /**
@@ -1089,31 +1085,6 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
         ++i;
       }
     }
-  }
-
-  /**
-   * @notice Transfer ERC1155s
-   * @dev uses the ERC1155 batchTransfer function for efficient transfers
-   * @param from address of the sender
-   * @param to address of the recipient
-   * @param item item to transfer
-   */
-  function _transferERC1155s(
-    address from,
-    address to,
-    OrderTypes.OrderItem calldata item
-  ) internal {
-    uint256 numNfts = item.tokens.length;
-    uint256[] memory tokenIdsArr = new uint256[](numNfts);
-    uint256[] memory numTokensPerTokenIdArr = new uint256[](numNfts);
-    for (uint256 i = 0; i < numNfts; ) {
-      tokenIdsArr[i] = item.tokens[i].tokenId;
-      numTokensPerTokenIdArr[i] = item.tokens[i].numTokens;
-      unchecked {
-        ++i;
-      }
-    }
-    IERC1155(item.collection).safeBatchTransferFrom(from, to, tokenIdsArr, numTokensPerTokenIdArr, '0x0');
   }
 
   /**
