@@ -343,8 +343,8 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
 
   /// @dev Admin function to rescue any ETH accidentally sent to the contract
   function rescueETH(address destination) external payable onlyOwner {
-    (bool sent, ) = destination.call{value: msg.value}('');
-    require(sent, 'Failed to send Ether');
+    (bool sent, ) = destination.call{value: address(this).balance}('');
+    require(sent, 'failed');
   }
 
   /// @dev Admin function to update stake level thresholds

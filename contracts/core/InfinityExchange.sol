@@ -1216,8 +1216,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
 
   // ====================================================== ADMIN FUNCTIONS ======================================================
 
-  /// @dev used for rescuing exchange fees paid to the contract in tokens
-  function rescueTokens(
+  /// @dev used for withdrawing exchange fees paid to the contract in tokens
+  function withdrawTokens(
     address destination,
     address currency,
     uint256 amount
@@ -1225,9 +1225,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     IERC20(currency).safeTransfer(destination, amount);
   }
 
-  /// @dev used for rescuing exchange fees paid to the contract in ETH
-  function rescueETH(address destination) external payable onlyOwner {
-    (bool sent, ) = destination.call{value: msg.value}('');
+  /// @dev used for withdrawing exchange fees paid to the contract in ETH
+  function withdrawETH(address destination) external payable onlyOwner {
+    (bool sent, ) = destination.call{value: address(this).balance}('');
     require(sent, 'failed');
   }
 
