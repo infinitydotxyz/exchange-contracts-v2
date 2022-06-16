@@ -1054,6 +1054,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
 
   /**
    * @notice Transfer NFTs
+   * @dev Only supports ERC721, no ERC1155 or NFTs that conform to both ERC721 and ERC1155
    * @param from address of the sender
    * @param to address of the recipient
    * @param item item to transfer
@@ -1063,7 +1064,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address to,
     OrderTypes.OrderItem calldata item
   ) internal {
-    require(IERC165(item.collection).supportsInterface(0x80ac58cd), 'only erc721');
+    require(
+      IERC165(item.collection).supportsInterface(0x80ac58cd) && !IERC165(item.collection).supportsInterface(0xd9b67a26),
+      'only erc721'
+    );
     _transferERC721s(from, to, item);
   }
 
