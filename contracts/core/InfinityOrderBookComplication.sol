@@ -201,7 +201,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         ++i;
       }
     }
-    return numConstructedItems >= buy.constraints[0] && buy.constraints[0] <= sell.constraints[0];
+    return numConstructedItems >= buy.constraints[0] && numConstructedItems <= sell.constraints[0];
   }
 
   /// @dev sanity check to make sure that a taker is specifying the right number of items
