@@ -136,8 +136,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         _isPriceValid &&
         areNumItemsValid(sell, buy, constructedNfts) &&
         doItemsIntersect(sell.nfts, constructedNfts) &&
-        doItemsIntersect(buy.nfts, constructedNfts) &&
-        doItemsIntersect(sell.nfts, buy.nfts),
+        doItemsIntersect(buy.nfts, constructedNfts),
       execPrice
     );
   }
