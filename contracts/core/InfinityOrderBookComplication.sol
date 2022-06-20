@@ -57,10 +57,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /**
-   * @notice Checks whether one to matches matches can be executed
+   * @notice Checks whether one to many matches can be executed
    * @dev This function is called by the main exchange to check whether one to many matches can be executed.
           It checks whether orders have the right constraints - i.e they have the right number of items, whether time is still valid,
-          prices are valid and whether the nfts intersect
+          prices are valid and whether the nfts intersect. All orders are expected to contain specific items.
    * @param makerOrder the one makerOrder
    * @param manyMakerOrders many maker orders
    * @return returns whether the order can be executed
@@ -69,7 +69,22 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     OrderTypes.MakerOrder calldata makerOrder,
     OrderTypes.MakerOrder[] calldata manyMakerOrders
   ) external view override returns (bool) {
-    uint256 numItems;
+    // check the constraints of the 'one' maker order
+    uint256 numNftsInOneOrder;
+    uint256 numOrderItemsInOneOrder = makerOrder.nfts.length;
+    for (uint256 i = 0; i < numOrderItemsInOneOrder; ) {
+      numNftsInOneOrder = makerOrder.nfts[i].tokens.length;
+      unchecked {
+        ++i;
+      }
+    }
+    if (numNftsInOneOrder != makerOrder.constraints[0]) {
+      return false;
+    }
+
+    // check the constraints of many maker orders
+    uint256 totalNftsInManyOrders;
+    bool numNftsPerManyOrderValid = true;
     bool isOrdersTimeValid = true;
     bool itemsIntersect = true;
     uint256 ordersLength = manyMakerOrders.length;
@@ -79,12 +94,15 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       }
 
       uint256 nftsLength = manyMakerOrders[i].nfts.length;
+      uint256 numNftsPerOrder;
       for (uint256 j = 0; j < nftsLength; ) {
-        numItems += manyMakerOrders[i].nfts[j].tokens.length;
+        numNftsPerOrder += manyMakerOrders[i].nfts[j].tokens.length;
         unchecked {
           ++j;
         }
       }
+      numNftsPerManyOrderValid = numNftsPerManyOrderValid && manyMakerOrders[i].constraints[0] == numNftsPerOrder;
+      totalNftsInManyOrders += numNftsPerOrder;
 
       isOrdersTimeValid =
         isOrdersTimeValid &&
@@ -112,7 +130,12 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       _isPriceValid = sumCurrentOrderPrices <= currentMakerOrderPrice;
     }
 
-    return (numItems == makerOrder.constraints[0]) && _isTimeValid && itemsIntersect && _isPriceValid;
+    return
+      numNftsInOneOrder == totalNftsInManyOrders &&
+      numNftsPerManyOrderValid &&
+      _isTimeValid &&
+      itemsIntersect &&
+      _isPriceValid;
   }
 
   /**
