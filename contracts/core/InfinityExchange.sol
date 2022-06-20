@@ -115,10 +115,6 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     MATCH_EXECUTOR = _matchExecutor;
   }
 
-  fallback() external payable {}
-
-  receive() external payable {}
-
   // =================================================== USER FUNCTIONS =======================================================
 
   /**
