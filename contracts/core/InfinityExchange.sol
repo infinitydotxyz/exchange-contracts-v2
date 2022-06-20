@@ -60,6 +60,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   uint32 public WETH_TRANSFER_GAS_UNITS = 50000;
   /// @notice Exchange fee in basis points (250 bps = 2.5%)
   uint16 public PROTOCOL_FEE_BPS = 250;
+  uint16 public constant MAX_PROTOCOL_FEE_BPS = 250;
 
   /**
    @dev All orders should have a nonce >= to this value. 
@@ -1248,6 +1249,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
 
   /// @dev updates exchange fees
   function setProtocolFee(uint16 _protocolFeeBps) external onlyOwner {
+    require(_protocolFeeBps <= MAX_PROTOCOL_FEE_BPS, 'protocol fee too high');
     PROTOCOL_FEE_BPS = _protocolFeeBps;
     emit NewProtocolFee(_protocolFeeBps);
   }
