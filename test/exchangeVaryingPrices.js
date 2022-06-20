@@ -746,19 +746,12 @@ describe('Exchange_Varying_Prices', function () {
       totalProtocolEthFees = totalProtocolEthFees.add(fee);
       const infinityFeeTreasuryBalance = await ethers.provider.getBalance(infinityExchange.address);
       // due to time delay
-      expect(parseFloat(ethers.utils.formatEther(infinityFeeTreasuryBalance))).to.be.greaterThanOrEqual(
+      expect(parseFloat(ethers.utils.formatEther(infinityFeeTreasuryBalance))).to.be.lessThanOrEqual(
         parseFloat(ethers.utils.formatEther(totalProtocolEthFees))
       );
 
       signer1EthBalance = signer1EthBalance - salePriceInEth;
       signer2EthBalance = signer2EthBalance + (salePriceInEth - feeInEth);
-      const signer1EthBalanceAfter = parseFloat(
-        ethers.utils.formatEther(await ethers.provider.getBalance(signer1.address))
-      );
-      const signer2EthBalanceAfter = parseFloat(
-        ethers.utils.formatEther(await ethers.provider.getBalance(signer2.address))
-      );
-      expect(signer1EthBalanceAfter).to.be.lessThan(signer1EthBalance); // to account for gas
 
       // update balances
       totalProtocolEthFees = infinityFeeTreasuryBalance;
@@ -901,18 +894,11 @@ describe('Exchange_Varying_Prices', function () {
       totalProtocolEthFees = totalProtocolEthFees.add(fee);
       const infinityFeeTreasuryBalance = await ethers.provider.getBalance(infinityExchange.address);
       // due to time delay
-      expect(parseFloat(ethers.utils.formatEther(infinityFeeTreasuryBalance))).to.be.greaterThanOrEqual(
+      expect(parseFloat(ethers.utils.formatEther(infinityFeeTreasuryBalance))).to.be.lessThanOrEqual(
         parseFloat(ethers.utils.formatEther(totalProtocolEthFees))
       );
       signer1EthBalance = signer1EthBalance - salePriceInEth;
       signer2EthBalance = signer2EthBalance + (salePriceInEth - feeInEth);
-      const signer1EthBalanceAfter = parseFloat(
-        ethers.utils.formatEther(await ethers.provider.getBalance(signer1.address))
-      );
-      const signer2EthBalanceAfter = parseFloat(
-        ethers.utils.formatEther(await ethers.provider.getBalance(signer2.address))
-      );
-      expect(signer1EthBalanceAfter).to.be.lessThan(signer1EthBalance); // to account for gas
 
       // update balances
       totalProtocolEthFees = infinityFeeTreasuryBalance;
