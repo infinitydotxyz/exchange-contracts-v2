@@ -308,6 +308,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       require(isTimeValid, 'invalid time');
       require(currency == makerOrders[i].execParams[1], 'cannot mix currencies');
       require(isMakerSeller == makerOrders[i].isSellOrder, 'cannot mix order sides');
+      require(msg.sender != makerOrders[i].signer, 'no dogfooding');
       uint256 execPrice = _getCurrentPrice(makerOrders[i]);
       totalPrice += execPrice;
       _execTakeOneOrder(makerOrderHash, makerOrders[i], isMakerSeller, execPrice);
@@ -348,6 +349,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     for (uint256 i = 0; i < ordersLength; ) {
       require(currency == makerOrders[i].execParams[1], 'cannot mix currencies');
       require(isMakerSeller == makerOrders[i].isSellOrder, 'cannot mix order sides');
+      require(msg.sender != makerOrders[i].signer, 'no dogfooding');
       uint256 execPrice = _getCurrentPrice(makerOrders[i]);
       totalPrice += execPrice;
       _takeOrders(makerOrders[i], takerNfts[i], execPrice);
@@ -447,6 +449,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     return (sell.isSellOrder &&
       !buy.isSellOrder &&
       sell.execParams[0] == buy.execParams[0] &&
+      sell.signer != buy.signer &&
       currenciesMatch &&
       isOrderValid(sell, sellOrderHash) &&
       isOrderValid(buy, buyOrderHash));
@@ -477,6 +480,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     return (sell.isSellOrder &&
       !buy.isSellOrder &&
       sell.execParams[0] == buy.execParams[0] &&
+      sell.signer != buy.signer &&
       currenciesMatch &&
       _orderValid);
   }
@@ -502,6 +506,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     return (sell.isSellOrder &&
       !buy.isSellOrder &&
       sell.execParams[0] == buy.execParams[0] &&
+      sell.signer != buy.signer &&
       currenciesMatch &&
       isOrderValid(sell, sellOrderHash) &&
       isOrderValid(buy, buyOrderHash));
