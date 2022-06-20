@@ -319,6 +319,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     // for non ETH orders, IERC20 safeTransferFrom will throw error if insufficient amount is sent
     if (isMakerSeller && currency == address(0)) {
       require(msg.value >= totalPrice, 'invalid total price');
+      if (msg.value > totalPrice) {
+        (bool sent, ) = msg.sender.call{value: msg.value - totalPrice}('');
+        require(sent, 'failed');
+      }
     }
   }
 
@@ -355,6 +359,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     // for non ETH orders, IERC20 safeTransferFrom will throw error if insufficient amount is sent
     if (isMakerSeller && currency == address(0)) {
       require(msg.value >= totalPrice, 'invalid total price');
+      if (msg.value > totalPrice) {
+        (bool sent, ) = msg.sender.call{value: msg.value - totalPrice}('');
+        require(sent, 'failed');
+      }
     }
   }
 
