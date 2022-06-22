@@ -89,11 +89,8 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     Duration newDuration
   ) external override nonReentrant whenNotPaused {
     require(amount != 0, 'amount cant be 0');
-    require(
-      userstakedAmounts[msg.sender][oldDuration].amount >= amount,
-      'insufficient staked amount to change duration'
-    );
-    require(newDuration > oldDuration, 'new duration must be greater than old duration');
+    require(userstakedAmounts[msg.sender][oldDuration].amount >= amount, 'insuf stake to change duration');
+    require(newDuration > oldDuration, 'new duration must exceed old dur');
 
     // update storage
     userstakedAmounts[msg.sender][oldDuration].amount -= amount;

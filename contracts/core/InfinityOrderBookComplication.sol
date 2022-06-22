@@ -39,7 +39,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       makerOrder2.constraints[4] >= block.timestamp &&
       makerOrder1.constraints[3] <= block.timestamp &&
       makerOrder1.constraints[4] >= block.timestamp;
-    bool _isPriceValid = false;
+    bool _isPriceValid;
     uint256 makerOrder1Price = _getCurrentPrice(makerOrder1);
     uint256 makerOrder2Price = _getCurrentPrice(makerOrder2);
     uint256 execPrice;
@@ -72,7 +72,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     // check the constraints of the 'one' maker order
     uint256 numNftsInOneOrder;
     uint256 numOrderItemsInOneOrder = makerOrder.nfts.length;
-    for (uint256 i = 0; i < numOrderItemsInOneOrder; ) {
+    for (uint256 i; i < numOrderItemsInOneOrder; ) {
       numNftsInOneOrder = makerOrder.nfts[i].tokens.length;
       unchecked {
         ++i;
@@ -88,14 +88,14 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     bool isOrdersTimeValid = true;
     bool itemsIntersect = true;
     uint256 ordersLength = manyMakerOrders.length;
-    for (uint256 i = 0; i < ordersLength; ) {
+    for (uint256 i; i < ordersLength; ) {
       if (!isOrdersTimeValid || !itemsIntersect) {
         return false; // short circuit
       }
 
       uint256 nftsLength = manyMakerOrders[i].nfts.length;
       uint256 numNftsPerOrder;
-      for (uint256 j = 0; j < nftsLength; ) {
+      for (uint256 j; j < nftsLength; ) {
         numNftsPerOrder += manyMakerOrders[i].nfts[j].tokens.length;
         unchecked {
           ++j;
@@ -123,7 +123,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     uint256 currentMakerOrderPrice = _getCurrentPrice(makerOrder);
     uint256 sumCurrentOrderPrices = _sumCurrentPrices(manyMakerOrders);
 
-    bool _isPriceValid = false;
+    bool _isPriceValid;
     if (makerOrder.isSellOrder) {
       _isPriceValid = sumCurrentOrderPrices >= currentMakerOrderPrice;
     } else {
@@ -231,9 +231,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     OrderTypes.MakerOrder calldata buy,
     OrderTypes.OrderItem[] calldata constructedNfts
   ) public pure returns (bool) {
-    uint256 numConstructedItems = 0;
+    uint256 numConstructedItems;
     uint256 nftsLength = constructedNfts.length;
-    for (uint256 i = 0; i < nftsLength; ) {
+    for (uint256 i; i < nftsLength; ) {
       unchecked {
         numConstructedItems += constructedNfts[i].tokens.length;
         ++i;
@@ -248,9 +248,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     pure
     returns (bool)
   {
-    uint256 numTakerItems = 0;
+    uint256 numTakerItems;
     uint256 nftsLength = takerItems.length;
-    for (uint256 i = 0; i < nftsLength; ) {
+    for (uint256 i; i < nftsLength; ) {
       unchecked {
         numTakerItems += takerItems[i].tokens.length;
         ++i;
@@ -278,10 +278,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       return true;
     }
 
-    uint256 numCollsMatched = 0;
+    uint256 numCollsMatched;
     // check if taker has all items in maker
-    for (uint256 i = 0; i < order2NftsLength; ) {
-      for (uint256 j = 0; j < order1NftsLength; ) {
+    for (uint256 i; i < order2NftsLength; ) {
+      for (uint256 j; j < order1NftsLength; ) {
         if (order1Nfts[j].collection == order2Nfts[i].collection) {
           // increment numCollsMatched
           unchecked {
@@ -323,9 +323,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     if (item1TokensLength == 0 || item2TokensLength == 0) {
       return true;
     }
-    uint256 numTokenIdsPerCollMatched = 0;
-    for (uint256 k = 0; k < item2TokensLength; ) {
-      for (uint256 l = 0; l < item1TokensLength; ) {
+    uint256 numTokenIdsPerCollMatched;
+    for (uint256 k; k < item2TokensLength; ) {
+      for (uint256 l; l < item1TokensLength; ) {
         if (
           item1.tokens[l].tokenId == item2.tokens[k].tokenId && item1.tokens[l].numTokens == item2.tokens[k].numTokens
         ) {
@@ -352,9 +352,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
 
   /// @dev returns the sum of current order prices; used in match one to many orders
   function _sumCurrentPrices(OrderTypes.MakerOrder[] calldata orders) internal view returns (uint256) {
-    uint256 sum = 0;
+    uint256 sum;
     uint256 ordersLength = orders.length;
-    for (uint256 i = 0; i < ordersLength; ) {
+    for (uint256 i; i < ordersLength; ) {
       sum += _getCurrentPrice(orders[i]);
       unchecked {
         ++i;
