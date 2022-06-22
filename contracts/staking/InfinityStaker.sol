@@ -312,10 +312,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
             amount = amount - vestedSixMonths;
           }
           if (amount > vestedTwelveMonths) {
-            if (vestedTwelveMonths != 0) { // redundant but leaving it in for conssistency
-              userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
-              userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
-            }
+            revert('should not happen');
           } else {
             userstakedAmounts[user][Duration.TWELVE_MONTHS].amount -= amount;
           }
