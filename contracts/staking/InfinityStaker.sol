@@ -285,7 +285,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   }
 
   /** @notice Update user staked amounts for different duration on unstake
-    * @dev A more elegant recursive function is possible but this is more gas efficient
+   * @dev A more elegant recursive function is possible but this is more gas efficient
    */
   function _updateUserStakedAmounts(
     address user,
@@ -374,5 +374,13 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   /// @dev Admin function to update Infinity treasury
   function updateInfinityTreasury(address _infinityTreasury) external onlyOwner {
     INFINITY_TREASURY = _infinityTreasury;
+  }
+
+  function pause() external onlyOwner {
+    _pause();
+  }
+
+  function unpause() external onlyOwner {
+    _unpause();
   }
 }
