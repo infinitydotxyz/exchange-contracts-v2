@@ -293,19 +293,19 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     uint256 vestedTwelveMonths
   ) internal {
     if (amount > noVesting) {
-      userstakedAmounts[user][Duration.NONE].amount = 0;
-      userstakedAmounts[user][Duration.NONE].timestamp = 0;
+      delete userstakedAmounts[user][Duration.NONE].amount;
+      delete userstakedAmounts[user][Duration.NONE].timestamp;
       amount = amount - noVesting;
       if (amount > vestedThreeMonths) {
         if (vestedThreeMonths != 0) {
-          userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
-          userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
+          delete userstakedAmounts[user][Duration.THREE_MONTHS].amount;
+          delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
           amount = amount - vestedThreeMonths;
         }
         if (amount > vestedSixMonths) {
           if (vestedSixMonths != 0) {
-            userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
-            userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
+            delete userstakedAmounts[user][Duration.SIX_MONTHS].amount;
+            delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
             amount = amount - vestedSixMonths;
           }
           if (amount > vestedTwelveMonths) {
@@ -327,16 +327,16 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   /// @dev clears staking info for a user on rageQuit
   function _clearUserStakedAmounts(address user) internal {
     // clear amounts
-    userstakedAmounts[user][Duration.NONE].amount = 0;
-    userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
-    userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
-    userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
+    delete userstakedAmounts[user][Duration.NONE].amount;
+    delete userstakedAmounts[user][Duration.THREE_MONTHS].amount;
+    delete userstakedAmounts[user][Duration.SIX_MONTHS].amount;
+    delete userstakedAmounts[user][Duration.TWELVE_MONTHS].amount;
 
     // clear timestamps
-    userstakedAmounts[user][Duration.NONE].timestamp = 0;
-    userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
-    userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
-    userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
+    delete userstakedAmounts[user][Duration.NONE].timestamp;
+    delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+    delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+    delete userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp;
   }
 
   // ====================================================== ADMIN FUNCTIONS ================================================
