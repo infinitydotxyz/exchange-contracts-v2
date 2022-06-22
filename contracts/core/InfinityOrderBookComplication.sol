@@ -165,6 +165,21 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /**
+   * @notice Checks whether one to one takers can be executed
+   * @dev This function is called by the main exchange to check whether one to one taker orders can be executed.
+          It checks whether orders have the right constraints - i.e they have one NFT only and whether time is still valid
+   * @param makerOrder the makerOrder
+   * @return returns whether the order can be executed
+   */
+  function canExecTakeOneOrder(OrderTypes.MakerOrder calldata makerOrder) external view override returns (bool) {
+    bool numItemsValid = makerOrder.constraints[0] == 1 &&
+      makerOrder.nfts.length == 1 &&
+      makerOrder.nfts[0].tokens.length == 1;
+    bool _isTimeValid = makerOrder.constraints[3] <= block.timestamp && makerOrder.constraints[4] >= block.timestamp;
+    return (numItemsValid && _isTimeValid);
+  }
+
+  /**
    * @notice Checks whether take orders with a higher order intent can be executed
    * @dev This function is called by the main exchange to check whether take orders with a higher order intent can be executed.
           It checks whether orders have the right constraints - i.e they have the right number of items, whether time is still valid

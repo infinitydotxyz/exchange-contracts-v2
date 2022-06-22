@@ -307,9 +307,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     for (uint256 i = 0; i < numMakerOrders; ) {
       bytes32 makerOrderHash = _hash(makerOrders[i]);
       require(isOrderValid(makerOrders[i], makerOrderHash), 'invalid maker order');
-      bool isTimeValid = makerOrders[i].constraints[3] <= block.timestamp &&
-        makerOrders[i].constraints[4] >= block.timestamp;
-      require(isTimeValid, 'invalid time');
+      require(IComplication(makerOrders[i].execParams[0]).canExecTakeOneOrder(makerOrders[i]), 'cannot execute');
       require(currency == makerOrders[i].execParams[1], 'cannot mix currencies');
       require(isMakerSeller == makerOrders[i].isSellOrder, 'cannot mix order sides');
       require(msg.sender != makerOrders[i].signer, 'no dogfooding');
