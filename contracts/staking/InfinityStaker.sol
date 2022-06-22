@@ -300,16 +300,22 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
       userstakedAmounts[user][Duration.NONE].timestamp = 0;
       amount = amount - noVesting;
       if (amount > vestedThreeMonths) {
-        userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
-        userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
-        amount = amount - vestedThreeMonths;
+        if (vestedThreeMonths != 0) {
+          userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
+          userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
+          amount = amount - vestedThreeMonths;
+        }
         if (amount > vestedSixMonths) {
-          userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
-          userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
-          amount = amount - vestedSixMonths;
+          if (vestedSixMonths != 0) {
+            userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
+            userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
+            amount = amount - vestedSixMonths;
+          }
           if (amount > vestedTwelveMonths) {
-            userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
-            userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
+            if (vestedTwelveMonths != 0) { // redundant but leaving it in for conssistency
+              userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
+              userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
+            }
           } else {
             userstakedAmounts[user][Duration.TWELVE_MONTHS].amount -= amount;
           }
