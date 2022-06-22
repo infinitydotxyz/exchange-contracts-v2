@@ -141,8 +141,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint16 protocolFeeBps = PROTOCOL_FEE_BPS;
     uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
     address weth = WETH;
+    uint256 sharedCost = (startGas - gasleft()) / numMakerOrders;
     for (uint256 i = 0; i < numMakerOrders; ) {
-      uint256 startGasPerOrder = gasleft() + ((startGas - gasleft()) / numMakerOrders);
+      uint256 startGasPerOrder = gasleft() + sharedCost;
       require(_complications.contains(makerOrders1[i].execParams[0]), 'invalid complication');
       (bool canExec, uint256 execPrice) = IComplication(makerOrders1[i].execParams[0]).canExecMatchOneToOne(
         makerOrders1[i],
@@ -193,9 +194,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
     address weth = WETH;
     if (makerOrder.isSellOrder) {
+      // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
+      uint256 sharedCost = (startGas + 20000 - gasleft()) / ordersLength;
       for (uint256 i = 0; i < ordersLength; ) {
-        // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
-        uint256 startGasPerOrder = gasleft() + ((startGas + 20000 - gasleft()) / ordersLength);
+        uint256 startGasPerOrder = gasleft() + sharedCost;
         _matchOneMakerSellToManyMakerBuys(
           makerOrderHash,
           makerOrder,
@@ -265,8 +267,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint16 protocolFeeBps = PROTOCOL_FEE_BPS;
     uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
     address weth = WETH;
+    uint256 sharedCost = (startGas - gasleft()) / numSells;
     for (uint256 i = 0; i < numSells; ) {
-      uint256 startGasPerOrder = gasleft() + ((startGas - gasleft()) / numSells);
+      uint256 startGasPerOrder = gasleft() + sharedCost;
       (bool executionValid, uint256 execPrice) = IComplication(sells[i].execParams[0]).canExecMatchOrder(
         sells[i],
         buys[i],
