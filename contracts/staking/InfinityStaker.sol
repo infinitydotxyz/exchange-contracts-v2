@@ -372,6 +372,9 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     uint16 sixMonthPenalty,
     uint16 twelveMonthPenalty
   ) external onlyOwner {
+    require(threeMonthPenalty > 0, 'cannot be 0');
+    require(sixMonthPenalty > 0, 'cannot be 0');
+    require(twelveMonthPenalty > 0, 'cannot be 0');
     THREE_MONTH_PENALTY = threeMonthPenalty;
     SIX_MONTH_PENALTY = sixMonthPenalty;
     TWELVE_MONTH_PENALTY = twelveMonthPenalty;
