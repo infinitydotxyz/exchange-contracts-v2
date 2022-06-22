@@ -128,7 +128,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   function matchOneToOneOrders(
     OrderTypes.MakerOrder[] calldata makerOrders1,
     OrderTypes.MakerOrder[] calldata makerOrders2
-  ) external {
+  ) external nonReentrant {
     uint256 startGas = gasleft();
     uint256 numMakerOrders = makerOrders1.length;
     require(msg.sender == MATCH_EXECUTOR, 'OME');
@@ -175,7 +175,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   function matchOneToManyOrders(
     OrderTypes.MakerOrder calldata makerOrder,
     OrderTypes.MakerOrder[] calldata manyMakerOrders
-  ) external {
+  ) external nonReentrant {
     uint256 startGas = gasleft();
     require(msg.sender == MATCH_EXECUTOR, 'OME');
     require(_complications.contains(makerOrder.execParams[0]), 'invalid complication');
@@ -255,7 +255,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder[] calldata sells,
     OrderTypes.MakerOrder[] calldata buys,
     OrderTypes.OrderItem[][] calldata constructs
-  ) external {
+  ) external nonReentrant {
     uint256 startGas = gasleft();
     uint256 numSells = sells.length;
     require(msg.sender == MATCH_EXECUTOR, 'OME');
