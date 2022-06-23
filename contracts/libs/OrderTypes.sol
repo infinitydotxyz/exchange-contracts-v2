@@ -36,15 +36,9 @@ library OrderTypes {
     OrderItem[] nfts;
     ///@dev address of complication for trade execution (e.g. InfinityOrderBookComplication), address of the currency (e.g., WETH)
     address[] execParams;
-    ///@dev additional parameters like traits for trait orders, private sale buyer for OTC ordes etc
+    ///@dev additional parameters like traits for trait orders, private sale buyer for OTC orders etc
     bytes extraParams;
     ///@dev the order signature uint8 v: parameter (27 or 28), bytes32 r, bytes32 s
     bytes sig;
-  }
-
-  /// @dev taker order struct are simply a subset of maker order since they don't need the signature and constraints
-  struct TakerOrder {
-    bool isSellOrder;
-    OrderItem[] nfts;
   }
 }

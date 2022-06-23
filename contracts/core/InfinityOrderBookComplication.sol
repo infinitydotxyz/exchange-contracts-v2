@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
-
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
-
 import {OrderTypes} from '../libs/OrderTypes.sol';
 import {IComplication} from '../interfaces/IComplication.sol';
 
@@ -11,7 +8,9 @@ import {IComplication} from '../interfaces/IComplication.sol';
  * @author nneverlander. Twitter @nneverlander
  * @notice Complication to execute orderbook orders
  */
-contract InfinityOrderBookComplication is IComplication, Ownable {
+contract InfinityOrderBookComplication is IComplication {
+  uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
+
   // ======================================================= EXTERNAL FUNCTIONS ==================================================
 
   /**
@@ -71,8 +70,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   ) external view override returns (bool) {
     // check the constraints of the 'one' maker order
     uint256 numNftsInOneOrder;
-    uint256 numOrderItemsInOneOrder = makerOrder.nfts.length;
-    for (uint256 i; i < numOrderItemsInOneOrder; ) {
+    for (uint256 i; i < makerOrder.nfts.length; ) {
       numNftsInOneOrder = makerOrder.nfts[i].tokens.length;
       unchecked {
         ++i;
@@ -87,22 +85,17 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     bool numNftsPerManyOrderValid = true;
     bool isOrdersTimeValid = true;
     bool itemsIntersect = true;
-    uint256 ordersLength = manyMakerOrders.length;
-    for (uint256 i; i < ordersLength; ) {
-      if (!isOrdersTimeValid || !itemsIntersect) {
-        return false; // short circuit
-      }
-
+    for (uint256 i; i < manyMakerOrders.length; ) {
       uint256 nftsLength = manyMakerOrders[i].nfts.length;
       uint256 numNftsPerOrder;
       for (uint256 j; j < nftsLength; ) {
-        numNftsPerOrder += manyMakerOrders[i].nfts[j].tokens.length;
+        numNftsPerOrder = numNftsPerOrder + manyMakerOrders[i].nfts[j].tokens.length;
         unchecked {
           ++j;
         }
       }
       numNftsPerManyOrderValid = numNftsPerManyOrderValid && manyMakerOrders[i].constraints[0] == numNftsPerOrder;
-      totalNftsInManyOrders += numNftsPerOrder;
+      totalNftsInManyOrders = totalNftsInManyOrders + numNftsPerOrder;
 
       isOrdersTimeValid =
         isOrdersTimeValid &&
@@ -111,14 +104,23 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
 
       itemsIntersect = itemsIntersect && doItemsIntersect(makerOrder.nfts, manyMakerOrders[i].nfts);
 
+      if (!isOrdersTimeValid || !itemsIntersect || !numNftsPerManyOrderValid) {
+        return false; // short circuit
+      }
+
       unchecked {
         ++i;
       }
     }
 
-    bool _isTimeValid = isOrdersTimeValid &&
-      makerOrder.constraints[3] <= block.timestamp &&
-      makerOrder.constraints[4] >= block.timestamp;
+    if (numNftsInOneOrder != totalNftsInManyOrders) {
+      return false;
+    }
+
+    bool _isMakerTimeValid = makerOrder.constraints[3] <= block.timestamp && makerOrder.constraints[4] >= block.timestamp;
+    if (!_isMakerTimeValid) {
+      return false;
+    }
 
     uint256 currentMakerOrderPrice = _getCurrentPrice(makerOrder);
     uint256 sumCurrentOrderPrices = _sumCurrentPrices(manyMakerOrders);
@@ -130,12 +132,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       _isPriceValid = sumCurrentOrderPrices <= currentMakerOrderPrice;
     }
 
-    return
-      numNftsInOneOrder == totalNftsInManyOrders &&
-      numNftsPerManyOrderValid &&
-      _isTimeValid &&
-      itemsIntersect &&
-      _isPriceValid;
+    return _isPriceValid;
   }
 
   /**
@@ -232,10 +229,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     OrderTypes.OrderItem[] calldata constructedNfts
   ) public pure returns (bool) {
     uint256 numConstructedItems;
-    uint256 nftsLength = constructedNfts.length;
-    for (uint256 i; i < nftsLength; ) {
+    for (uint256 i; i < constructedNfts.length; ) {
       unchecked {
-        numConstructedItems += constructedNfts[i].tokens.length;
+        numConstructedItems = numConstructedItems + constructedNfts[i].tokens.length;
         ++i;
       }
     }
@@ -249,10 +245,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     returns (bool)
   {
     uint256 numTakerItems;
-    uint256 nftsLength = takerItems.length;
-    for (uint256 i; i < nftsLength; ) {
+    for (uint256 i; i < takerItems.length; ) {
       unchecked {
-        numTakerItems += takerItems[i].tokens.length;
+        numTakerItems = numTakerItems + takerItems[i].tokens.length;
         ++i;
       }
     }
@@ -280,24 +275,20 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
 
     uint256 numCollsMatched;
     // check if taker has all items in maker
-    for (uint256 i; i < order2NftsLength; ) {
-      for (uint256 j; j < order1NftsLength; ) {
-        if (order1Nfts[j].collection == order2Nfts[i].collection) {
-          // increment numCollsMatched
-          unchecked {
+    unchecked {
+      for (uint256 i; i < order2NftsLength; ) {
+        for (uint256 j; j < order1NftsLength; ) {
+          if (order1Nfts[j].collection == order2Nfts[i].collection) {
+            // increment numCollsMatched
             ++numCollsMatched;
+            // check if tokenIds intersect
+            bool tokenIdsIntersect = doTokenIdsIntersect(order1Nfts[j], order2Nfts[i]);
+            require(tokenIdsIntersect, 'tokenIds dont intersect');
+            // short circuit
+            break;
           }
-          // check if tokenIds intersect
-          bool tokenIdsIntersect = doTokenIdsIntersect(order1Nfts[j], order2Nfts[i]);
-          require(tokenIdsIntersect, 'tokenIds dont intersect');
-          // short circuit
-          break;
-        }
-        unchecked {
           ++j;
         }
-      }
-      unchecked {
         ++i;
       }
     }
@@ -324,23 +315,19 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       return true;
     }
     uint256 numTokenIdsPerCollMatched;
-    for (uint256 k; k < item2TokensLength; ) {
-      for (uint256 l; l < item1TokensLength; ) {
-        if (
-          item1.tokens[l].tokenId == item2.tokens[k].tokenId && item1.tokens[l].numTokens == item2.tokens[k].numTokens
-        ) {
-          // increment numTokenIdsPerCollMatched
-          unchecked {
+    unchecked {
+      for (uint256 k; k < item2TokensLength; ) {
+        for (uint256 l; l < item1TokensLength; ) {
+          if (
+            item1.tokens[l].tokenId == item2.tokens[k].tokenId && item1.tokens[l].numTokens == item2.tokens[k].numTokens
+          ) {
+            // increment numTokenIdsPerCollMatched
             ++numTokenIdsPerCollMatched;
+            // short circuit
+            break;
           }
-          // short circuit
-          break;
-        }
-        unchecked {
           ++l;
         }
-      }
-      unchecked {
         ++k;
       }
     }
@@ -355,7 +342,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     uint256 sum;
     uint256 ordersLength = orders.length;
     for (uint256 i; i < ordersLength; ) {
-      sum += _getCurrentPrice(orders[i]);
+      sum = sum + _getCurrentPrice(orders[i]);
       unchecked {
         ++i;
       }
@@ -366,15 +353,25 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   /// @dev Gets current order price for orders that vary in price over time (dutch and reverse dutch auctions)
   function _getCurrentPrice(OrderTypes.MakerOrder calldata order) internal view returns (uint256) {
     (uint256 startPrice, uint256 endPrice) = (order.constraints[1], order.constraints[2]);
-    uint256 duration = order.constraints[4] - order.constraints[3];
-    uint256 priceDiff = startPrice > endPrice ? startPrice - endPrice : endPrice - startPrice;
-    if (priceDiff == 0 || duration == 0) {
+    if (startPrice == endPrice) {
       return startPrice;
     }
+
+    uint256 duration = order.constraints[4] - order.constraints[3];
+    if (duration == 0) {
+      return startPrice;
+    }
+
     uint256 elapsedTime = block.timestamp - order.constraints[3];
-    uint256 PRECISION = 10**4; // precision for division; similar to bps
-    uint256 portionBps = elapsedTime > duration ? PRECISION : ((elapsedTime * PRECISION) / duration);
-    priceDiff = (priceDiff * portionBps) / PRECISION;
-    return startPrice > endPrice ? startPrice - priceDiff : startPrice + priceDiff;
+    unchecked {
+      uint256 portionBps = elapsedTime > duration ? PRECISION : ((elapsedTime * PRECISION) / duration);
+      if (startPrice > endPrice) {
+        uint256 priceDiff = ((startPrice - endPrice) * portionBps) / PRECISION;
+        return startPrice - priceDiff;
+      } else {
+        uint256 priceDiff = ((endPrice - startPrice) * portionBps) / PRECISION;
+        return startPrice + priceDiff;
+      }
+    }
   }
 }
