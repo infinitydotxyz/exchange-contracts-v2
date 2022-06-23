@@ -2,9 +2,8 @@
 pragma solidity 0.8.14;
 
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
-import {IERC20, SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Pausable} from '@openzeppelin/contracts/security/Pausable.sol';
-import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {IStaker, Duration, StakeLevel} from '../interfaces/IStaker.sol';
 
 /**
@@ -12,8 +11,7 @@ import {IStaker, Duration, StakeLevel} from '../interfaces/IStaker.sol';
  * @author nneverlander. Twitter @nneverlander
  * @notice The staker contract that allows people to stake tokens and earn voting power to be used in curation and possibly other places
  */
-contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
-  using SafeERC20 for IERC20;
+contract InfinityStaker is IStaker, Ownable, Pausable {
   struct StakeAmount {
     uint256 amount;
     uint256 timestamp;
@@ -22,39 +20,40 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   ///@dev Storage variable to keep track of the staker's staked duration and amounts
   mapping(address => mapping(Duration => StakeAmount)) public userstakedAmounts;
 
-  address public INFINITY_TOKEN;
+  address public immutable INFINITY_TOKEN;
   ///@dev Infinity treasury address - will be a EOA/multisig
-  address public INFINITY_TREASURY;
+  address public infinityTreasury;
 
   /**@dev Power levels to reach the specified stake thresholds. Users can reach these levels 
           either by staking the specified number of tokens for no duration or a less number of tokens but with higher durations.
           See getUserStakePower() to see how users can reach these levels.
   */
-  uint16 public BRONZE_STAKE_THRESHOLD = 1000;
-  uint16 public SILVER_STAKE_THRESHOLD = 5000;
-  uint16 public GOLD_STAKE_THRESHOLD = 10000;
-  uint16 public PLATINUM_STAKE_THRESHOLD = 20000;
+  uint32 public bronzeStakeThreshold = 1000;
+  uint32 public silverStakeThreshold = 5000;
+  uint32 public goldStakeThreshold = 10000;
+  uint32 public platinumStakeThreshold = 20000;
 
   ///@dev Penalties if staked tokens are rageQuit early. Example: If 100 tokens are staked for twelve months but rageQuit right away,
   /// the user will get back 100/4 tokens.
-  uint16 public THREE_MONTH_PENALTY = 2;
-  uint16 public SIX_MONTH_PENALTY = 3;
-  uint16 public TWELVE_MONTH_PENALTY = 4;
+  uint32 public threeMonthPenalty = 2;
+  uint32 public sixMonthPenalty = 3;
+  uint32 public twelveMonthPenalty = 4;
 
   event Staked(address indexed user, uint256 amount, Duration duration);
   event DurationChanged(address indexed user, uint256 amount, Duration oldDuration, Duration newDuration);
   event UnStaked(address indexed user, uint256 amount);
   event RageQuit(address indexed user, uint256 totalToUser, uint256 penalty);
+  event RageQuitPenaltiesUpdated(uint32 threeMonth, uint32 sixMonth, uint32 twelveMonth);
+  event StakeLevelThresholdUpdated(StakeLevel stakeLevel, uint32 threshold);
 
+  /**
+    @param _tokenAddress The address of the Infinity token contract
+    @param _infinityTreasury The address of the Infinity treasury used for sending rageQuit penalties
+   */
   constructor(address _tokenAddress, address _infinityTreasury) {
     INFINITY_TOKEN = _tokenAddress;
-    INFINITY_TREASURY = _infinityTreasury;
+    infinityTreasury = _infinityTreasury;
   }
-
-  // Fallback
-  fallback() external payable {}
-
-  receive() external payable {}
 
   // =================================================== USER FUNCTIONS =======================================================
 
@@ -64,14 +63,13 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
    * @param amount Amount of tokens to stake
    * @param duration Duration of the stake
    */
-  function stake(uint256 amount, Duration duration) external override nonReentrant whenNotPaused {
+  function stake(uint256 amount, Duration duration) external override whenNotPaused {
     require(amount != 0, 'stake amount cant be 0');
-    require(IERC20(INFINITY_TOKEN).balanceOf(msg.sender) >= amount, 'insufficient balance to stake');
     // update storage
     userstakedAmounts[msg.sender][duration].amount += amount;
     userstakedAmounts[msg.sender][duration].timestamp = block.timestamp;
-    // perform transfer
-    IERC20(INFINITY_TOKEN).safeTransferFrom(msg.sender, address(this), amount);
+    // perform transfer; no need for safeTransferFrom since we know the implementation of the token contract
+    IERC20(INFINITY_TOKEN).transferFrom(msg.sender, address(this), amount);
     // emit event
     emit Staked(msg.sender, amount, duration);
   }
@@ -87,13 +85,10 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     uint256 amount,
     Duration oldDuration,
     Duration newDuration
-  ) external override nonReentrant whenNotPaused {
+  ) external override whenNotPaused {
     require(amount != 0, 'amount cant be 0');
-    require(
-      userstakedAmounts[msg.sender][oldDuration].amount >= amount,
-      'insufficient staked amount to change duration'
-    );
-    require(newDuration > oldDuration, 'new duration must be greater than old duration');
+    require(userstakedAmounts[msg.sender][oldDuration].amount >= amount, 'insuf stake to change duration');
+    require(newDuration > oldDuration, 'new duration must exceed old dur');
 
     // update storage
     userstakedAmounts[msg.sender][oldDuration].amount -= amount;
@@ -109,23 +104,23 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   }
 
   /**
-   * @notice Untake tokens
+   * @notice Unstake tokens
    * @dev Storage updates are done for each stake level. See _updateUserStakedAmounts for more details
    * @param amount Amount of tokens to unstake
    */
-  function unstake(uint256 amount) external override nonReentrant whenNotPaused {
-    require(amount != 0, 'stake amount cant be 0');
+  function unstake(uint256 amount) external override whenNotPaused {
+    require(amount != 0, 'unstake amount cant be 0');
     uint256 noVesting = userstakedAmounts[msg.sender][Duration.NONE].amount;
     uint256 vestedThreeMonths = getVestedAmount(msg.sender, Duration.THREE_MONTHS);
-    uint256 vestedsixMonths = getVestedAmount(msg.sender, Duration.SIX_MONTHS);
+    uint256 vestedSixMonths = getVestedAmount(msg.sender, Duration.SIX_MONTHS);
     uint256 vestedTwelveMonths = getVestedAmount(msg.sender, Duration.TWELVE_MONTHS);
-    uint256 totalVested = noVesting + vestedThreeMonths + vestedsixMonths + vestedTwelveMonths;
+    uint256 totalVested = noVesting + vestedThreeMonths + vestedSixMonths + vestedTwelveMonths;
     require(totalVested >= amount, 'insufficient balance to unstake');
 
     // update storage
-    _updateUserStakedAmounts(msg.sender, amount, noVesting, vestedThreeMonths, vestedsixMonths, vestedTwelveMonths);
+    _updateUserStakedAmounts(msg.sender, amount, noVesting, vestedThreeMonths, vestedSixMonths, vestedTwelveMonths);
     // perform transfer
-    IERC20(INFINITY_TOKEN).safeTransfer(msg.sender, amount);
+    IERC20(INFINITY_TOKEN).transfer(msg.sender, amount);
     // emit event
     emit UnStaked(msg.sender, amount);
   }
@@ -133,13 +128,13 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   /**
    * @notice Ragequit tokens. Applies penalties for unvested tokens
    */
-  function rageQuit() external override nonReentrant {
+  function rageQuit() external override {
     (uint256 totalToUser, uint256 penalty) = getRageQuitAmounts(msg.sender);
     // update storage
     _clearUserStakedAmounts(msg.sender);
     // perform transfers
-    IERC20(INFINITY_TOKEN).safeTransfer(msg.sender, totalToUser);
-    IERC20(INFINITY_TOKEN).safeTransfer(INFINITY_TREASURY, penalty);
+    IERC20(INFINITY_TOKEN).transfer(msg.sender, totalToUser);
+    IERC20(INFINITY_TOKEN).transfer(infinityTreasury, penalty);
     // emit event
     emit RageQuit(msg.sender, totalToUser, penalty);
   }
@@ -151,7 +146,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
    * @param user address of the user
    * @return total amount of tokens staked by the user
    */
-  function getUserTotalStaked(address user) public view override returns (uint256) {
+  function getUserTotalStaked(address user) external view override returns (uint256) {
     return
       userstakedAmounts[user][Duration.NONE].amount +
       userstakedAmounts[user][Duration.THREE_MONTHS].amount +
@@ -164,7 +159,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
    * @param user address of the user
    * @return total amount of vested tokens for the user
    */
-  function getUserTotalVested(address user) public view override returns (uint256) {
+  function getUserTotalVested(address user) external view override returns (uint256) {
     uint256 noVesting = getVestedAmount(user, Duration.NONE);
     uint256 vestedThreeMonths = getVestedAmount(user, Duration.THREE_MONTHS);
     uint256 vestedsixMonths = getVestedAmount(user, Duration.SIX_MONTHS);
@@ -184,18 +179,19 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     uint256 sixMonthLock = userstakedAmounts[user][Duration.SIX_MONTHS].amount;
     uint256 twelveMonthLock = userstakedAmounts[user][Duration.TWELVE_MONTHS].amount;
 
+    uint256 totalStaked = noLock + threeMonthLock + sixMonthLock + twelveMonthLock;
+    require(totalStaked != 0, 'nothing staked to rage quit');
+
     uint256 threeMonthVested = getVestedAmount(user, Duration.THREE_MONTHS);
     uint256 sixMonthVested = getVestedAmount(user, Duration.SIX_MONTHS);
     uint256 twelveMonthVested = getVestedAmount(user, Duration.TWELVE_MONTHS);
 
     uint256 totalVested = noLock + threeMonthVested + sixMonthVested + twelveMonthVested;
-    uint256 totalStaked = noLock + threeMonthLock + sixMonthLock + twelveMonthLock;
-    require(totalStaked >= 0, 'nothing staked to rage quit');
 
     uint256 totalToUser = totalVested +
-      ((threeMonthLock - threeMonthVested) / THREE_MONTH_PENALTY) +
-      ((sixMonthLock - sixMonthVested) / SIX_MONTH_PENALTY) +
-      ((twelveMonthLock - twelveMonthVested) / TWELVE_MONTH_PENALTY);
+      ((threeMonthLock - threeMonthVested) / threeMonthPenalty) +
+      ((sixMonthLock - sixMonthVested) / sixMonthPenalty) +
+      ((twelveMonthLock - twelveMonthVested) / twelveMonthPenalty);
 
     uint256 penalty = totalStaked - totalToUser;
 
@@ -210,13 +206,13 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   function getUserStakeLevel(address user) external view override returns (StakeLevel) {
     uint256 totalPower = getUserStakePower(user);
 
-    if (totalPower <= BRONZE_STAKE_THRESHOLD) {
+    if (totalPower <= bronzeStakeThreshold) {
       return StakeLevel.NONE;
-    } else if (totalPower > BRONZE_STAKE_THRESHOLD && totalPower <= SILVER_STAKE_THRESHOLD) {
+    } else if (totalPower <= silverStakeThreshold) {
       return StakeLevel.BRONZE;
-    } else if (totalPower > SILVER_STAKE_THRESHOLD && totalPower <= GOLD_STAKE_THRESHOLD) {
+    } else if (totalPower <= goldStakeThreshold) {
       return StakeLevel.SILVER;
-    } else if (totalPower > GOLD_STAKE_THRESHOLD && totalPower <= PLATINUM_STAKE_THRESHOLD) {
+    } else if (totalPower <= platinumStakeThreshold) {
       return StakeLevel.GOLD;
     } else {
       return StakeLevel.PLATINUM;
@@ -231,10 +227,10 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
    */
   function getUserStakePower(address user) public view override returns (uint256) {
     return
-      ((userstakedAmounts[user][Duration.NONE].amount * 1) +
+      ((userstakedAmounts[user][Duration.NONE].amount) +
         (userstakedAmounts[user][Duration.THREE_MONTHS].amount * 2) +
         (userstakedAmounts[user][Duration.SIX_MONTHS].amount * 3) +
-        (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount * 4)) / (10**18);
+        (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount * 4)) / (1e18);
   }
 
   /**
@@ -258,7 +254,6 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
    * @return Vested amount for the given duration
    */
   function getVestedAmount(address user, Duration duration) public view returns (uint256) {
-    uint256 amount = userstakedAmounts[user][duration].amount;
     uint256 timestamp = userstakedAmounts[user][duration].timestamp;
     // short circuit if no vesting for this duration
     if (timestamp == 0) {
@@ -266,7 +261,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     }
     uint256 durationInSeconds = _getDurationInSeconds(duration);
     uint256 secondsSinceStake = block.timestamp - timestamp;
-
+    uint256 amount = userstakedAmounts[user][duration].amount;
     return secondsSinceStake >= durationInSeconds ? amount : 0;
   }
 
@@ -285,7 +280,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
   }
 
   /** @notice Update user staked amounts for different duration on unstake
-    * @dev A more elegant recursive function is possible but this is more gas efficient
+   * @dev A more elegant recursive function is possible but this is more gas efficient
    */
   function _updateUserStakedAmounts(
     address user,
@@ -296,83 +291,106 @@ contract InfinityStaker is IStaker, Ownable, Pausable, ReentrancyGuard {
     uint256 vestedTwelveMonths
   ) internal {
     if (amount > noVesting) {
-      userstakedAmounts[user][Duration.NONE].amount = 0;
-      userstakedAmounts[user][Duration.NONE].timestamp = 0;
+      delete userstakedAmounts[user][Duration.NONE].amount;
+      delete userstakedAmounts[user][Duration.NONE].timestamp;
       amount = amount - noVesting;
       if (amount > vestedThreeMonths) {
-        userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
-        userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
-        amount = amount - vestedThreeMonths;
+        if (vestedThreeMonths != 0) {
+          delete userstakedAmounts[user][Duration.THREE_MONTHS].amount;
+          delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+          amount = amount - vestedThreeMonths;
+        }
         if (amount > vestedSixMonths) {
-          userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
-          userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
-          amount = amount - vestedSixMonths;
+          if (vestedSixMonths != 0) {
+            delete userstakedAmounts[user][Duration.SIX_MONTHS].amount;
+            delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+            amount = amount - vestedSixMonths;
+          }
           if (amount > vestedTwelveMonths) {
-            userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
-            userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
+            revert('should not happen');
           } else {
             userstakedAmounts[user][Duration.TWELVE_MONTHS].amount -= amount;
+            if (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount == 0) {
+              delete userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp;
+            }
           }
         } else {
           userstakedAmounts[user][Duration.SIX_MONTHS].amount -= amount;
+          if (userstakedAmounts[user][Duration.SIX_MONTHS].amount == 0) {
+            delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+          }
         }
       } else {
         userstakedAmounts[user][Duration.THREE_MONTHS].amount -= amount;
+        if (userstakedAmounts[user][Duration.THREE_MONTHS].amount == 0) {
+          delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+        }
       }
     } else {
       userstakedAmounts[user][Duration.NONE].amount -= amount;
+      if (userstakedAmounts[user][Duration.NONE].amount == 0) {
+        delete userstakedAmounts[user][Duration.NONE].timestamp;
+      }
     }
   }
 
   /// @dev clears staking info for a user on rageQuit
   function _clearUserStakedAmounts(address user) internal {
     // clear amounts
-    userstakedAmounts[user][Duration.NONE].amount = 0;
-    userstakedAmounts[user][Duration.THREE_MONTHS].amount = 0;
-    userstakedAmounts[user][Duration.SIX_MONTHS].amount = 0;
-    userstakedAmounts[user][Duration.TWELVE_MONTHS].amount = 0;
+    delete userstakedAmounts[user][Duration.NONE].amount;
+    delete userstakedAmounts[user][Duration.THREE_MONTHS].amount;
+    delete userstakedAmounts[user][Duration.SIX_MONTHS].amount;
+    delete userstakedAmounts[user][Duration.TWELVE_MONTHS].amount;
 
     // clear timestamps
-    userstakedAmounts[user][Duration.NONE].timestamp = 0;
-    userstakedAmounts[user][Duration.THREE_MONTHS].timestamp = 0;
-    userstakedAmounts[user][Duration.SIX_MONTHS].timestamp = 0;
-    userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp = 0;
+    delete userstakedAmounts[user][Duration.NONE].timestamp;
+    delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+    delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+    delete userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp;
   }
 
   // ====================================================== ADMIN FUNCTIONS ================================================
 
-  /// @dev Admin function to rescue any ETH accidentally sent to the contract
-  function rescueETH(address destination) external payable onlyOwner {
-    (bool sent, ) = destination.call{value: msg.value}('');
-    require(sent, 'Failed to send Ether');
-  }
-
   /// @dev Admin function to update stake level thresholds
-  function updateStakeLevelThreshold(StakeLevel stakeLevel, uint16 threshold) external onlyOwner {
+  function updateStakeLevelThreshold(StakeLevel stakeLevel, uint32 threshold) external onlyOwner {
     if (stakeLevel == StakeLevel.BRONZE) {
-      BRONZE_STAKE_THRESHOLD = threshold;
+      bronzeStakeThreshold = threshold;
     } else if (stakeLevel == StakeLevel.SILVER) {
-      SILVER_STAKE_THRESHOLD = threshold;
+      silverStakeThreshold = threshold;
     } else if (stakeLevel == StakeLevel.GOLD) {
-      GOLD_STAKE_THRESHOLD = threshold;
+      goldStakeThreshold = threshold;
     } else if (stakeLevel == StakeLevel.PLATINUM) {
-      PLATINUM_STAKE_THRESHOLD = threshold;
+      platinumStakeThreshold = threshold;
     }
+    emit StakeLevelThresholdUpdated(stakeLevel, threshold);
   }
 
   /// @dev Admin function to update rageQuit penalties
   function updatePenalties(
-    uint16 threeMonthPenalty,
-    uint16 sixMonthPenalty,
-    uint16 twelveMonthPenalty
+    uint32 _threeMonthPenalty,
+    uint32 _sixMonthPenalty,
+    uint32 _twelveMonthPenalty
   ) external onlyOwner {
-    THREE_MONTH_PENALTY = threeMonthPenalty;
-    SIX_MONTH_PENALTY = sixMonthPenalty;
-    TWELVE_MONTH_PENALTY = twelveMonthPenalty;
+    require(_threeMonthPenalty > 0 && _threeMonthPenalty < threeMonthPenalty, 'invalid value');
+    require(_sixMonthPenalty > 0 && _sixMonthPenalty < sixMonthPenalty, 'invalid value');
+    require(_twelveMonthPenalty > 0 && _twelveMonthPenalty < twelveMonthPenalty, 'invalid value');
+    threeMonthPenalty = _threeMonthPenalty;
+    sixMonthPenalty = _sixMonthPenalty;
+    twelveMonthPenalty = _twelveMonthPenalty;
+    emit RageQuitPenaltiesUpdated(threeMonthPenalty, sixMonthPenalty, twelveMonthPenalty);
   }
 
   /// @dev Admin function to update Infinity treasury
   function updateInfinityTreasury(address _infinityTreasury) external onlyOwner {
-    INFINITY_TREASURY = _infinityTreasury;
+    require(_infinityTreasury != address(0), 'invalid address');
+    infinityTreasury = _infinityTreasury;
+  }
+
+  function pause() external onlyOwner {
+    _pause();
+  }
+
+  function unpause() external onlyOwner {
+    _unpause();
   }
 }

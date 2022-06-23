@@ -30,7 +30,7 @@ Contracts are designed to be extensible. The main contract is `InfinityExchange.
 - [InfinityExchange.sol](./contracts/core/InfinityExchange.sol) - main contract that stores state and has user approvals for spending assets
 - [InfinityOrderBookComplication.sol](./contracts/core/InfinityOrderBookComplication.sol) - our first complication that helps execute the order types listed above
 
-![Contracts graph](./static/contractGraph.svg?sanitize-true)
+![Contracts graph](./static/exchangeContractGraph.svg?sanitize-true)
 
 # Staking and Token contracts
 
@@ -63,9 +63,11 @@ The min gas of 121176 units is for exchanging one NFT (33% less gas than Opensea
 
 The contracts have been extensively tested. All tests can be found in the `test` folder organized into different files. Tests can be run individually with `npx hardhat test --grep <test name>` or all at once with `./runTests.sh`
 
-# Bug bounty
+# Audits
 
-Coming soon.
+- [Immunefi bug bounty](https://immunefi.com/bounty/infinity/)
+  
+- [Code4Arena audit contest](https://code4rena.com/contests/2022-06-infinity-nft-marketplace-contest)
 
 # Links
 

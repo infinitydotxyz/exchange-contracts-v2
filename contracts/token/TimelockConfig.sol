@@ -6,8 +6,8 @@ import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet
 contract TimelockConfig {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
-  bytes32 public constant ADMIN = keccak256('Admin');
-  bytes32 public constant TIMELOCK = keccak256('Timelock');
+  bytes32 public immutable ADMIN = keccak256('Admin');
+  bytes32 public immutable TIMELOCK = keccak256('Timelock');
 
   struct Config {
     bytes32 id;
@@ -73,42 +73,42 @@ contract TimelockConfig {
 
   // =============================================== VIEW FUNCTIONS =========================================================
 
-  function calculateConfigId(string memory name) external pure returns (bytes32 configId) {
+  function calculateConfigId(string memory name) external pure returns (bytes32) {
     return keccak256(abi.encodePacked(name));
   }
 
-  function isConfig(bytes32 configId) external view returns (bool status) {
+  function isConfig(bytes32 configId) external view returns (bool) {
     return _configSet.contains(configId);
   }
 
-  function getConfigCount() external view returns (uint256 count) {
+  function getConfigCount() external view returns (uint256) {
     return _configSet.length();
   }
 
-  function getConfigByIndex(uint256 index) external view returns (Config memory config) {
+  function getConfigByIndex(uint256 index) external view returns (Config memory) {
     bytes32 configId = _configSet.at(index);
     return Config(configId, _config[configId]);
   }
 
-  function getConfig(bytes32 configId) public view returns (Config memory config) {
+  function getConfig(bytes32 configId) public view returns (Config memory) {
     require(_configSet.contains(configId), 'not config');
     return Config(configId, _config[configId]);
   }
 
-  function isPending(bytes32 configId) public view returns (bool status) {
+  function isPending(bytes32 configId) public view returns (bool) {
     return _pendingSet.contains(configId);
   }
 
-  function getPendingCount() external view returns (uint256 count) {
+  function getPendingCount() external view returns (uint256) {
     return _pendingSet.length();
   }
 
-  function getPendingByIndex(uint256 index) external view returns (PendingChange memory pendingRequest) {
+  function getPendingByIndex(uint256 index) external view returns (PendingChange memory) {
     bytes32 configId = _pendingSet.at(index);
     return PendingChange(configId, _pending[configId].value, _pending[configId].timestamp);
   }
 
-  function getPending(bytes32 configId) external view returns (PendingChange memory pendingRequest) {
+  function getPending(bytes32 configId) external view returns (PendingChange memory) {
     require(_pendingSet.contains(configId), 'not pending');
     return PendingChange(configId, _pending[configId].value, _pending[configId].timestamp);
   }

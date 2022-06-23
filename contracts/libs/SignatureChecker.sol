@@ -11,7 +11,7 @@ import {IERC1271} from '@openzeppelin/contracts/interfaces/IERC1271.sol';
 library SignatureChecker {
   /**
    * @notice Recovers the signer of a signature (for EOA)
-   * @param hashed the hash containing the signed mesage
+   * @param hashed hash containing the signed message
    * @param r parameter
    * @param s parameter
    * @param v parameter (27 or 28). This prevents malleability since the public key recovery equation has two possible solutions.
@@ -45,7 +45,7 @@ library SignatureChecker {
    * @param r parameter
    * @param s parameter
    * @param v parameter (27 or 28) this prevents malleability since the public key recovery equation has two possible solutions
-   * @param domainSeparator paramer to prevent signature being executed in other chains and environments
+   * @param domainSeparator parameter to prevent signature being executed in other chains and environments
    * @return true --> if valid // false --> if invalid
    */
   function verify(

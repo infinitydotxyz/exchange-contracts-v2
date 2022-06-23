@@ -7,7 +7,7 @@ pragma solidity 0.8.14;
  * @notice This library contains the order types used by the main exchange and complications
  */
 library OrderTypes {
-  /// @dev the tokenId and numTokens (=1 for ERC721 and >=1 for ERC1155)
+  /// @dev the tokenId and numTokens (==1 for ERC721)
   struct TokenInfo {
     uint256 tokenId;
     uint256 numTokens;
@@ -24,27 +24,22 @@ library OrderTypes {
     bool isSellOrder;
     ///@dev signer of the order (maker address)
     address signer;
-    ///@dev Constraints array contains the order constraints. Total constraints: 6. In order:
+    ///@dev Constraints array contains the order constraints. Total constraints: 7. In order:
     // numItems - min (for buy orders) / max (for sell orders) number of items in the order
     // start price in wei
     // end price in wei
     // start time in block.timestamp
     // end time in block.timestamp
     // nonce of the order
+    // max tx.gasprice in wei
     uint256[] constraints;
     ///@dev nfts array contains order items where each item is a collection and its tokenIds
     OrderItem[] nfts;
     ///@dev address of complication for trade execution (e.g. InfinityOrderBookComplication), address of the currency (e.g., WETH)
     address[] execParams;
-    ///@dev additional parameters like traits for trait orders, private sale buyer for OTC ordes etc
+    ///@dev additional parameters like traits for trait orders, private sale buyer for OTC orders etc
     bytes extraParams;
     ///@dev the order signature uint8 v: parameter (27 or 28), bytes32 r, bytes32 s
     bytes sig;
-  }
-
-  /// @dev taker order struct are simply a subset of maker order since they don't need the signature and constraints
-  struct TakerOrder {
-    bool isSellOrder;
-    OrderItem[] nfts;
   }
 }

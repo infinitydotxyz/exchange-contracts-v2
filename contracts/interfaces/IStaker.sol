@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {OrderTypes} from '../libs/OrderTypes.sol';
-
 enum Duration {
   NONE,
   THREE_MONTHS,

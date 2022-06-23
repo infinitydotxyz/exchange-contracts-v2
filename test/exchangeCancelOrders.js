@@ -82,7 +82,7 @@ describe('Exchange_Cancel_Orders', function () {
     // add currencies to registry
     await infinityExchange.addCurrency(token.address);
     await infinityExchange.addCurrency(NULL_ADDRESS);
-    
+
     // add complications to registry
     await infinityExchange.addComplication(obComplication.address);
 
@@ -555,7 +555,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // should not cancel already canceled orders
       await expect(infinityExchange.connect(signer2).cancelMultipleOrders([nonce1, nonce2])).to.be.revertedWith(
-        'nonce already executed or cancelled'
+        'nonce already exec or cancelled'
       );
     });
   });
@@ -671,7 +671,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // try canceling
       await expect(infinityExchange.connect(signer2).cancelMultipleOrders([nonce])).to.be.revertedWith(
-        'nonce already executed or cancelled'
+        'nonce already exec or cancelled'
       );
     });
   });

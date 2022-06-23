@@ -189,7 +189,7 @@ describe('Staker', function () {
   describe('Try changing duration to silver level', () => {
     it('Should not change duration', async function () {
       await expect(infinityStaker.changeDuration(amountStaked2, 1, 0)).to.be.revertedWith(
-        'new duration must be greater than old duration'
+        'new duration must exceed old dur'
       );
     });
   });

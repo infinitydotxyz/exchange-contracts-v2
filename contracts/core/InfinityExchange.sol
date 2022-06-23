@@ -3,17 +3,15 @@ pragma solidity 0.8.14;
 
 // external imports
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Pausable} from '@openzeppelin/contracts/security/Pausable.sol';
 import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {IERC165} from '@openzeppelin/contracts/interfaces/IERC165.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
-import {IERC20, SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 // internal imports
 import {OrderTypes} from '../libs/OrderTypes.sol';
 import {IComplication} from '../interfaces/IComplication.sol';
-import {SignatureChecker} from '../libs/SignatureChecker.sol';
 
 /**
 @title InfinityExchange
@@ -47,20 +45,22 @@ NFTNFT                                                 NFTNFT
 NFTNFTNFT...........................................NFTNFTNFT 
 
 */
-contract InfinityExchange is ReentrancyGuard, Ownable {
-  using SafeERC20 for IERC20;
-  using EnumerableSet for EnumerableSet.AddressSet;
-
+contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
   /// @dev WETH address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
   address public immutable WETH;
-  /// @dev Used in order signing with EIP-712
-  bytes32 public immutable DOMAIN_SEPARATOR;
-  /// @dev This is the adress that is used to send auto sniped orders for execution on chain
-  address public MATCH_EXECUTOR;
+  /// @dev This is the address that is used to send auto sniped orders for execution on chain
+  address public matchExecutor;
   /// @dev Gas cost for auto sniped orders are paid by the buyers and refunded to this contract in the form of WETH
-  uint32 public WETH_TRANSFER_GAS_UNITS = 50000;
+  uint32 public wethTransferGasUnits = 5e4;
+  /// @notice max weth transfer gas units
+  uint32 public constant MAX_WETH_TRANSFER_GAS_UNITS = 2e5;
   /// @notice Exchange fee in basis points (250 bps = 2.5%)
-  uint16 public PROTOCOL_FEE_BPS = 250;
+  uint32 public protocolFeeBps = 250;
+  /// @notice Max exchange fee in basis points (2000 bps = 20%)
+  uint32 public constant MAX_PROTOCOL_FEE_BPS = 2000;
+
+  /// @dev Used in division
+  uint256 constant PRECISION = 1e4; // precision for division; similar to bps
 
   /**
    @dev All orders should have a nonce >= to this value. 
@@ -72,53 +72,38 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   /// @dev This records already executed or cancelled orders to prevent replay attacks.
   mapping(address => mapping(uint256 => bool)) public isUserOrderNonceExecutedOrCancelled;
 
-  /// @dev Storage variable that keeps track of valid complications (order execution strategies)
-  EnumerableSet.AddressSet private _complications;
-  /// @dev Storate variable that keeps track of valid currencies (tokens)
-  EnumerableSet.AddressSet private _currencies;
-
-  event CancelAllOrders(address user, uint256 newMinNonce);
-  event CancelMultipleOrders(address user, uint256[] orderNonces);
-  event NewWethTransferGasUnits(uint32 wethTransferGasUnits);
-  event NewProtocolFee(uint16 protocolFee);
+  event CancelAllOrders(address indexed user, uint256 newMinNonce);
+  event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
+  event NewWethTransferGasUnits(uint32 _wethTransferGasUnits);
+  event NewProtocolFee(uint32 protocolFee);
 
   event MatchOrderFulfilled(
     bytes32 sellOrderHash,
     bytes32 buyOrderHash,
-    address seller,
-    address buyer,
+    address indexed seller,
+    address indexed buyer,
     address complication, // address of the complication that defines the execution
-    address currency, // token address of the transacting currency
+    address indexed currency, // token address of the transacting currency
     uint256 amount // amount spent on the order
   );
 
   event TakeOrderFulfilled(
     bytes32 orderHash,
-    address seller,
-    address buyer,
+    address indexed seller,
+    address indexed buyer,
     address complication, // address of the complication that defines the execution
-    address currency, // token address of the transacting currency
+    address indexed currency, // token address of the transacting currency
     uint256 amount // amount spent on the order
   );
 
-  constructor(address _WETH, address _matchExecutor) {
-    // Calculate the domain separator
-    DOMAIN_SEPARATOR = keccak256(
-      abi.encode(
-        keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-        keccak256('InfinityExchange'),
-        keccak256(bytes('1')), // for versionId = 1
-        block.chainid,
-        address(this)
-      )
-    );
-    WETH = _WETH;
-    MATCH_EXECUTOR = _matchExecutor;
+  /**
+    @param _weth address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
+    @param _matchExecutor address of the match executor used by match* functions to auto execute orders 
+   */
+  constructor(address _weth, address _matchExecutor) {
+    WETH = _weth;
+    matchExecutor = _matchExecutor;
   }
-
-  fallback() external payable {}
-
-  receive() external payable {}
 
   // =================================================== USER FUNCTIONS =======================================================
 
@@ -132,34 +117,29 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   function matchOneToOneOrders(
     OrderTypes.MakerOrder[] calldata makerOrders1,
     OrderTypes.MakerOrder[] calldata makerOrders2
-  ) external {
+  ) external nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
     uint256 numMakerOrders = makerOrders1.length;
-    require(msg.sender == MATCH_EXECUTOR, 'OME');
+    require(msg.sender == matchExecutor, 'OME');
     require(numMakerOrders == makerOrders2.length, 'mismatched lengths');
 
-    // the below 3 variables are copied to memory once to save on gas
+    // the below 3 variables are copied locally once to save on gas
     // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
     // since these values won't change during function execution, we can save on gas by copying them to memory once
     // instead of SLOADing once for each loop iteration
-    uint16 protocolFeeBps = PROTOCOL_FEE_BPS;
-    uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
+    uint32 _protocolFeeBps = protocolFeeBps;
+    uint32 _wethTransferGasUnits = wethTransferGasUnits;
     address weth = WETH;
-    for (uint256 i = 0; i < numMakerOrders; ) {
-      uint256 startGasPerOrder = gasleft() + ((startGas - gasleft()) / numMakerOrders);
-      require(_complications.contains(makerOrders1[i].execParams[0]), 'invalid complication');
-      (bool canExec, uint256 execPrice) = IComplication(makerOrders1[i].execParams[0]).canExecMatchOneToOne(
-        makerOrders1[i],
-        makerOrders2[i]
-      );
-      require(canExec, 'cannot execute');
+    uint256 sharedCost = (startGas - gasleft()) / numMakerOrders;
+    for (uint256 i; i < numMakerOrders; ) {
+      uint256 startGasPerOrder = gasleft() + sharedCost;
+
       _matchOneToOneOrders(
         makerOrders1[i],
         makerOrders2[i],
         startGasPerOrder,
-        execPrice,
-        protocolFeeBps,
-        wethTransferGasUnits,
+        _protocolFeeBps,
+        _wethTransferGasUnits,
         weth
       );
       unchecked {
@@ -169,7 +149,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   }
 
   /**
-   @notice Matches one  order to many orders. Example: A buy order with 5 specific NFTs with 5 sell orders with those specific NFTs.
+   @notice Matches one order to many orders. Example: A buy order with 5 specific NFTs with 5 sell orders with those specific NFTs.
    @dev Can only be called by the match executor. Refunds gas cost incurred by the
         match executor to this contract. Checks whether the given complication can execute the match.
    @param makerOrder The one order to match
@@ -178,35 +158,40 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   function matchOneToManyOrders(
     OrderTypes.MakerOrder calldata makerOrder,
     OrderTypes.MakerOrder[] calldata manyMakerOrders
-  ) external {
+  ) external nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
-    require(msg.sender == MATCH_EXECUTOR, 'OME');
-    require(_complications.contains(makerOrder.execParams[0]), 'invalid complication');
-    require(
-      IComplication(makerOrder.execParams[0]).canExecMatchOneToMany(makerOrder, manyMakerOrders),
-      'cannot execute'
+    require(msg.sender == matchExecutor, 'OME');
+
+    (bool canExec, bytes32 makerOrderHash) = IComplication(makerOrder.execParams[0]).canExecMatchOneToMany(
+      makerOrder,
+      manyMakerOrders
     );
-    bytes32 makerOrderHash = _hash(makerOrder);
-    require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
+    require(canExec, 'cannot execute');
+
+    bool makerOrderExpired = isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] ||
+      makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
+    require(!makerOrderExpired, 'maker order expired');
+
     uint256 ordersLength = manyMakerOrders.length;
-    // the below 3 variables are copied to memory once to save on gas
+    // the below 3 variables are copied locally once to save on gas
     // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
     // since these values won't change during function execution, we can save on gas by copying them to memory once
     // instead of SLOADing once for each loop iteration
-    uint16 protocolFeeBps = PROTOCOL_FEE_BPS;
-    uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
+    uint32 _protocolFeeBps = protocolFeeBps;
+    uint32 _wethTransferGasUnits = wethTransferGasUnits;
     address weth = WETH;
     if (makerOrder.isSellOrder) {
-      for (uint256 i = 0; i < ordersLength; ) {
-        // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
-        uint256 startGasPerOrder = gasleft() + ((startGas + 20000 - gasleft()) / ordersLength);
+      // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
+      uint256 sharedCost = (startGas + 20000 - gasleft()) / ordersLength;
+      for (uint256 i; i < ordersLength; ) {
+        uint256 startGasPerOrder = gasleft() + sharedCost;
         _matchOneMakerSellToManyMakerBuys(
           makerOrderHash,
           makerOrder,
           manyMakerOrders[i],
           startGasPerOrder,
-          protocolFeeBps,
-          wethTransferGasUnits,
+          _protocolFeeBps,
+          _wethTransferGasUnits,
           weth
         );
         unchecked {
@@ -215,29 +200,29 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       }
       isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] = true;
     } else {
+      if (makerOrder.constraints[6] > 0) {
+        require(makerOrder.constraints[6] <= tx.gasprice, 'gas price too high');
+      }
       uint256 protocolFee;
-      for (uint256 i = 0; i < ordersLength; ) {
-        protocolFee += _matchOneMakerBuyToManyMakerSells(
-          makerOrderHash,
-          manyMakerOrders[i],
-          makerOrder,
-          protocolFeeBps
-        );
+      for (uint256 i; i < ordersLength; ) {
+        protocolFee =
+          protocolFee +
+          _matchOneMakerBuyToManyMakerSells(makerOrderHash, manyMakerOrders[i], makerOrder, _protocolFeeBps);
         unchecked {
           ++i;
         }
       }
       isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] = true;
-      uint256 gasCost = (startGas - gasleft() + WETH_TRANSFER_GAS_UNITS) * tx.gasprice;
+      uint256 gasCost = (startGas - gasleft() + _wethTransferGasUnits) * tx.gasprice;
       // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
       // else we need to send the protocol fee separately in the execution currency
       // since the buyer is common across many sell orders, this part can be executed outside the above for loop
       // in contrast to the case where if the one order is a sell order, we need to do this in each for loop
       if (makerOrder.execParams[1] == weth) {
-        IERC20(weth).safeTransferFrom(makerOrder.signer, address(this), protocolFee + gasCost);
+        IERC20(weth).transferFrom(makerOrder.signer, address(this), protocolFee + gasCost);
       } else {
-        IERC20(makerOrder.execParams[1]).safeTransferFrom(makerOrder.signer, address(this), protocolFee);
-        IERC20(weth).safeTransferFrom(makerOrder.signer, address(this), gasCost);
+        IERC20(makerOrder.execParams[1]).transferFrom(makerOrder.signer, address(this), protocolFee);
+        IERC20(weth).transferFrom(makerOrder.signer, address(this), gasCost);
       }
     }
   }
@@ -257,36 +242,24 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder[] calldata sells,
     OrderTypes.MakerOrder[] calldata buys,
     OrderTypes.OrderItem[][] calldata constructs
-  ) external {
+  ) external nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
     uint256 numSells = sells.length;
-    require(msg.sender == MATCH_EXECUTOR, 'OME');
-    require(numSells == buys.length && numSells == constructs.length, 'mismatched lengths');
-    // the below 3 variables are copied to memory once to save on gas
+    require(msg.sender == matchExecutor, 'OME');
+    require(numSells == buys.length, 'mismatched lengths');
+    require(numSells == constructs.length, 'mismatched lengths');
+    // the below 3 variables are copied locally once to save on gas
     // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
     // since these values won't change during function execution, we can save on gas by copying them to memory once
     // instead of SLOADing once for each loop iteration
-    uint16 protocolFeeBps = PROTOCOL_FEE_BPS;
-    uint32 wethTransferGasUnits = WETH_TRANSFER_GAS_UNITS;
+    uint32 _protocolFeeBps = protocolFeeBps;
+    uint32 _wethTransferGasUnits = wethTransferGasUnits;
     address weth = WETH;
-    for (uint256 i = 0; i < numSells; ) {
-      uint256 startGasPerOrder = gasleft() + ((startGas - gasleft()) / numSells);
-      (bool executionValid, uint256 execPrice) = IComplication(sells[i].execParams[0]).canExecMatchOrder(
-        sells[i],
-        buys[i],
-        constructs[i]
-      );
-      require(executionValid, 'cannot execute');
-      _matchOrders(
-        sells[i],
-        buys[i],
-        constructs[i],
-        startGasPerOrder,
-        execPrice,
-        protocolFeeBps,
-        wethTransferGasUnits,
-        weth
-      );
+    uint256 sharedCost = (startGas - gasleft()) / numSells;
+    for (uint256 i; i < numSells; ) {
+      uint256 startGasPerOrder = gasleft() + sharedCost;
+
+      _matchOrders(sells[i], buys[i], constructs[i], startGasPerOrder, _protocolFeeBps, _wethTransferGasUnits, weth);
       unchecked {
         ++i;
       }
@@ -297,33 +270,43 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    @notice Batch buys or sells orders with specific `1` NFTs. Transaction initiated by an end user.
    @param makerOrders The orders to fulfill
   */
-  function takeMultipleOneOrders(OrderTypes.MakerOrder[] calldata makerOrders) external payable nonReentrant {
-    uint256 numMakerOrders = makerOrders.length;
+  function takeMultipleOneOrders(OrderTypes.MakerOrder[] calldata makerOrders) external payable nonReentrant whenNotPaused {
     uint256 totalPrice;
     address currency = makerOrders[0].execParams[1];
+    if (currency != address(0)) {
+      require(msg.value == 0, 'msg has value');
+    }
     bool isMakerSeller = makerOrders[0].isSellOrder;
     if (!isMakerSeller) {
       require(currency != address(0), 'offers only in ERC20');
     }
-    for (uint256 i = 0; i < numMakerOrders; ) {
-      bytes32 makerOrderHash = _hash(makerOrders[i]);
-      require(isOrderValid(makerOrders[i], makerOrderHash), 'invalid maker order');
-      bool isTimeValid = makerOrders[i].constraints[3] <= block.timestamp &&
-        makerOrders[i].constraints[4] >= block.timestamp;
-      require(isTimeValid, 'invalid time');
+    for (uint256 i; i < makerOrders.length; ) {
+      bool orderExpired = isUserOrderNonceExecutedOrCancelled[makerOrders[i].signer][makerOrders[i].constraints[5]] ||
+        makerOrders[i].constraints[5] < userMinOrderNonce[makerOrders[i].signer];
+      (bool canExec, bytes32 makerOrderHash) = IComplication(makerOrders[i].execParams[0]).canExecTakeOneOrder(
+        makerOrders[i]
+      );
+
+      require(!orderExpired && canExec, 'cannot execute');
+
       require(currency == makerOrders[i].execParams[1], 'cannot mix currencies');
       require(isMakerSeller == makerOrders[i].isSellOrder, 'cannot mix order sides');
+      require(msg.sender != makerOrders[i].signer, 'no dogfooding');
       uint256 execPrice = _getCurrentPrice(makerOrders[i]);
-      totalPrice += execPrice;
+      totalPrice = totalPrice + execPrice;
       _execTakeOneOrder(makerOrderHash, makerOrders[i], isMakerSeller, execPrice);
       unchecked {
         ++i;
       }
     }
     // check to ensure that for ETH orders, enough ETH is sent
-    // for non ETH orders, IERC20 safeTransferFrom will throw error if insufficient amount is sent
+    // for non ETH orders, IERC20 transferFrom will throw error if insufficient amount is sent
     if (isMakerSeller && currency == address(0)) {
       require(msg.value >= totalPrice, 'invalid total price');
+      if (msg.value > totalPrice) {
+        (bool sent, ) = msg.sender.call{value: msg.value - totalPrice}('');
+        require(sent, 'failed');
+      }
     }
   }
 
@@ -337,29 +320,37 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     external
     payable
     nonReentrant
+    whenNotPaused
   {
-    uint256 ordersLength = makerOrders.length;
-    require(ordersLength == takerNfts.length, 'mismatched lengths');
+    require(makerOrders.length == takerNfts.length, 'mismatched lengths');
     uint256 totalPrice;
     address currency = makerOrders[0].execParams[1];
+    if (currency != address(0)) {
+      require(msg.value == 0, 'msg has value');
+    }
     bool isMakerSeller = makerOrders[0].isSellOrder;
     if (!isMakerSeller) {
       require(currency != address(0), 'offers only in ERC20');
     }
-    for (uint256 i = 0; i < ordersLength; ) {
+    for (uint256 i; i < makerOrders.length; ) {
       require(currency == makerOrders[i].execParams[1], 'cannot mix currencies');
       require(isMakerSeller == makerOrders[i].isSellOrder, 'cannot mix order sides');
+      require(msg.sender != makerOrders[i].signer, 'no dogfooding');
       uint256 execPrice = _getCurrentPrice(makerOrders[i]);
-      totalPrice += execPrice;
+      totalPrice = totalPrice + execPrice;
       _takeOrders(makerOrders[i], takerNfts[i], execPrice);
       unchecked {
         ++i;
       }
     }
     // check to ensure that for ETH orders, enough ETH is sent
-    // for non ETH orders, IERC20 safeTransferFrom will throw error if insufficient amount is sent
+    // for non ETH orders, IERC20 transferFrom will throw error if insufficient amount is sent
     if (isMakerSeller && currency == address(0)) {
       require(msg.value >= totalPrice, 'invalid total price');
+      if (msg.value > totalPrice) {
+        (bool sent, ) = msg.sender.call{value: msg.value - totalPrice}('');
+        require(sent, 'failed');
+      }
     }
   }
 
@@ -368,7 +359,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    @param to The orders to fulfill
    @param items The specific NFTs to transfer
   */
-  function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external nonReentrant {
+  function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external nonReentrant whenNotPaused {
+    require(to != address(0), 'invalid address');
     _transferMultipleNFTs(msg.sender, to, items);
   }
 
@@ -378,7 +370,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    */
   function cancelAllOrders(uint256 minNonce) external {
     require(minNonce > userMinOrderNonce[msg.sender], 'nonce too low');
-    require(minNonce < userMinOrderNonce[msg.sender] + 1000000, 'too many');
+    require(minNonce < userMinOrderNonce[msg.sender] + 1e6, 'too many');
     userMinOrderNonce[msg.sender] = minNonce;
     emit CancelAllOrders(msg.sender, minNonce);
   }
@@ -388,11 +380,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param orderNonces array of order nonces
    */
   function cancelMultipleOrders(uint256[] calldata orderNonces) external {
-    uint256 numNonces = orderNonces.length;
-    require(numNonces > 0, 'cannot be empty');
-    for (uint256 i = 0; i < numNonces; ) {
+    require(orderNonces.length != 0, 'cannot be empty');
+    for (uint256 i; i < orderNonces.length; ) {
       require(orderNonces[i] >= userMinOrderNonce[msg.sender], 'nonce too low');
-      require(!isUserOrderNonceExecutedOrCancelled[msg.sender][orderNonces[i]], 'nonce already executed or cancelled');
+      require(!isUserOrderNonceExecutedOrCancelled[msg.sender][orderNonces[i]], 'nonce already exec or cancelled');
       isUserOrderNonceExecutedOrCancelled[msg.sender][orderNonces[i]] = true;
       unchecked {
         ++i;
@@ -410,7 +401,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @return whether nonce is valid
    */
   function isNonceValid(address user, uint256 nonce) external view returns (bool) {
-    return !isUserOrderNonceExecutedOrCancelled[user][nonce] && nonce > userMinOrderNonce[user];
+    return !isUserOrderNonceExecutedOrCancelled[user][nonce] && nonce >= userMinOrderNonce[user];
   }
 
   /**
@@ -418,146 +409,30 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param order the order to verify
    * @return whether order has valid signature
    */
-  function verifyOrderSig(OrderTypes.MakerOrder calldata order) external view returns (bool) {
-    // Verify the validity of the signature
-    (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
-    return SignatureChecker.verify(_hash(order), order.signer, r, s, v, DOMAIN_SEPARATOR);
-  }
+  // function verifyOrderSig(OrderTypes.MakerOrder calldata order) external view returns (bool) {
+  //   // Verify the validity of the signature
+  //   (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
+  //   return SignatureChecker.verify(_hash(order), order.signer, r, s, v, DOMAIN_SEPARATOR);
+  // }
 
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-   * @param sellOrderHash hash of the sell order
-   * @param buyOrderHash hash of the buy order
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid
-   */
-  function verifyMatchOneToOneOrders(
-    bytes32 sellOrderHash,
-    bytes32 buyOrderHash,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view returns (bool) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-    return (sell.isSellOrder &&
-      !buy.isSellOrder &&
-      sell.execParams[0] == buy.execParams[0] &&
-      currenciesMatch &&
-      isOrderValid(sell, sellOrderHash) &&
-      isOrderValid(buy, buyOrderHash));
-  }
-
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-   * @param orderHash hash of the order
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid
-   */
-  function verifyMatchOneToManyOrders(
-    bytes32 orderHash,
-    bool verifySellOrder,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view returns (bool) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-    bool _orderValid;
-    if (verifySellOrder) {
-      _orderValid = isOrderValid(sell, orderHash);
-    } else {
-      _orderValid = isOrderValid(buy, orderHash);
-    }
-    return (sell.isSellOrder &&
-      !buy.isSellOrder &&
-      sell.execParams[0] == buy.execParams[0] &&
-      currenciesMatch &&
-      _orderValid);
-  }
-
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-          Also checks if the given complication can execute this order
-   * @param sellOrderHash hash of the sell order
-   * @param buyOrderHash hash of the buy order
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid and the execution price
-   */
-  function verifyMatchOrders(
-    bytes32 sellOrderHash,
-    bytes32 buyOrderHash,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view returns (bool) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-    return (sell.isSellOrder &&
-      !buy.isSellOrder &&
-      sell.execParams[0] == buy.execParams[0] &&
-      currenciesMatch &&
-      isOrderValid(sell, sellOrderHash) &&
-      isOrderValid(buy, buyOrderHash));
-  }
-
-  /**
-   * @notice Verifies the validity of the order
-   * @dev checks whether order nonce was cancelled or already executed, 
-          if signature is valid and if the complication and currency are valid
-   * @param order the order
-   * @param orderHash computed hash of the order
-   */
-  function isOrderValid(OrderTypes.MakerOrder calldata order, bytes32 orderHash) public view returns (bool) {
-    bool orderExpired = isUserOrderNonceExecutedOrCancelled[order.signer][order.constraints[5]] ||
-      order.constraints[5] < userMinOrderNonce[order.signer];
-    // Verify the validity of the signature
-    (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
-    bool sigValid = SignatureChecker.verify(orderHash, order.signer, r, s, v, DOMAIN_SEPARATOR);
-    if (
-      orderExpired ||
-      !sigValid ||
-      order.signer == address(0) ||
-      !_complications.contains(order.execParams[0]) ||
-      !_currencies.contains(order.execParams[1])
-    ) {
-      return false;
-    }
-    return true;
-  }
-
-  /// @notice returns the number of complications supported by the exchange
-  function numComplications() external view returns (uint256) {
-    return _complications.length();
-  }
-
-  /// @notice returns the complication at the given index
-  function getComplicationAt(uint256 index) external view returns (address) {
-    return _complications.at(index);
-  }
-
-  /// @notice returns whether a given complication is valid
-  function isValidComplication(address complication) external view returns (bool) {
-    return _complications.contains(complication);
-  }
-
-  /// @notice returns the number of currencies supported by the exchange
-  function numCurrencies() external view returns (uint256) {
-    return _currencies.length();
-  }
-
-  /// @notice returns the currency at the given index
-  function getCurrencyAt(uint256 index) external view returns (address) {
-    return _currencies.at(index);
-  }
-
-  /// @notice returns whether a given currency is valid
-  function isValidCurrency(address currency) external view returns (bool) {
-    return _currencies.contains(currency);
-  }
+  // /**
+  //  * @notice Verifies the validity of the order
+  //  * @dev checks whether order nonce was cancelled or already executed,
+  //         if signature is valid and if the complication and currency are valid
+  //  * @param order the order
+  //  * @param orderHash computed hash of the order
+  //  */
+  // function isOrderValid(OrderTypes.MakerOrder calldata order, bytes32 orderHash) public view returns (bool) {
+  //   bool orderExpired = isUserOrderNonceExecutedOrCancelled[order.signer][order.constraints[5]] ||
+  //     order.constraints[5] < userMinOrderNonce[order.signer];
+  //   // Verify the validity of the signature
+  //   (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
+  //   bool sigValid = SignatureChecker.verify(orderHash, order.signer, r, s, v, DOMAIN_SEPARATOR);
+  //   return (!orderExpired &&
+  //     sigValid &&
+  //     _complications.contains(order.execParams[0]) &&
+  //     _currencies.contains(order.execParams[1]));
+  // }
 
   // ====================================================== INTERNAL FUNCTIONS ================================================
 
@@ -566,25 +441,43 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param makerOrder1 first order
    * @param makerOrder2 second maker order
    * @param startGasPerOrder start gas when this order started execution
-   * @param execPrice execution price
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
    * @param weth WETH address
    */
   function _matchOneToOneOrders(
     OrderTypes.MakerOrder calldata makerOrder1,
     OrderTypes.MakerOrder calldata makerOrder2,
     uint256 startGasPerOrder,
-    uint256 execPrice,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
-    OrderTypes.MakerOrder calldata sell = makerOrder1.isSellOrder ? makerOrder1 : makerOrder2;
-    OrderTypes.MakerOrder calldata buy = makerOrder1.isSellOrder ? makerOrder2 : makerOrder1;
-    bytes32 sellOrderHash = _hash(sell);
-    bytes32 buyOrderHash = _hash(buy);
-    require(verifyMatchOneToOneOrders(sellOrderHash, buyOrderHash, sell, buy), 'order not verified');
+    OrderTypes.MakerOrder calldata sell;
+    OrderTypes.MakerOrder calldata buy;
+    if (makerOrder1.isSellOrder) {
+      sell = makerOrder1;
+      buy = makerOrder2;
+    } else {
+      sell = makerOrder2;
+      buy = makerOrder1;
+    }
+
+    (bool canExec, bytes32 sellOrderHash, bytes32 buyOrderHash, uint256 execPrice) = IComplication(
+      makerOrder1.execParams[0]
+    ).canExecMatchOneToOne(sell, buy);
+
+    require(canExec, 'cannot execute');
+
+    bool sellOrderExpired = isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] ||
+      sell.constraints[5] < userMinOrderNonce[sell.signer];
+
+    bool buyOrderExpired = isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] ||
+      buy.constraints[5] < userMinOrderNonce[buy.signer];
+
+    require(!sellOrderExpired, 'sell order expired');
+    require(!buyOrderExpired, 'buy order expired');
+
     _execMatchOneToOneOrders(
       sellOrderHash,
       buyOrderHash,
@@ -592,8 +485,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       buy,
       startGasPerOrder,
       execPrice,
-      protocolFeeBps,
-      wethTransferGasUnits,
+      _protocolFeeBps,
+      _wethTransferGasUnits,
       weth
     );
   }
@@ -604,8 +497,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param sell the sell order
    * @param buy the buy order
    * @param startGasPerOrder start gas when this order started execution
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
    * @param weth WETH address
    */
   function _matchOneMakerSellToManyMakerBuys(
@@ -613,12 +506,21 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
     uint256 startGasPerOrder,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
-    bytes32 buyOrderHash = _hash(buy);
-    require(verifyMatchOneToManyOrders(buyOrderHash, false, sell, buy), 'order not verified');
+    (bool verified, bytes32 buyOrderHash) = IComplication(sell.execParams[0]).verifyMatchOneToManyOrders(
+      false,
+      sell,
+      buy
+    );
+    require(verified, 'order not verified');
+
+    bool buyOrderExpired = isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] ||
+      buy.constraints[5] < userMinOrderNonce[buy.signer];
+    require(!buyOrderExpired, 'buy order expired');
+
     _execMatchOneMakerSellToManyMakerBuys(
       sellOrderHash,
       buyOrderHash,
@@ -626,8 +528,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       buy,
       startGasPerOrder,
       _getCurrentPrice(buy),
-      protocolFeeBps,
-      wethTransferGasUnits,
+      _protocolFeeBps,
+      _wethTransferGasUnits,
       weth
     );
   }
@@ -637,16 +539,25 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param buyOrderHash buy order hash
    * @param sell the sell order
    * @param buy the buy order
-   * @param protocolFeeBps exchange fee
+   * @param _protocolFeeBps exchange fee
    */
   function _matchOneMakerBuyToManyMakerSells(
     bytes32 buyOrderHash,
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
-    uint16 protocolFeeBps
+    uint32 _protocolFeeBps
   ) internal returns (uint256) {
-    bytes32 sellOrderHash = _hash(sell);
-    require(verifyMatchOneToManyOrders(sellOrderHash, true, sell, buy), 'order not verified');
+    (bool verified, bytes32 sellOrderHash) = IComplication(sell.execParams[0]).verifyMatchOneToManyOrders(
+      true,
+      sell,
+      buy
+    );
+    require(verified, 'order not verified');
+
+    bool sellOrderExpired = isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] ||
+      sell.constraints[5] < userMinOrderNonce[sell.signer];
+    require(!sellOrderExpired, 'sell order expired');
+
     return
       _execMatchOneMakerBuyToManyMakerSells(
         sellOrderHash,
@@ -654,7 +565,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
         sell,
         buy,
         _getCurrentPrice(sell),
-        protocolFeeBps
+        _protocolFeeBps
       );
   }
 
@@ -665,8 +576,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param constructedNfts the nfts constructed by an off chain matching that are guaranteed to intersect
             with the user specified signed intents (orders)
    * @param startGasPerOrder start gas when this order started execution
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
    * @param weth WETH address
    */
   function _matchOrders(
@@ -674,14 +585,24 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder calldata buy,
     OrderTypes.OrderItem[] calldata constructedNfts,
     uint256 startGasPerOrder,
-    uint256 execPrice,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
-    bytes32 sellOrderHash = _hash(sell);
-    bytes32 buyOrderHash = _hash(buy);
-    require(verifyMatchOrders(sellOrderHash, buyOrderHash, sell, buy), 'order not verified');
+    (bool executionValid, bytes32 sellOrderHash, bytes32 buyOrderHash, uint256 execPrice) = IComplication(
+      sell.execParams[0]
+    ).canExecMatchOrder(sell, buy, constructedNfts);
+    require(executionValid, 'cannot execute');
+
+    bool sellOrderExpired = isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] ||
+      sell.constraints[5] < userMinOrderNonce[sell.signer];
+
+    bool buyOrderExpired = isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] ||
+      buy.constraints[5] < userMinOrderNonce[buy.signer];
+
+    require(!sellOrderExpired, 'sell order expired');
+    require(!buyOrderExpired, 'buy order expired');
+
     _execMatchOrders(
       sellOrderHash,
       buyOrderHash,
@@ -690,8 +611,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       constructedNfts,
       startGasPerOrder,
       execPrice,
-      protocolFeeBps,
-      wethTransferGasUnits,
+      _protocolFeeBps,
+      _wethTransferGasUnits,
       weth
     );
   }
@@ -705,8 +626,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param buy the buy order
    * @param startGasPerOrder start gas when this order started execution
    * @param execPrice execution price
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
    * @param weth WETH address
    */
   function _execMatchOneToOneOrders(
@@ -716,17 +637,20 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder calldata buy,
     uint256 startGasPerOrder,
     uint256 execPrice,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
     isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] = true;
     isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] = true;
-    uint256 protocolFee = (protocolFeeBps * execPrice) / 10000;
+    uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
     _transferMultipleNFTs(sell.signer, buy.signer, sell.nfts);
     // transfer final amount (post-fees) to seller
-    IERC20(buy.execParams[1]).safeTransferFrom(buy.signer, sell.signer, remainingAmount);
+    IERC20(buy.execParams[1]).transferFrom(buy.signer, sell.signer, remainingAmount);
     _emitMatchEvent(
       sellOrderHash,
       buyOrderHash,
@@ -736,14 +660,14 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       buy.execParams[1],
       execPrice
     );
-    uint256 gasCost = (startGasPerOrder - gasleft() + wethTransferGasUnits) * tx.gasprice;
+    uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
     // else we need to send the protocol fee separately in the execution currency
     if (buy.execParams[1] == weth) {
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), protocolFee + gasCost);
+      IERC20(weth).transferFrom(buy.signer, address(this), protocolFee + gasCost);
     } else {
-      IERC20(buy.execParams[1]).safeTransferFrom(buy.signer, address(this), protocolFee);
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), gasCost);
+      IERC20(buy.execParams[1]).transferFrom(buy.signer, address(this), protocolFee);
+      IERC20(weth).transferFrom(buy.signer, address(this), gasCost);
     }
   }
 
@@ -756,8 +680,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param buy the buy order
    * @param startGasPerOrder start gas when this order started execution
    * @param execPrice execution price
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
    * @param weth WETH address
    */
   function _execMatchOneMakerSellToManyMakerBuys(
@@ -767,12 +691,15 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder calldata buy,
     uint256 startGasPerOrder,
     uint256 execPrice,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
     isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] = true;
-    uint256 protocolFee = (protocolFeeBps * execPrice) / 10000;
+    uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
     _execMatchOneToManyOrders(sell.signer, buy.signer, buy.nfts, buy.execParams[1], remainingAmount);
     _emitMatchEvent(
@@ -784,14 +711,14 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       buy.execParams[1],
       execPrice
     );
-    uint256 gasCost = (startGasPerOrder - gasleft() + wethTransferGasUnits) * tx.gasprice;
+    uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
     // else we need to send the protocol fee separately in the execution currency
     if (buy.execParams[1] == weth) {
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), protocolFee + gasCost);
+      IERC20(weth).transferFrom(buy.signer, address(this), protocolFee + gasCost);
     } else {
-      IERC20(buy.execParams[1]).safeTransferFrom(buy.signer, address(this), protocolFee);
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), gasCost);
+      IERC20(buy.execParams[1]).transferFrom(buy.signer, address(this), protocolFee);
+      IERC20(weth).transferFrom(buy.signer, address(this), gasCost);
     }
   }
 
@@ -804,7 +731,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param sell the sell order
    * @param buy the buy order
    * @param execPrice execution price
-   * @param protocolFeeBps exchange fee
+   * @param _protocolFeeBps exchange fee
    * @return the protocolFee so that the buyer can pay the protocol fee and gas cost in one go
    */
   function _execMatchOneMakerBuyToManyMakerSells(
@@ -813,10 +740,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
     uint256 execPrice,
-    uint16 protocolFeeBps
+    uint32 _protocolFeeBps
   ) internal returns (uint256) {
     isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] = true;
-    uint256 protocolFee = (protocolFeeBps * execPrice) / 10000;
+    uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
     _execMatchOneToManyOrders(sell.signer, buy.signer, sell.nfts, buy.execParams[1], remainingAmount);
     _emitMatchEvent(
@@ -841,7 +768,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   ) internal {
     _transferMultipleNFTs(seller, buyer, constructedNfts);
     // transfer final amount (post-fees) to seller
-    IERC20(currency).safeTransferFrom(buyer, seller, amount);
+    IERC20(currency).transferFrom(buyer, seller, amount);
   }
 
   /**
@@ -854,9 +781,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
    * @param constructedNfts the constructed nfts
    * @param startGasPerOrder gas when this order started execution
    * @param execPrice execution price
-   * @param protocolFeeBps exchange fee
-   * @param wethTransferGasUnits gas units that a WETH transfer will use
-   * @param weth weth address
+   * @param _protocolFeeBps exchange fee
+   * @param _wethTransferGasUnits gas units that a WETH transfer will use
+   * @param weth WETH address
    */
   function _execMatchOrders(
     bytes32 sellOrderHash,
@@ -866,11 +793,14 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.OrderItem[] calldata constructedNfts,
     uint256 startGasPerOrder,
     uint256 execPrice,
-    uint16 protocolFeeBps,
-    uint32 wethTransferGasUnits,
+    uint32 _protocolFeeBps,
+    uint32 _wethTransferGasUnits,
     address weth
   ) internal {
-    uint256 protocolFee = (protocolFeeBps * execPrice) / 10000;
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
+    uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
     _execMatchOrder(
       sell.signer,
@@ -890,14 +820,14 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       buy.execParams[1],
       execPrice
     );
-    uint256 gasCost = (startGasPerOrder - gasleft() + wethTransferGasUnits) * tx.gasprice;
+    uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
     // else we need to send the protocol fee separately in the execution currency
     if (buy.execParams[1] == weth) {
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), protocolFee + gasCost);
+      IERC20(weth).transferFrom(buy.signer, address(this), protocolFee + gasCost);
     } else {
-      IERC20(buy.execParams[1]).safeTransferFrom(buy.signer, address(this), protocolFee);
-      IERC20(weth).safeTransferFrom(buy.signer, address(this), gasCost);
+      IERC20(buy.execParams[1]).transferFrom(buy.signer, address(this), protocolFee);
+      IERC20(weth).transferFrom(buy.signer, address(this), gasCost);
     }
   }
 
@@ -916,7 +846,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     isUserOrderNonceExecutedOrCancelled[buyer][buyNonce] = true;
     _transferMultipleNFTs(seller, buyer, constructedNfts);
     // transfer final amount (post-fees) to seller
-    IERC20(currency).safeTransferFrom(buyer, seller, amount);
+    IERC20(currency).transferFrom(buyer, seller, amount);
   }
 
   function _emitMatchEvent(
@@ -943,10 +873,15 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     OrderTypes.OrderItem[] calldata takerItems,
     uint256 execPrice
   ) internal {
-    bytes32 makerOrderHash = _hash(makerOrder);
-    bool makerOrderValid = isOrderValid(makerOrder, makerOrderHash);
-    bool executionValid = IComplication(makerOrder.execParams[0]).canExecTakeOrder(makerOrder, takerItems);
-    require(makerOrderValid && executionValid, 'order not verified');
+    bool sellOrderExpired = isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] ||
+      makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
+    require(!sellOrderExpired, 'sell order expired');
+
+    (bool executionValid, bytes32 makerOrderHash) = IComplication(makerOrder.execParams[0]).canExecTakeOrder(
+      makerOrder,
+      takerItems
+    );
+    require(executionValid, 'cannot execute');
     _execTakeOrders(makerOrderHash, makerOrder, takerItems, makerOrder.isSellOrder, execPrice);
   }
 
@@ -1034,7 +969,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   }
 
   /**
-   * @notice Transfers multiple NFTs in a loop and ERC1155s in a batch
+   * @notice Transfers multiple NFTs in a loop
    * @param from the from address
    * @param to the to address
    * @param nfts nfts to transfer
@@ -1044,8 +979,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address to,
     OrderTypes.OrderItem[] calldata nfts
   ) internal {
-    uint256 numNfts = nfts.length;
-    for (uint256 i = 0; i < numNfts; ) {
+    for (uint256 i; i < nfts.length; ) {
       _transferNFTs(from, to, nfts[i]);
       unchecked {
         ++i;
@@ -1055,6 +989,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
 
   /**
    * @notice Transfer NFTs
+   * @dev Only supports ERC721, no ERC1155 or NFTs that conform to both ERC721 and ERC1155
    * @param from address of the sender
    * @param to address of the recipient
    * @param item item to transfer
@@ -1064,11 +999,11 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address to,
     OrderTypes.OrderItem calldata item
   ) internal {
-    if (IERC165(item.collection).supportsInterface(0x80ac58cd)) {
-      _transferERC721s(from, to, item);
-    } else if (IERC165(item.collection).supportsInterface(0xd9b67a26)) {
-      _transferERC1155s(from, to, item);
-    }
+    require(
+      IERC165(item.collection).supportsInterface(0x80ac58cd) && !IERC165(item.collection).supportsInterface(0xd9b67a26),
+      'only erc721'
+    );
+    _transferERC721s(from, to, item);
   }
 
   /**
@@ -1082,44 +1017,18 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address to,
     OrderTypes.OrderItem calldata item
   ) internal {
-    uint256 numTokens = item.tokens.length;
-    for (uint256 i = 0; i < numTokens; ) {
-      IERC721(item.collection).safeTransferFrom(from, to, item.tokens[i].tokenId);
+    for (uint256 i; i < item.tokens.length; ) {
+      IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
       unchecked {
         ++i;
       }
     }
-  }
-
-  /**
-   * @notice Transfer ERC1155s
-   * @dev uses the ERC1155 batchTransfer function for efficient transfers
-   * @param from address of the sender
-   * @param to address of the recipient
-   * @param item item to transfer
-   */
-  function _transferERC1155s(
-    address from,
-    address to,
-    OrderTypes.OrderItem calldata item
-  ) internal {
-    uint256 numNfts = item.tokens.length;
-    uint256[] memory tokenIdsArr = new uint256[](numNfts);
-    uint256[] memory numTokensPerTokenIdArr = new uint256[](numNfts);
-    for (uint256 i = 0; i < numNfts; ) {
-      tokenIdsArr[i] = item.tokens[i].tokenId;
-      numTokensPerTokenIdArr[i] = item.tokens[i].numTokens;
-      unchecked {
-        ++i;
-      }
-    }
-    IERC1155(item.collection).safeBatchTransferFrom(from, to, tokenIdsArr, numTokensPerTokenIdArr, '0x0');
   }
 
   /**
    * @notice Transfer fees. Fees are always transferred from buyer to the seller and the exchange although seller is 
             the one that actually 'pays' the fees
-   * @dev if the currency ETH, no additional transfer is needed to pay exchange fees since the contract is 'payable'
+   * @dev if the currency ETH, no additional transfer is needed to pay exchange fees since reqd functions are 'payable'
    * @param seller the seller
    * @param buyer the buyer
    * @param amount amount to transfer
@@ -1132,7 +1041,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     address currency
   ) internal {
     // protocol fee
-    uint256 protocolFee = (PROTOCOL_FEE_BPS * amount) / 10000;
+    uint256 protocolFee = (protocolFeeBps * amount) / PRECISION;
     uint256 remainingAmount = amount - protocolFee;
     // ETH
     if (currency == address(0)) {
@@ -1141,9 +1050,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       require(sent, 'failed to send ether to seller');
     } else {
       // transfer final amount (post-fees) to seller
-      IERC20(currency).safeTransferFrom(buyer, seller, remainingAmount);
+      IERC20(currency).transferFrom(buyer, seller, remainingAmount);
       // send fee to protocol
-      IERC20(currency).safeTransferFrom(buyer, address(this), protocolFee);
+      IERC20(currency).transferFrom(buyer, address(this), protocolFee);
     }
   }
 
@@ -1152,119 +1061,69 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
   /// @dev Gets current order price for orders that vary in price over time (dutch and reverse dutch auctions)
   function _getCurrentPrice(OrderTypes.MakerOrder calldata order) internal view returns (uint256) {
     (uint256 startPrice, uint256 endPrice) = (order.constraints[1], order.constraints[2]);
-    uint256 duration = order.constraints[4] - order.constraints[3];
-    uint256 priceDiff = startPrice > endPrice ? startPrice - endPrice : endPrice - startPrice;
-    if (priceDiff == 0 || duration == 0) {
+    if (startPrice == endPrice) {
       return startPrice;
     }
+
+    uint256 duration = order.constraints[4] - order.constraints[3];
+    if (duration == 0) {
+      return startPrice;
+    }
+
     uint256 elapsedTime = block.timestamp - order.constraints[3];
-    uint256 PRECISION = 10**4; // precision for division; similar to bps
-    uint256 portionBps = elapsedTime > duration ? PRECISION : ((elapsedTime * PRECISION) / duration);
-    priceDiff = (priceDiff * portionBps) / PRECISION;
-    return startPrice > endPrice ? startPrice - priceDiff : startPrice + priceDiff;
-  }
-
-  /// @dev hashes the given order with the help of _nftsHash and _tokensHash
-  function _hash(OrderTypes.MakerOrder calldata order) internal pure returns (bytes32) {
-    // keccak256('Order(bool isSellOrder,address signer,uint256[] constraints,OrderItem[] nfts,address[] execParams,bytes extraParams)OrderItem(address collection,TokenInfo[] tokens)TokenInfo(uint256 tokenId,uint256 numTokens)')
-    bytes32 ORDER_HASH = 0x7bcfb5a29031e6b8d34ca1a14dd0a1f5cb11b20f755bb2a31ee3c4b143477e4a;
-    return
-      keccak256(
-        abi.encode(
-          ORDER_HASH,
-          order.isSellOrder,
-          order.signer,
-          keccak256(abi.encodePacked(order.constraints)),
-          _nftsHash(order.nfts),
-          keccak256(abi.encodePacked(order.execParams)),
-          keccak256(order.extraParams)
-        )
-      );
-  }
-
-  function _nftsHash(OrderTypes.OrderItem[] calldata nfts) internal pure returns (bytes32) {
-    // keccak256('OrderItem(address collection,TokenInfo[] tokens)TokenInfo(uint256 tokenId,uint256 numTokens)')
-    bytes32 ORDER_ITEM_HASH = 0xf73f37e9f570369ceaab59cef16249ae1c0ad1afd592d656afac0be6f63b87e0;
-    uint256 numNfts = nfts.length;
-    bytes32[] memory hashes = new bytes32[](numNfts);
-    for (uint256 i = 0; i < numNfts; ) {
-      bytes32 hash = keccak256(abi.encode(ORDER_ITEM_HASH, nfts[i].collection, _tokensHash(nfts[i].tokens)));
-      hashes[i] = hash;
-      unchecked {
-        ++i;
+    unchecked {
+      uint256 portionBps = elapsedTime > duration ? PRECISION : ((elapsedTime * PRECISION) / duration);
+      if (startPrice > endPrice) {
+        uint256 priceDiff = ((startPrice - endPrice) * portionBps) / PRECISION;
+        return startPrice - priceDiff;
+      } else {
+        uint256 priceDiff = ((endPrice - startPrice) * portionBps) / PRECISION;
+        return startPrice + priceDiff;
       }
     }
-    bytes32 nftsHash = keccak256(abi.encodePacked(hashes));
-    return nftsHash;
-  }
-
-  function _tokensHash(OrderTypes.TokenInfo[] calldata tokens) internal pure returns (bytes32) {
-    // keccak256('TokenInfo(uint256 tokenId,uint256 numTokens)')
-    bytes32 TOKEN_INFO_HASH = 0x88f0bd19d14f8b5d22c0605a15d9fffc285ebc8c86fb21139456d305982906f1;
-    uint256 numTokens = tokens.length;
-    bytes32[] memory hashes = new bytes32[](numTokens);
-    for (uint256 i = 0; i < numTokens; ) {
-      bytes32 hash = keccak256(abi.encode(TOKEN_INFO_HASH, tokens[i].tokenId, tokens[i].numTokens));
-      hashes[i] = hash;
-      unchecked {
-        ++i;
-      }
-    }
-    bytes32 tokensHash = keccak256(abi.encodePacked(hashes));
-    return tokensHash;
   }
 
   // ====================================================== ADMIN FUNCTIONS ======================================================
 
-  /// @dev used for rescuing exchange fees paid to the contract in tokens
-  function rescueTokens(
+  /// @dev used for withdrawing exchange fees paid to the contract in tokens
+  function withdrawTokens(
     address destination,
     address currency,
     uint256 amount
   ) external onlyOwner {
-    IERC20(currency).safeTransfer(destination, amount);
+    IERC20(currency).transfer(destination, amount);
   }
 
-  /// @dev used for rescuing exchange fees paid to the contract in ETH
-  function rescueETH(address destination) external payable onlyOwner {
-    (bool sent, ) = destination.call{value: msg.value}('');
+  /// @dev used for withdrawing exchange fees paid to the contract in ETH
+  function withdrawETH(address destination) external onlyOwner {
+    (bool sent, ) = destination.call{value: address(this).balance}('');
     require(sent, 'failed');
-  }
-
-  /// @dev adds a new transaction currency to the exchange
-  function addCurrency(address _currency) external onlyOwner {
-    _currencies.add(_currency);
-  }
-
-  /// @dev adds a new complication to the exchange
-  function addComplication(address _complication) external onlyOwner {
-    _complications.add(_complication);
-  }
-
-  /// @dev removes a transaction currency from the exchange
-  function removeCurrency(address _currency) external onlyOwner {
-    _currencies.remove(_currency);
-  }
-
-  /// @dev removes a complication from the exchange
-  function removeComplication(address _complication) external onlyOwner {
-    _complications.remove(_complication);
   }
 
   /// @dev updates auto snipe executor
   function updateMatchExecutor(address _matchExecutor) external onlyOwner {
-    MATCH_EXECUTOR = _matchExecutor;
+    matchExecutor = _matchExecutor;
   }
 
   /// @dev updates the gas units required for WETH transfers
-  function updateWethTranferGas(uint32 _wethTransferGasUnits) external onlyOwner {
-    WETH_TRANSFER_GAS_UNITS = _wethTransferGasUnits;
-    emit NewWethTransferGasUnits(_wethTransferGasUnits);
+  function updateWethTransferGas(uint32 _newWethTransferGasUnits) external onlyOwner {
+    require(_newWethTransferGasUnits <= MAX_WETH_TRANSFER_GAS_UNITS);
+    wethTransferGasUnits = _newWethTransferGasUnits;
+    emit NewWethTransferGasUnits(_newWethTransferGasUnits);
   }
 
   /// @dev updates exchange fees
-  function setProtocolFee(uint16 _protocolFeeBps) external onlyOwner {
-    PROTOCOL_FEE_BPS = _protocolFeeBps;
-    emit NewProtocolFee(_protocolFeeBps);
+  function setProtocolFee(uint32 _newProtocolFeeBps) external onlyOwner {
+    require(_newProtocolFeeBps <= MAX_PROTOCOL_FEE_BPS, 'protocol fee too high');
+    protocolFeeBps = _newProtocolFeeBps;
+    emit NewProtocolFee(_newProtocolFeeBps);
+  }
+
+  function pause() external onlyOwner {
+    _pause();
+  }
+
+  function unpause() external onlyOwner {
+    _unpause();
   }
 }

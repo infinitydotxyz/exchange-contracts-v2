@@ -79,7 +79,7 @@ describe('Exchange_Match_One_To_Many', function () {
     // add currencies to registry
     await infinityExchange.addCurrency(token.address);
     await infinityExchange.addCurrency(NULL_ADDRESS);
-    
+
     // add complications to registry
     await infinityExchange.addComplication(obComplication.address);
 
@@ -907,7 +907,7 @@ describe('Exchange_Match_One_To_Many', function () {
       expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer2Balance));
+      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
       expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
 
       // update to right amount
@@ -916,7 +916,7 @@ describe('Exchange_Match_One_To_Many', function () {
   });
 
   describe('Match_MultipleCollectionsAnyTokensSell_ETH', () => {
-    it('Should match valid order', async function () {
+    it('Should not match non specific orders', async function () {
       const sellOrder = sellOrders[4];
 
       expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
@@ -987,24 +987,18 @@ describe('Exchange_Match_One_To_Many', function () {
         );
       }, 0);
 
-      const numTokens = numTokens1 + numTokens2 + numTokens3;
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange
-        .connect(signer3)
-        .estimateGas.matchOneToManyOrders(sellOrder, [buyOrder1, buyOrder2, buyOrder3]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
-
       // initiate exchange by 3rd party
-      await infinityExchange.connect(signer3).matchOneToManyOrders(sellOrder, [buyOrder1, buyOrder2, buyOrder3]);
+      await expect(
+        infinityExchange.connect(signer3).matchOneToManyOrders(sellOrder, [buyOrder1, buyOrder2, buyOrder3])
+      ).to.be.revertedWith('cannot execute');
 
-      // owners after sale
+      // owners after sale should remain same
       for (const item of buyOrder1.nfts) {
         const collection = item.collection;
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
       for (const item of buyOrder2.nfts) {
@@ -1012,7 +1006,7 @@ describe('Exchange_Match_One_To_Many', function () {
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
       for (const item of buyOrder3.nfts) {
@@ -1020,33 +1014,23 @@ describe('Exchange_Match_One_To_Many', function () {
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
 
       // balance after sale
-      const salePrice = salePrice1.add(salePrice2).add(salePrice3);
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
+      totalProtocolFees = totalProtocolFees.add(gasRefund);
       expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer2Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
 
       // update to right amount
       signer1Balance = signer1TokenBalance;
     });
   });
 
-  describe('Match_OneCollectionAnyMultipleTokens_ETH', () => {
-    it('Should match valid order', async function () {
+  describe('Match_OneCollectionAnyMultipleTokensBuy_ETH', () => {
+    it('Should not match non-specific order', async function () {
       const buyOrder = buyOrders[5];
       // balance before sale
       expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
@@ -1117,24 +1101,18 @@ describe('Exchange_Match_One_To_Many', function () {
         );
       }, 0);
 
-      const numTokens = numTokens1 + numTokens2 + numTokens3;
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange
-        .connect(signer3)
-        .estimateGas.matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
-
       // initiate exchange by 3rd party
-      await infinityExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3]);
+      await expect(
+        infinityExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3])
+      ).to.be.revertedWith('cannot execute');
 
-      // owners after sale
+      // owners after sale should remain same
       for (const item of sellOrder1.nfts) {
         const collection = item.collection;
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
       for (const item of sellOrder2.nfts) {
@@ -1142,7 +1120,7 @@ describe('Exchange_Match_One_To_Many', function () {
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
       for (const item of sellOrder3.nfts) {
@@ -1150,25 +1128,15 @@ describe('Exchange_Match_One_To_Many', function () {
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
           const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
 
       // balance after sale
-      const salePrice = salePrice1.add(salePrice2).add(salePrice3);
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
+      totalProtocolFees = totalProtocolFees.add(gasRefund);
       expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer2Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
 
       // update to right amount
       signer1Balance = signer1TokenBalance;
