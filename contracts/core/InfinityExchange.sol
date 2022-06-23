@@ -229,6 +229,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
       }
       isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] = true;
     } else {
+      if (makerOrder.constraints[6] > 0) {
+        require(makerOrder.constraints[6] <= tx.gasprice, 'gas price too high');
+      }
       uint256 protocolFee;
       for (uint256 i; i < ordersLength; ) {
         protocolFee =
@@ -749,6 +752,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint32 _wethTransferGasUnits,
     address weth
   ) internal {
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
     isUserOrderNonceExecutedOrCancelled[sell.signer][sell.constraints[5]] = true;
     isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] = true;
     uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
@@ -800,6 +806,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint32 _wethTransferGasUnits,
     address weth
   ) internal {
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
     isUserOrderNonceExecutedOrCancelled[buy.signer][buy.constraints[5]] = true;
     uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
@@ -899,6 +908,9 @@ contract InfinityExchange is ReentrancyGuard, Ownable {
     uint32 _wethTransferGasUnits,
     address weth
   ) internal {
+    if (buy.constraints[6] > 0) {
+      require(buy.constraints[6] <= tx.gasprice, 'gas price too high');
+    }
     uint256 protocolFee = (_protocolFeeBps * execPrice) / PRECISION;
     uint256 remainingAmount = execPrice - protocolFee;
     _execMatchOrder(

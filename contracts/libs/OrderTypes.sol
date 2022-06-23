@@ -24,13 +24,14 @@ library OrderTypes {
     bool isSellOrder;
     ///@dev signer of the order (maker address)
     address signer;
-    ///@dev Constraints array contains the order constraints. Total constraints: 6. In order:
+    ///@dev Constraints array contains the order constraints. Total constraints: 7. In order:
     // numItems - min (for buy orders) / max (for sell orders) number of items in the order
     // start price in wei
     // end price in wei
     // start time in block.timestamp
     // end time in block.timestamp
     // nonce of the order
+    // max tx.gasprice in wei
     uint256[] constraints;
     ///@dev nfts array contains order items where each item is a collection and its tokenIds
     OrderItem[] nfts;
