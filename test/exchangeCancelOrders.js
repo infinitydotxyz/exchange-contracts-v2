@@ -76,15 +76,17 @@ describe('Exchange_Cancel_Orders', function () {
     obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1
+      signer1,
+      [token.address]
     );
 
     // add currencies to registry
-    await infinityExchange.addCurrency(token.address);
-    await infinityExchange.addCurrency(NULL_ADDRESS);
+    // await infinityExchange.addCurrency(token.address);
+    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    await obComplication.addCurrency(token.address);
 
     // add complications to registry
-    await infinityExchange.addComplication(obComplication.address);
+    // await infinityExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -152,7 +154,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -198,7 +200,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -236,7 +238,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -274,7 +276,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -331,7 +333,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -377,7 +379,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -410,7 +412,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -443,7 +445,7 @@ describe('Exchange_Cancel_Orders', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       orders.push(signedOrder);
     });
@@ -492,8 +494,8 @@ describe('Exchange_Cancel_Orders', function () {
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -510,7 +512,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // try to perform exchange
       await expect(infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts])).to.be.revertedWith(
-        'order not verified'
+        'sell order expired'
       );
 
       // owners after sale
@@ -617,8 +619,8 @@ describe('Exchange_Cancel_Orders', function () {
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -729,8 +731,8 @@ describe('Exchange_Cancel_Orders', function () {
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -747,7 +749,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // perform exchange
       await expect(infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts])).to.be.revertedWith(
-        'order not verified'
+        'sell order expired'
       );
 
       // owners after sale

@@ -404,36 +404,6 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     return !isUserOrderNonceExecutedOrCancelled[user][nonce] && nonce >= userMinOrderNonce[user];
   }
 
-  /**
-   * @notice Check whether a user signed order has valid signature
-   * @param order the order to verify
-   * @return whether order has valid signature
-   */
-  // function verifyOrderSig(OrderTypes.MakerOrder calldata order) external view returns (bool) {
-  //   // Verify the validity of the signature
-  //   (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
-  //   return SignatureChecker.verify(_hash(order), order.signer, r, s, v, DOMAIN_SEPARATOR);
-  // }
-
-  // /**
-  //  * @notice Verifies the validity of the order
-  //  * @dev checks whether order nonce was cancelled or already executed,
-  //         if signature is valid and if the complication and currency are valid
-  //  * @param order the order
-  //  * @param orderHash computed hash of the order
-  //  */
-  // function isOrderValid(OrderTypes.MakerOrder calldata order, bytes32 orderHash) public view returns (bool) {
-  //   bool orderExpired = isUserOrderNonceExecutedOrCancelled[order.signer][order.constraints[5]] ||
-  //     order.constraints[5] < userMinOrderNonce[order.signer];
-  //   // Verify the validity of the signature
-  //   (bytes32 r, bytes32 s, uint8 v) = abi.decode(order.sig, (bytes32, bytes32, uint8));
-  //   bool sigValid = SignatureChecker.verify(orderHash, order.signer, r, s, v, DOMAIN_SEPARATOR);
-  //   return (!orderExpired &&
-  //     sigValid &&
-  //     _complications.contains(order.execParams[0]) &&
-  //     _currencies.contains(order.execParams[1]));
-  // }
-
   // ====================================================== INTERNAL FUNCTIONS ================================================
 
   /**

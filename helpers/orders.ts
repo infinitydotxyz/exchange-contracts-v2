@@ -149,7 +149,8 @@ export async function prepareOBOrder(
   chainId: BigNumberish,
   signer: JsonRpcSigner,
   order: OBOrder,
-  infinityExchange: Contract
+  infinityExchange: Contract,
+  obComplication: Contract,
 ): Promise<SignedOBOrder | undefined> {
   const validOrder = await isOrderValid(user, order, infinityExchange, signer);
   if (!validOrder) {
@@ -163,14 +164,7 @@ export async function prepareOBOrder(
   }
 
   // sign order
-  const signedOBOrder = await signOBOrder(chainId, infinityExchange.address, order, signer);
-
-  const isSigValid = await infinityExchange.verifyOrderSig(signedOBOrder);
-  if (!isSigValid) {
-    console.error('Signature is invalid');
-    return undefined;
-  } else {
-  }
+  const signedOBOrder = await signOBOrder(chainId, obComplication.address, order, signer);
   return signedOBOrder;
 }
 
@@ -300,7 +294,7 @@ export async function checkERC721Ownership(user: User, contract: Contract, token
 
 export async function signOBOrder(
   chainId: BigNumberish,
-  contractAddress: string,
+  verifyingContractAddress: string,
   order: OBOrder,
   signer: JsonRpcSigner
 ): Promise<SignedOBOrder | undefined> {
@@ -308,7 +302,7 @@ export async function signOBOrder(
     name: 'InfinityExchange',
     version: '1',
     chainId: chainId,
-    verifyingContract: contractAddress
+    verifyingContract: verifyingContractAddress
   };
 
   const types = {
@@ -329,8 +323,6 @@ export async function signOBOrder(
       { name: 'numTokens', type: 'uint256' }
     ]
   };
-
-  // _getCalculatedDigest(chainId, contractAddress, order);
 
   const constraints = [
     order.numItems,

@@ -74,15 +74,17 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
     obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1
+      signer1,
+      [token.address]
     );
 
     // add currencies to registry
-    await infinityExchange.addCurrency(token.address);
-    await infinityExchange.addCurrency(NULL_ADDRESS);
-    
+    // await infinityExchange.addCurrency(token.address);
+    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    await obComplication.addCurrency(token.address);
+
     // add complications to registry
-    await infinityExchange.addComplication(obComplication.address);
+    // await infinityExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -150,7 +152,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -196,7 +198,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -234,7 +236,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -291,7 +293,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -337,7 +339,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -370,7 +372,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -403,7 +405,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -444,7 +446,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -479,8 +481,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -549,8 +551,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -634,8 +636,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -715,8 +717,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -835,8 +837,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -853,7 +855,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
 
       // perform exchange
       await expect(infinityExchange.connect(signer2).takeOrders([buyOrder], [sellOrder.nfts])).to.be.revertedWith(
-        'order not verified'
+        'cannot execute'
       );
 
       // owners after sale
@@ -974,8 +976,8 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;

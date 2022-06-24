@@ -73,15 +73,17 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
     obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1
+      signer1,
+      [token.address]
     );
 
     // add currencies to registry
-    await infinityExchange.addCurrency(token.address);
-    await infinityExchange.addCurrency(NULL_ADDRESS);
-    
+    // await infinityExchange.addCurrency(token.address);
+    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    await obComplication.addCurrency(token.address);
+
     // add complications to registry
-    await infinityExchange.addComplication(obComplication.address);
+    // await infinityExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -149,7 +151,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -190,7 +192,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -231,7 +233,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -272,7 +274,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -313,7 +315,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -354,7 +356,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -395,7 +397,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -436,7 +438,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -477,7 +479,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -518,7 +520,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -567,7 +569,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -613,7 +615,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -659,7 +661,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -705,7 +707,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -751,7 +753,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -797,7 +799,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -843,7 +845,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -889,7 +891,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -935,7 +937,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -981,7 +983,7 @@ describe('Exchange_Match_Multiple_One_To_One', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });

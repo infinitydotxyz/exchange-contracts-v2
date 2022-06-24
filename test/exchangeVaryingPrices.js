@@ -88,15 +88,17 @@ describe('Exchange_Varying_Prices', function () {
     obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1
+      signer1,
+      [token.address]
     );
 
     // add currencies to registry
-    await infinityExchange.addCurrency(token.address);
-    await infinityExchange.addCurrency(NULL_ADDRESS);
-    
+    // await infinityExchange.addCurrency(token.address);
+    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    await obComplication.addCurrency(token.address);
+
     // add complications to registry
-    await infinityExchange.addComplication(obComplication.address);
+    // await infinityExchange.addCurrency(token.address);
 
     // send assets
     signer1Balance = INITIAL_SUPPLY.div(2);
@@ -166,7 +168,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -212,7 +214,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -258,7 +260,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -307,7 +309,7 @@ describe('Exchange_Varying_Prices', function () {
       const salePrice = getCurrentOrderPrice(order);
       await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -353,7 +355,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -399,7 +401,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -434,8 +436,8 @@ describe('Exchange_Varying_Prices', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -584,8 +586,8 @@ describe('Exchange_Varying_Prices', function () {
       };
       sellOrder.sig = await signFormattedOrder(chainId, contractAddress, sellOrder, signer2);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(sellOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -683,8 +685,8 @@ describe('Exchange_Varying_Prices', function () {
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -832,8 +834,8 @@ describe('Exchange_Varying_Prices', function () {
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
-      expect(isSigValid).to.equal(true);
+      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
         const collection = item.collection;
@@ -1010,7 +1012,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
       // increase time
@@ -1052,7 +1054,7 @@ describe('Exchange_Varying_Prices', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange);
+      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });

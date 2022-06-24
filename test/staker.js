@@ -95,7 +95,8 @@ describe('Staker', function () {
     obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1
+      signer1,
+      [token.address]
     );
 
     // Infinity treasury
@@ -110,11 +111,12 @@ describe('Staker', function () {
     );
 
     // add currencies to registry
-    await infinityExchange.addCurrency(token.address);
-    await infinityExchange.addCurrency(NULL_ADDRESS);
+    // await infinityExchange.addCurrency(token.address);
+    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    await obComplication.addCurrency(token.address);
 
     // add complications to registry
-    await infinityExchange.addComplication(obComplication.address);
+    // await infinityExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
