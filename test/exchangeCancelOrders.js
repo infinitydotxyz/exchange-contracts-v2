@@ -512,7 +512,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // try to perform exchange
       await expect(infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts])).to.be.revertedWith(
-        'sell order expired'
+        'order expired'
       );
 
       // owners after sale
@@ -688,7 +688,7 @@ describe('Exchange_Cancel_Orders', function () {
       expect(isValid).to.be.true;
 
       // try canceling a big nonce
-      await expect(infinityExchange.connect(signer2).cancelAllOrders(1000001)).to.be.revertedWith('too many');
+      await expect(infinityExchange.connect(signer2).cancelAllOrders(100001)).to.be.revertedWith('too many');
 
       // cancel all orders
       await infinityExchange.connect(signer2).cancelAllOrders(minCancelNonce);
@@ -749,7 +749,7 @@ describe('Exchange_Cancel_Orders', function () {
 
       // perform exchange
       await expect(infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts])).to.be.revertedWith(
-        'sell order expired'
+        'order expired'
       );
 
       // owners after sale

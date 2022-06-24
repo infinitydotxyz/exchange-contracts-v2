@@ -6,7 +6,6 @@ import {ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-
 import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import {ERC20Snapshot} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol';
 import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
-
 import {TimelockConfig} from './TimelockConfig.sol';
 
 /**
@@ -64,7 +63,7 @@ contract InfinityToken is
     _mint(admin, supply);
   }
 
-  // =============================================== USER FUNCTIONS =========================================================
+  // =============================================== ADMIN FUNCTIONS =========================================================
 
   function advanceEpoch() external onlyAdmin {
     uint256 maxEpochs = getMaxEpochs();

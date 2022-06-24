@@ -6,7 +6,7 @@ import {IERC1271} from '@openzeppelin/contracts/interfaces/IERC1271.sol';
 
 /**
  * @title SignatureChecker
- * @notice This library allows verification of signatures for both EOAs and contracts.
+ * @notice This library allows verification of signatures for both EOAs and contracts
  */
 library SignatureChecker {
   /**

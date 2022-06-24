@@ -31,7 +31,7 @@ library OrderTypes {
     // start time in block.timestamp
     // end time in block.timestamp
     // nonce of the order
-    // max tx.gasprice in wei
+    // max tx.gasprice in wei that a user is willing to pay for gas
     uint256[] constraints;
     ///@dev nfts array contains order items where each item is a collection and its tokenIds
     OrderItem[] nfts;

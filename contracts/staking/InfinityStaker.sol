@@ -4,23 +4,39 @@ pragma solidity 0.8.14;
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Pausable} from '@openzeppelin/contracts/security/Pausable.sol';
-import {IStaker, Duration, StakeLevel} from '../interfaces/IStaker.sol';
 
 /**
  * @title InfinityStaker
  * @author nneverlander. Twitter @nneverlander
  * @notice The staker contract that allows people to stake tokens and earn voting power to be used in curation and possibly other places
  */
-contract InfinityStaker is IStaker, Ownable, Pausable {
+contract InfinityStaker is Ownable, Pausable {
   struct StakeAmount {
     uint256 amount;
     uint256 timestamp;
   }
 
+  enum Duration {
+    NONE,
+    THREE_MONTHS,
+    SIX_MONTHS,
+    TWELVE_MONTHS
+  }
+
+  enum StakeLevel {
+    NONE,
+    BRONZE,
+    SILVER,
+    GOLD,
+    PLATINUM
+  }
+
   ///@dev Storage variable to keep track of the staker's staked duration and amounts
   mapping(address => mapping(Duration => StakeAmount)) public userstakedAmounts;
 
+  ///@dev Infinity token address
   address public immutable INFINITY_TOKEN;
+
   ///@dev Infinity treasury address - will be a EOA/multisig
   address public infinityTreasury;
 
@@ -63,7 +79,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param amount Amount of tokens to stake
    * @param duration Duration of the stake
    */
-  function stake(uint256 amount, Duration duration) external override whenNotPaused {
+  function stake(uint256 amount, Duration duration) external whenNotPaused {
     require(amount != 0, 'stake amount cant be 0');
     // update storage
     userstakedAmounts[msg.sender][duration].amount += amount;
@@ -85,10 +101,10 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
     uint256 amount,
     Duration oldDuration,
     Duration newDuration
-  ) external override whenNotPaused {
+  ) external whenNotPaused {
     require(amount != 0, 'amount cant be 0');
     require(userstakedAmounts[msg.sender][oldDuration].amount >= amount, 'insuf stake to change duration');
-    require(newDuration > oldDuration, 'new duration must exceed old dur');
+    require(newDuration > oldDuration, 'new duration must exceed old');
 
     // update storage
     userstakedAmounts[msg.sender][oldDuration].amount -= amount;
@@ -97,7 +113,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
     userstakedAmounts[msg.sender][newDuration].timestamp = block.timestamp;
     // only update old duration timestamp if old duration amount is 0
     if (userstakedAmounts[msg.sender][oldDuration].amount == 0) {
-      userstakedAmounts[msg.sender][oldDuration].timestamp = 0;
+      delete userstakedAmounts[msg.sender][oldDuration].timestamp;
     }
     // emit event
     emit DurationChanged(msg.sender, amount, oldDuration, newDuration);
@@ -108,7 +124,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @dev Storage updates are done for each stake level. See _updateUserStakedAmounts for more details
    * @param amount Amount of tokens to unstake
    */
-  function unstake(uint256 amount) external override whenNotPaused {
+  function unstake(uint256 amount) external whenNotPaused {
     require(amount != 0, 'unstake amount cant be 0');
     uint256 noVesting = userstakedAmounts[msg.sender][Duration.NONE].amount;
     uint256 vestedThreeMonths = getVestedAmount(msg.sender, Duration.THREE_MONTHS);
@@ -128,7 +144,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
   /**
    * @notice Ragequit tokens. Applies penalties for unvested tokens
    */
-  function rageQuit() external override {
+  function rageQuit() external {
     (uint256 totalToUser, uint256 penalty) = getRageQuitAmounts(msg.sender);
     // update storage
     _clearUserStakedAmounts(msg.sender);
@@ -146,7 +162,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param user address of the user
    * @return total amount of tokens staked by the user
    */
-  function getUserTotalStaked(address user) external view override returns (uint256) {
+  function getUserTotalStaked(address user) external view returns (uint256) {
     return
       userstakedAmounts[user][Duration.NONE].amount +
       userstakedAmounts[user][Duration.THREE_MONTHS].amount +
@@ -159,12 +175,12 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param user address of the user
    * @return total amount of vested tokens for the user
    */
-  function getUserTotalVested(address user) external view override returns (uint256) {
-    uint256 noVesting = getVestedAmount(user, Duration.NONE);
-    uint256 vestedThreeMonths = getVestedAmount(user, Duration.THREE_MONTHS);
-    uint256 vestedsixMonths = getVestedAmount(user, Duration.SIX_MONTHS);
-    uint256 vestedTwelveMonths = getVestedAmount(user, Duration.TWELVE_MONTHS);
-    return noVesting + vestedThreeMonths + vestedsixMonths + vestedTwelveMonths;
+  function getUserTotalVested(address user) external view returns (uint256) {
+    return
+      getVestedAmount(user, Duration.NONE) +
+      getVestedAmount(user, Duration.THREE_MONTHS) +
+      getVestedAmount(user, Duration.SIX_MONTHS) +
+      getVestedAmount(user, Duration.TWELVE_MONTHS);
   }
 
   /**
@@ -173,7 +189,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param user address of the user
    * @return Total amount to user and penalties
    */
-  function getRageQuitAmounts(address user) public view override returns (uint256, uint256) {
+  function getRageQuitAmounts(address user) public view returns (uint256, uint256) {
     uint256 noLock = userstakedAmounts[user][Duration.NONE].amount;
     uint256 threeMonthLock = userstakedAmounts[user][Duration.THREE_MONTHS].amount;
     uint256 sixMonthLock = userstakedAmounts[user][Duration.SIX_MONTHS].amount;
@@ -203,7 +219,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param user address of the user
    * @return StakeLevel
    */
-  function getUserStakeLevel(address user) external view override returns (StakeLevel) {
+  function getUserStakeLevel(address user) external view returns (StakeLevel) {
     uint256 totalPower = getUserStakePower(user);
 
     if (totalPower <= bronzeStakeThreshold) {
@@ -225,7 +241,7 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
    * @param user address of the user
    * @return user stake power
    */
-  function getUserStakePower(address user) public view override returns (uint256) {
+  function getUserStakePower(address user) public view returns (uint256) {
     return
       ((userstakedAmounts[user][Duration.NONE].amount) +
         (userstakedAmounts[user][Duration.THREE_MONTHS].amount * 2) +
@@ -386,10 +402,12 @@ contract InfinityStaker is IStaker, Ownable, Pausable {
     infinityTreasury = _infinityTreasury;
   }
 
+  /// @dev Admin function to pause the contract
   function pause() external onlyOwner {
     _pause();
   }
 
+  /// @dev Admin function to unpause the contract
   function unpause() external onlyOwner {
     _unpause();
   }

@@ -34,9 +34,15 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   /// @dev Used in order signing with EIP-712
   bytes32 public immutable DOMAIN_SEPARATOR;
 
-  /// @dev Storage variable that keeps track of valid currencies (tokens)
+  /// @dev Storage variable that keeps track of valid currencies used for payment (tokens)
   EnumerableSet.AddressSet private _currencies;
 
+  event CurrencyAdded(address currency);
+  event CurrencyRemoved(address currency);
+
+  /**
+    @param _weth address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
+   */
   constructor(address _weth) {
     // Calculate the domain separator
     DOMAIN_SEPARATOR = keccak256(
@@ -61,11 +67,11 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   /**
    * @notice Checks whether one to one matches can be executed
    * @dev This function is called by the main exchange to check whether one to one matches can be executed.
-          It checks whether orders have the right constraints - i.e they have one NFT only, whether time is still valid,
-          prices are valid and whether the nfts intersect
+          It checks whether orders have the right constraints - i.e they have one specific NFT only, whether time is still valid,
+          prices are valid and whether the nfts intersect.
    * @param makerOrder1 first makerOrder
    * @param makerOrder2 second makerOrder
-   * @return returns whether the order can be executed and the execution price
+   * @return returns whether the order can be executed, orderHashes and the execution price
    */
   function canExecMatchOneToOne(OrderTypes.MakerOrder calldata makerOrder1, OrderTypes.MakerOrder calldata makerOrder2)
     external
@@ -78,16 +84,24 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       uint256
     )
   {
+    // check if the orders are valid
+    bytes32 sellOrderHash = _hash(makerOrder1);
+    bytes32 buyOrderHash = _hash(makerOrder2);
+    require(verifyMatchOneToOneOrders(sellOrderHash, buyOrderHash, makerOrder1, makerOrder2), 'order not verified');
+
+    // check constraints
     bool numItemsValid = makerOrder2.constraints[0] == makerOrder1.constraints[0] &&
       makerOrder2.constraints[0] == 1 &&
       makerOrder2.nfts.length == 1 &&
       makerOrder2.nfts[0].tokens.length == 1 &&
       makerOrder1.nfts.length == 1 &&
       makerOrder1.nfts[0].tokens.length == 1;
+
     bool _isTimeValid = makerOrder2.constraints[3] <= block.timestamp &&
       makerOrder2.constraints[4] >= block.timestamp &&
       makerOrder1.constraints[3] <= block.timestamp &&
       makerOrder1.constraints[4] >= block.timestamp;
+
     bool _isPriceValid;
     uint256 makerOrder1Price = _getCurrentPrice(makerOrder1);
     uint256 makerOrder2Price = _getCurrentPrice(makerOrder2);
@@ -100,106 +114,11 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       execPrice = makerOrder2Price;
     }
 
-    bytes32 sellOrderHash = _hash(makerOrder1);
-    bytes32 buyOrderHash = _hash(makerOrder2);
-    require(verifyMatchOneToOneOrders(sellOrderHash, buyOrderHash, makerOrder1, makerOrder2), 'order not verified');
-
     return (
       numItemsValid && _isTimeValid && doItemsIntersect(makerOrder1.nfts, makerOrder2.nfts) && _isPriceValid,
       sellOrderHash,
       buyOrderHash,
       execPrice
-    );
-  }
-
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-   * @param sellOrderHash hash of the sell order
-   * @param buyOrderHash hash of the buy order
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid
-   */
-  function verifyMatchOneToOneOrders(
-    bytes32 sellOrderHash,
-    bytes32 buyOrderHash,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view returns (bool) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-
-    return (sell.isSellOrder &&
-      !buy.isSellOrder &&
-      sell.execParams[0] == buy.execParams[0] &&
-      sell.signer != buy.signer &&
-      currenciesMatch &&
-      isOrderValid(sell, sellOrderHash) &&
-      isOrderValid(buy, buyOrderHash));
-  }
-
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-          Also checks if the given complication can execute this order
-   * @param sellOrderHash hash of the sell order
-   * @param buyOrderHash hash of the buy order
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid and the execution price
-   */
-  function verifyMatchOrders(
-    bytes32 sellOrderHash,
-    bytes32 buyOrderHash,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view returns (bool) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-
-    return (sell.isSellOrder &&
-      !buy.isSellOrder &&
-      sell.execParams[0] == buy.execParams[0] &&
-      sell.signer != buy.signer &&
-      currenciesMatch &&
-      isOrderValid(sell, sellOrderHash) &&
-      isOrderValid(buy, buyOrderHash));
-  }
-
-  /**
-   * @notice Checks whether orders are valid
-   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
-   * @param sell the sell order
-   * @param buy the buy order
-   * @return whether orders are valid
-   */
-  function verifyMatchOneToManyOrders(
-    bool verifySellOrder,
-    OrderTypes.MakerOrder calldata sell,
-    OrderTypes.MakerOrder calldata buy
-  ) public view override returns (bool, bytes32) {
-    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
-      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
-
-    bool _orderValid;
-    bytes32 orderHash;
-
-    if (verifySellOrder) {
-      orderHash = _hash(sell);
-      _orderValid = isOrderValid(sell, orderHash);
-    } else {
-      orderHash = _hash(buy);
-      _orderValid = isOrderValid(buy, orderHash);
-    }
-    return (
-      sell.isSellOrder &&
-        !buy.isSellOrder &&
-        sell.execParams[0] == buy.execParams[0] &&
-        sell.signer != buy.signer &&
-        currenciesMatch &&
-        _orderValid,
-      orderHash
     );
   }
 
@@ -210,19 +129,20 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
           prices are valid and whether the nfts intersect. All orders are expected to contain specific items.
    * @param makerOrder the one makerOrder
    * @param manyMakerOrders many maker orders
-   * @return returns whether the order can be executed
+   * @return returns whether the order can be executed and orderHash of the one side order
    */
   function canExecMatchOneToMany(
     OrderTypes.MakerOrder calldata makerOrder,
     OrderTypes.MakerOrder[] calldata manyMakerOrders
   ) external view override returns (bool, bytes32) {
+    // check if makerOrder is valid
     bytes32 makerOrderHash = _hash(makerOrder);
     require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
 
     // check the constraints of the 'one' maker order
     uint256 numNftsInOneOrder;
     for (uint256 i; i < makerOrder.nfts.length; ) {
-      numNftsInOneOrder = makerOrder.nfts[i].tokens.length;
+      numNftsInOneOrder = numNftsInOneOrder + makerOrder.nfts[i].tokens.length;
       unchecked {
         ++i;
       }
@@ -286,14 +206,14 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /**
-   * @notice Checks whether match orders with a higher order intent can be executed
+   * @notice Checks whether match orders with a higher level intent can be executed
    * @dev This function is called by the main exchange to check whether one to one matches can be executed.
           It checks whether orders have the right constraints - i.e they have the right number of items, whether time is still valid,
           prices are valid and whether the nfts intersect
    * @param sell sell order
    * @param buy buy order
    * @param constructedNfts - nfts constructed by the off chain matching engine
-   * @return returns whether the order can be executed and the execution price
+   * @return returns whether the order can be execute, orderHashes and the execution price
    */
   function canExecMatchOrder(
     OrderTypes.MakerOrder calldata sell,
@@ -310,16 +230,17 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       uint256
     )
   {
-    (bool _isPriceValid, uint256 execPrice) = isPriceValid(sell, buy);
-
+    // check if orders are valid
     bytes32 sellOrderHash = _hash(sell);
     bytes32 buyOrderHash = _hash(buy);
     require(verifyMatchOrders(sellOrderHash, buyOrderHash, sell, buy), 'order not verified');
 
+    (bool _isPriceValid, uint256 execPrice) = isPriceValid(sell, buy);
+
     return (
       isTimeValid(sell, buy) &&
         _isPriceValid &&
-        areNumItemsValid(sell, buy, constructedNfts) &&
+        areNumMatchItemsValid(sell, buy, constructedNfts) &&
         doItemsIntersect(sell.nfts, constructedNfts) &&
         doItemsIntersect(buy.nfts, constructedNfts),
       sellOrderHash,
@@ -329,11 +250,11 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /**
-   * @notice Checks whether one to one takers can be executed
+   * @notice Checks whether one to one taker orders can be executed
    * @dev This function is called by the main exchange to check whether one to one taker orders can be executed.
           It checks whether orders have the right constraints - i.e they have one NFT only and whether time is still valid
    * @param makerOrder the makerOrder
-   * @return returns whether the order can be executed
+   * @return returns whether the order can be executed and makerOrderHash
    */
   function canExecTakeOneOrder(OrderTypes.MakerOrder calldata makerOrder)
     external
@@ -341,25 +262,26 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     override
     returns (bool, bytes32)
   {
+    // check if makerOrder is valid
+    bytes32 makerOrderHash = _hash(makerOrder);
+    require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
+
     bool numItemsValid = makerOrder.constraints[0] == 1 &&
       makerOrder.nfts.length == 1 &&
       makerOrder.nfts[0].tokens.length == 1;
     bool _isTimeValid = makerOrder.constraints[3] <= block.timestamp && makerOrder.constraints[4] >= block.timestamp;
 
-    bytes32 makerOrderHash = _hash(makerOrder);
-    require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
-
     return (numItemsValid && _isTimeValid, makerOrderHash);
   }
 
   /**
-   * @notice Checks whether take orders with a higher order intent can be executed
-   * @dev This function is called by the main exchange to check whether take orders with a higher order intent can be executed.
+   * @notice Checks whether take orders with a higher level intent can be executed
+   * @dev This function is called by the main exchange to check whether take orders with a higher level intent can be executed.
           It checks whether orders have the right constraints - i.e they have the right number of items, whether time is still valid
           and whether the nfts intersect
    * @param makerOrder the maker order
    * @param takerItems the taker items specified by the taker
-   * @return returns whether order can be executed
+   * @return returns whether order can be executed and the makerOrderHash
    */
   function canExecTakeOrder(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
     external
@@ -367,13 +289,14 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     override
     returns (bool, bytes32)
   {
+    // check if makerOrder is valid
     bytes32 makerOrderHash = _hash(makerOrder);
-    bool makerOrderValid = isOrderValid(makerOrder, makerOrderHash);
+    require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
+
     return (
-      makerOrderValid &&
-        makerOrder.constraints[3] <= block.timestamp &&
+      makerOrder.constraints[3] <= block.timestamp &&
         makerOrder.constraints[4] >= block.timestamp &&
-        areTakerNumItemsValid(makerOrder, takerItems) &&
+        areNumTakerItemsValid(makerOrder, takerItems) &&
         doItemsIntersect(makerOrder.nfts, takerItems),
       makerOrderHash
     );
@@ -382,11 +305,102 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   // ======================================================= PUBLIC FUNCTIONS ==================================================
 
   /**
+   * @notice Checks whether orders are valid
+   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
+   * @param sellOrderHash hash of the sell order
+   * @param buyOrderHash hash of the buy order
+   * @param sell the sell order
+   * @param buy the buy order
+   * @return whether orders are valid
+   */
+  function verifyMatchOneToOneOrders(
+    bytes32 sellOrderHash,
+    bytes32 buyOrderHash,
+    OrderTypes.MakerOrder calldata sell,
+    OrderTypes.MakerOrder calldata buy
+  ) public view returns (bool) {
+    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
+      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
+
+    return (sell.isSellOrder &&
+      !buy.isSellOrder &&
+      sell.execParams[0] == buy.execParams[0] &&
+      sell.signer != buy.signer &&
+      currenciesMatch &&
+      isOrderValid(sell, sellOrderHash) &&
+      isOrderValid(buy, buyOrderHash));
+  }
+
+  /**
+   * @notice Checks whether orders are valid
+   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
+   * @param sell the sell order
+   * @param buy the buy order
+   * @return whether orders are valid and orderHash
+   */
+  function verifyMatchOneToManyOrders(
+    bool verifySellOrder,
+    OrderTypes.MakerOrder calldata sell,
+    OrderTypes.MakerOrder calldata buy
+  ) public view override returns (bool, bytes32) {
+    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
+      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
+
+    bool _orderValid;
+    bytes32 orderHash;
+
+    if (verifySellOrder) {
+      orderHash = _hash(sell);
+      _orderValid = isOrderValid(sell, orderHash);
+    } else {
+      orderHash = _hash(buy);
+      _orderValid = isOrderValid(buy, orderHash);
+    }
+    return (
+      sell.isSellOrder &&
+        !buy.isSellOrder &&
+        sell.execParams[0] == buy.execParams[0] &&
+        sell.signer != buy.signer &&
+        currenciesMatch &&
+        _orderValid,
+      orderHash
+    );
+  }
+
+  /**
+   * @notice Checks whether orders are valid
+   * @dev Checks whether currencies match, sides match, complications match and if each order is valid (see isOrderValid)
+          Also checks if the given complication can execute this order
+   * @param sellOrderHash hash of the sell order
+   * @param buyOrderHash hash of the buy order
+   * @param sell the sell order
+   * @param buy the buy order
+   * @return whether orders are valid
+   */
+  function verifyMatchOrders(
+    bytes32 sellOrderHash,
+    bytes32 buyOrderHash,
+    OrderTypes.MakerOrder calldata sell,
+    OrderTypes.MakerOrder calldata buy
+  ) public view returns (bool) {
+    bool currenciesMatch = sell.execParams[1] == buy.execParams[1] ||
+      (sell.execParams[1] == address(0) && buy.execParams[1] == WETH);
+
+    return (sell.isSellOrder &&
+      !buy.isSellOrder &&
+      sell.execParams[0] == buy.execParams[0] &&
+      sell.signer != buy.signer &&
+      currenciesMatch &&
+      isOrderValid(sell, sellOrderHash) &&
+      isOrderValid(buy, buyOrderHash));
+  }
+
+  /**
    * @notice Verifies the validity of the order
-   * @dev checks whether order nonce was cancelled or already executed, 
-          if signature is valid and if the complication and currency are valid
+   * @dev checks if signature is valid and if the complication and currency are valid
    * @param order the order
    * @param orderHash computed hash of the order
+   * @return whether the order is valid
    */
   function isOrderValid(OrderTypes.MakerOrder calldata order, bytes32 orderHash) public view returns (bool) {
     // Verify the validity of the signature
@@ -395,7 +409,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     return (sigValid && order.execParams[0] == address(this) && _currencies.contains(order.execParams[1]));
   }
 
-  /// @dev checks whether the orders are active and not expired
+  /// @dev checks whether the orders are expired
   function isTimeValid(OrderTypes.MakerOrder calldata sell, OrderTypes.MakerOrder calldata buy)
     public
     view
@@ -419,7 +433,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /// @dev sanity check to make sure the constructed nfts conform to the user signed constraints
-  function areNumItemsValid(
+  function areNumMatchItemsValid(
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
     OrderTypes.OrderItem[] calldata constructedNfts
@@ -435,7 +449,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /// @dev sanity check to make sure that a taker is specifying the right number of items
-  function areTakerNumItemsValid(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
+  function areNumTakerItemsValid(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
     public
     pure
     returns (bool)
@@ -470,7 +484,6 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     }
 
     uint256 numCollsMatched;
-    // check if taker has all items in maker
     unchecked {
       for (uint256 i; i < order2NftsLength; ) {
         for (uint256 j; j < order1NftsLength; ) {
@@ -611,15 +624,21 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     }
   }
 
+  // ======================================================= OWNER FUNCTIONS ============================================================
+
   /// @dev adds a new transaction currency to the exchange
   function addCurrency(address _currency) external onlyOwner {
     _currencies.add(_currency);
+    emit CurrencyAdded(_currency);
   }
 
   /// @dev removes a transaction currency from the exchange
   function removeCurrency(address _currency) external onlyOwner {
     _currencies.remove(_currency);
+    emit CurrencyRemoved(_currency);
   }
+
+  // ======================================================= VIEW FUNCTIONS ============================================================
 
   /// @notice returns the number of currencies supported by the exchange
   function numCurrencies() external view returns (uint256) {

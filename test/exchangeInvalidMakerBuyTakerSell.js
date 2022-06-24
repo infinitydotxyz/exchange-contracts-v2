@@ -855,7 +855,7 @@ describe('Exchange_Invalid_Maker_Buy_Taker_Sell', function () {
 
       // perform exchange
       await expect(infinityExchange.connect(signer2).takeOrders([buyOrder], [sellOrder.nfts])).to.be.revertedWith(
-        'cannot execute'
+        'invalid maker order'
       );
 
       // owners after sale
