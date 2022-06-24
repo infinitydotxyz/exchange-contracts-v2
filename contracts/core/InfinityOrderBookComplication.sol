@@ -42,7 +42,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     DOMAIN_SEPARATOR = keccak256(
       abi.encode(
         keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-        keccak256('InfinityExchange'),
+        keccak256('InfinityComplication'),
         keccak256(bytes('1')), // for versionId = 1
         block.chainid,
         address(this)
@@ -514,9 +514,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     unchecked {
       for (uint256 k; k < item2TokensLength; ) {
         for (uint256 l; l < item1TokensLength; ) {
-          if (
-            item1.tokens[l].tokenId == item2.tokens[k].tokenId && item1.tokens[l].numTokens == item2.tokens[k].numTokens
-          ) {
+          if (item1.tokens[l].tokenId == item2.tokens[k].tokenId) {
             // increment numTokenIdsPerCollMatched
             ++numTokenIdsPerCollMatched;
             // short circuit

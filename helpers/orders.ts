@@ -299,7 +299,7 @@ export async function signOBOrder(
   signer: JsonRpcSigner
 ): Promise<SignedOBOrder | undefined> {
   const domain = {
-    name: 'InfinityExchange',
+    name: 'InfinityComplication',
     version: '1',
     chainId: chainId,
     verifyingContract: verifyingContractAddress
@@ -364,7 +364,7 @@ export async function signFormattedOrder(
   signer: JsonRpcSigner
 ): Promise<string> {
   const domain = {
-    name: 'InfinityExchange',
+    name: 'InfinityComplication',
     version: '1',
     chainId: chainId,
     verifyingContract: contractAddress
