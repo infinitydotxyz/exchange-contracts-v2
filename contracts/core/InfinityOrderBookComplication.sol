@@ -19,8 +19,8 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   using EnumerableSet for EnumerableSet.AddressSet;
   uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
 
-  /// @dev WETH address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
-  address public immutable WETH;
+  /// @dev WETH address of the chain being used
+  address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
   // keccak256('Order(bool isSellOrder,address signer,uint256[] constraints,OrderItem[] nfts,address[] execParams,bytes extraParams)OrderItem(address collection,TokenInfo[] tokens)TokenInfo(uint256 tokenId,uint256 numTokens)')
   bytes32 public constant ORDER_HASH = 0x7bcfb5a29031e6b8d34ca1a14dd0a1f5cb11b20f755bb2a31ee3c4b143477e4a;
@@ -40,10 +40,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   event CurrencyAdded(address currency);
   event CurrencyRemoved(address currency);
 
-  /**
-    @param _weth address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
-   */
-  constructor(address _weth) {
+  constructor() {
     // Calculate the domain separator
     DOMAIN_SEPARATOR = keccak256(
       abi.encode(
@@ -55,10 +52,8 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
       )
     );
 
-    WETH = _weth;
-
     // add default currencies
-    _currencies.add(_weth);
+    _currencies.add(WETH);
     _currencies.add(address(0)); // ETH
   }
 
