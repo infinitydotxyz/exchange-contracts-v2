@@ -135,8 +135,7 @@ task('deployInfinityOrderBookComplication', 'Deploy')
     const obComplication = await deployContract(
       'InfinityOrderBookComplication',
       await ethers.getContractFactory('InfinityOrderBookComplication'),
-      signer1,
-      [args.wethaddress]
+      signer1
     );
 
     // verify source
@@ -145,8 +144,7 @@ task('deployInfinityOrderBookComplication', 'Deploy')
       await obComplication.deployTransaction.wait(5);
       await run('verify:verify', {
         address: obComplication.address,
-        contract: 'contracts/core/InfinityOrderBookComplication.sol:InfinityOrderBookComplication',
-        constructorArguments: [args.wethaddress]
+        contract: 'contracts/core/InfinityOrderBookComplication.sol:InfinityOrderBookComplication'
       });
     }
     return obComplication;
