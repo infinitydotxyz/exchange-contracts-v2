@@ -66,11 +66,12 @@ task('deployAll', 'Deploy all contracts')
 
 task('deployInfinityToken', 'Deploy Infinity token contract')
   .addFlag('verify', 'verify contracts on etherscan')
+  .addParam('admin', 'admin address')
   .setAction(async (args, { ethers, run }) => {
     const signer1 = (await ethers.getSigners())[0];
 
     const tokenArgs = [
-      signer1.address,
+      args.admin,
       INFLATION.toString(),
       EPOCH_DURATION.toString(),
       CLIFF_PERIOD.toString(),
