@@ -20,7 +20,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
 
   /// @dev WETH address of the chain being used
-  address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address public constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
 
   // keccak256('Order(bool isSellOrder,address signer,uint256[] constraints,OrderItem[] nfts,address[] execParams,bytes extraParams)OrderItem(address collection,TokenInfo[] tokens)TokenInfo(uint256 tokenId,uint256 numTokens)')
   bytes32 public constant ORDER_HASH = 0x7bcfb5a29031e6b8d34ca1a14dd0a1f5cb11b20f755bb2a31ee3c4b143477e4a;
