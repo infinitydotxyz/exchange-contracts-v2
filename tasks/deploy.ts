@@ -129,7 +129,6 @@ task('deployInfinityExchange', 'Deploy')
 
 task('deployInfinityOrderBookComplication', 'Deploy')
   .addFlag('verify', 'verify contracts on etherscan')
-  .addParam('wethaddress', 'weth address')
   .setAction(async (args, { ethers, run, network }) => {
     const signer1 = (await ethers.getSigners())[0];
     const obComplication = await deployContract(
