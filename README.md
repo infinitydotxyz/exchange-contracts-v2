@@ -30,7 +30,8 @@ Contracts are designed to be extensible. The main contract is `InfinityExchange.
 - [InfinityExchange.sol](./contracts/core/InfinityExchange.sol) - main contract that stores state and has user approvals for spending assets
 - [InfinityOrderBookComplication.sol](./contracts/core/InfinityOrderBookComplication.sol) - our first complication that helps execute the order types listed above
 
-![Contracts graph](./static/exchangeContractGraph.svg?sanitize-true)
+![Exchange graph](./static/contractGraphExchange.svg?sanitize-true)
+![OB Complication graph](./static/contractGraphOBComplication.svg?sanitize-true)
 
 # Staking and Token contracts
 
