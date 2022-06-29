@@ -1,0 +1,538 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1006pt" height="1218pt" viewBox="0.00 0.00 1005.63 1218.00">
+<g id="graph0" class="graph" transform="translate(4,1214) scale(1)" data-name="G">
+
+<polygon fill="#2e3e56" stroke="transparent" points="-4,4 -4,-1214 1001.63,-1214 1001.63,4 -4,4" style=""/>
+<g id="clust1" class="cluster" data-name="clusterInfinityOrderBookComplication">
+
+<path fill="#445773" stroke="#445773" d="M20,-394C20,-394 970.34,-394 970.34,-394 976.34,-394 982.34,-400 982.34,-406 982.34,-406 982.34,-1053 982.34,-1053 982.34,-1059 976.34,-1065 970.34,-1065 970.34,-1065 20,-1065 20,-1065 14,-1065 8,-1059 8,-1053 8,-1053 8,-406 8,-406 8,-400 14,-394 20,-394" style=""/>
+<text text-anchor="middle" x="495.17" y="-1048.4" font-family="Times,serif" font-size="14.00" fill="#f0f0f0" style="">InfinityOrderBookComplication</text>
+</g>
+<g id="clust2" class="cluster" data-name="clusterEnumerableSet.AddressSet">
+
+<path fill="#3b4b63" stroke="#e8726d" stroke-dasharray="5,2" d="M841.2,-8C841.2,-8 985.63,-8 985.63,-8 991.63,-8 997.63,-14 997.63,-20 997.63,-20 997.63,-289 997.63,-289 997.63,-295 991.63,-301 985.63,-301 985.63,-301 841.2,-301 841.2,-301 835.2,-301 829.2,-295 829.2,-289 829.2,-289 829.2,-20 829.2,-20 829.2,-14 835.2,-8 841.2,-8" style=""/>
+<text text-anchor="middle" x="913.42" y="-284.4" font-family="Times,serif" font-size="14.00" fill="#f0f0f0" style="">EnumerableSet.AddressSet</text>
+</g>
+<g id="clust3" class="cluster" data-name="clusterSignatureChecker">
+
+<path fill="#3b4b63" stroke="#e8726d" stroke-dasharray="5,2" d="M867.32,-309C867.32,-309 959.51,-309 959.51,-309 965.51,-309 971.51,-315 971.51,-321 971.51,-321 971.51,-374 971.51,-374 971.51,-380 965.51,-386 959.51,-386 959.51,-386 867.32,-386 867.32,-386 861.32,-386 855.32,-380 855.32,-374 855.32,-374 855.32,-321 855.32,-321 855.32,-315 861.32,-309 867.32,-309" style=""/>
+<text text-anchor="middle" x="913.42" y="-369.4" font-family="Times,serif" font-size="14.00" fill="#f0f0f0" style="">SignatureChecker</text>
+</g>
+<g id="clust4" class="cluster" data-name="cluster_01">
+
+<polygon fill="#2e3e56" stroke="black" points="77.39,-1073 77.39,-1202 483.73,-1202 483.73,-1073 77.39,-1073" style=""/>
+<text text-anchor="middle" x="280.56" y="-1185.4" font-family="Times,serif" font-size="14.00" style="">Legend</text>
+</g>
+<!-- InfinityOrderBookComplication.&lt;Constructor&gt; -->
+<g id="node1" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.&lt;Constructor&gt;">
+
+<ellipse fill="#ff9797" stroke="#ff9797" stroke-width="3" cx="150.39" cy="-636" rx="67.55" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-631.8" font-family="Times,serif" font-size="14.00" style="">&lt;Constructor&gt;</text>
+</g>
+<!-- EnumerableSet.AddressSet.add -->
+<g id="node27" class="node" pointer-events="visible" data-name="EnumerableSet.AddressSet.add">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-196" rx="27" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-191.8" font-family="Times,serif" font-size="14.00" style="">add</text>
+</g>
+<!-- InfinityOrderBookComplication.&lt;Constructor&gt;&#45;&gt;EnumerableSet.AddressSet.add -->
+<g id="edge1" class="edge" data-name="InfinityOrderBookComplication.&lt;Constructor&gt;-&gt;EnumerableSet.AddressSet.add">
+
+<path fill="none" stroke="white" stroke-width="2" d="M213.69,-629.65C238.98,-626.37 266.49,-618.8 284.78,-600 349.89,-533.07 260.16,-464.03 320.78,-393 329.79,-382.44 780.64,-236.24 793.49,-231 809.77,-224.36 812.87,-220.5 829.2,-214 844.45,-207.93 861.65,-202.17 876.44,-198.22" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="877.38,-201.6 886.24,-195.79 875.69,-194.8 877.38,-201.6" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.&lt;Constructor&gt;&#45;&gt;EnumerableSet.AddressSet.add -->
+<g id="edge2" class="edge" data-name="InfinityOrderBookComplication.&lt;Constructor&gt;-&gt;EnumerableSet.AddressSet.add">
+
+<path fill="none" stroke="white" stroke-width="2" d="M205.25,-646.59C232.67,-645.93 264.43,-638.92 284.78,-618 349.89,-551.07 260.16,-482.03 320.78,-411 329.79,-400.44 780.64,-254.24 793.49,-249 809.77,-242.36 812.87,-238.5 829.2,-232 847.19,-224.83 867.91,-218.11 884.17,-212.05" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="885.61,-215.25 893.66,-208.36 883.07,-208.72 885.61,-215.25" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne -->
+<g id="node2" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.canExecMatchOneToOne">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-960" rx="111.12" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-955.8" font-family="Times,serif" font-size="14.00" style="">canExecMatchOneToOne</text>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToOneOrders -->
+<g id="node7" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.verifyMatchOneToOneOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-792" rx="127.9" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-787.8" font-family="Times,serif" font-size="14.00" style="">verifyMatchOneToOneOrders</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication.verifyMatchOneToOneOrders -->
+<g id="edge5" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication.verifyMatchOneToOneOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M251.08,-952.27C263.45,-947.89 275.11,-941.69 284.78,-933 324.29,-897.48 281.44,-854.72 320.78,-819 325.82,-814.42 331.44,-810.55 337.44,-807.27" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="338.99,-810.41 346.47,-802.9 335.94,-804.11 338.99,-810.41" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.doItemsIntersect -->
+<g id="node15" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.doItemsIntersect">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-846" rx="75.28" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-841.8" font-family="Times,serif" font-size="14.00" style="">doItemsIntersect</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication.doItemsIntersect -->
+<g id="edge8" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication.doItemsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M245.94,-950.64C259.7,-946.56 273.14,-940.89 284.78,-933 308.96,-916.61 296.98,-894.95 320.78,-878 335.17,-867.75 352.53,-860.77 369.72,-856.02" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="370.96,-859.32 379.8,-853.48 369.25,-852.53 370.96,-859.32" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._hash -->
+<g id="node17" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication._hash">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-576" rx="33.63" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-571.8" font-family="Times,serif" font-size="14.00" style="">_hash</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge3" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M239.91,-949.26C256.87,-944.62 272.99,-936.91 284.78,-924 384.25,-815.04 221.85,-703.45 320.78,-594 342.85,-569.58 381.06,-564.24 409.81,-565.82" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="409.66,-569.32 419.92,-566.7 410.26,-562.35 409.66,-569.32" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge4" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M261.79,-958.96C270.39,-954.71 278.25,-949.15 284.78,-942 384.25,-833.04 221.85,-721.45 320.78,-612 341.84,-588.7 377.6,-582.77 405.81,-580.75" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="406.04,-584.24 415.82,-580.15 405.63,-577.25 406.04,-584.24" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._getCurrentPrice -->
+<g id="node21" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication._getCurrentPrice">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="703.08" cy="-957" rx="77.01" ry="18" style=""/>
+<text text-anchor="middle" x="703.08" y="-952.8" font-family="Times,serif" font-size="14.00" style="">_getCurrentPrice</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge6" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M255.62,-954.01C360.72,-951.54 520.94,-950.8 618.15,-952.44" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="618.17,-955.94 628.23,-952.62 618.3,-948.94 618.17,-955.94" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToOne&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge7" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToOne-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M257.57,-964.88C363.07,-966.17 522.67,-965.15 619.18,-962.44" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="619.29,-965.94 629.19,-962.15 619.09,-958.95 619.29,-965.94" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany -->
+<g id="node3" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.canExecMatchOneToMany">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-1014" rx="117.51" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-1009.8" font-family="Times,serif" font-size="14.00" style="">canExecMatchOneToMany</text>
+</g>
+<!-- InfinityOrderBookComplication.isOrderValid -->
+<g id="node10" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.isOrderValid">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="703.08" cy="-530" rx="61.41" ry="18" style=""/>
+<text text-anchor="middle" x="703.08" y="-525.8" font-family="Times,serif" font-size="14.00" style="">isOrderValid</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge10" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToMany-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M252.64,-1005.01C264.33,-1000.76 275.4,-994.94 284.78,-987 318.93,-958.1 284.94,-919.77 320.78,-893 366.48,-858.87 535.63,-912.61 576.67,-873 678.38,-774.83 522.1,-665.52 612.67,-557 618.92,-549.52 627.16,-544.06 636.12,-540.09" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="637.55,-543.29 645.66,-536.47 635.07,-536.74 637.55,-543.29" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany&#45;&gt;InfinityOrderBookComplication.doItemsIntersect -->
+<g id="edge11" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToMany-&gt;InfinityOrderBookComplication.doItemsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M253.67,-1005.17C265.05,-1000.88 275.76,-995 284.78,-987 322.94,-953.14 283.43,-912.75 320.78,-878 333.44,-866.22 349.78,-858.62 366.5,-853.75" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="367.57,-857.09 376.37,-851.19 365.81,-850.31 367.57,-857.09" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge9" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToMany-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M257.13,-1006.34C267.57,-1001.78 277.12,-995.52 284.78,-987 342.08,-923.26 263.79,-667.02 320.78,-603 341.59,-579.62 377.21,-573.66 405.43,-573.11" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="405.44,-576.61 415.45,-573.12 405.45,-569.61 405.44,-576.61" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._sumCurrentPrices -->
+<g id="node20" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication._sumCurrentPrices">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-1014" rx="85.12" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-1009.8" font-family="Times,serif" font-size="14.00" style="">_sumCurrentPrices</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany&#45;&gt;InfinityOrderBookComplication._sumCurrentPrices -->
+<g id="edge13" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToMany-&gt;InfinityOrderBookComplication._sumCurrentPrices">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M268.51,-1014C296.63,-1014 326.3,-1014 353.24,-1014" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="353.43,-1017.5 363.43,-1014 353.43,-1010.5 353.43,-1017.5" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOneToMany&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge12" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOneToMany-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M228.37,-1000.4C257.27,-995.65 290.47,-990.6 320.78,-987 422.54,-974.91 540.17,-966.49 617.57,-961.72" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="617.97,-965.2 627.74,-961.09 617.55,-958.21 617.97,-965.2" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder -->
+<g id="node4" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.canExecMatchOrder">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-906" rx="90.86" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-901.8" font-family="Times,serif" font-size="14.00" style="">canExecMatchOrder</text>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOrders -->
+<g id="node9" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.verifyMatchOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-738" rx="85.09" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-733.8" font-family="Times,serif" font-size="14.00" style="">verifyMatchOrders</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.verifyMatchOrders -->
+<g id="edge16" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.verifyMatchOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M239.11,-901.92C255.82,-897.58 272.04,-890.45 284.78,-879 324.29,-843.48 281.44,-800.72 320.78,-765 330.75,-755.95 342.98,-749.65 355.88,-745.31" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="357.25,-748.56 365.84,-742.37 355.26,-741.85 357.25,-748.56" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.isTimeValid -->
+<g id="node11" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.isTimeValid">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-684" rx="59.12" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-679.8" font-family="Times,serif" font-size="14.00" style="">isTimeValid</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.isTimeValid -->
+<g id="edge18" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.isTimeValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M239.97,-902.83C256.62,-898.43 272.6,-891.04 284.78,-879 339.08,-825.31 266.74,-764.95 320.78,-711 336.19,-695.61 358.07,-687.99 379.34,-684.47" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="379.93,-687.92 389.36,-683.09 378.98,-680.99 379.93,-687.92" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.isPriceValid -->
+<g id="node12" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.isPriceValid">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-920" rx="58.55" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-915.8" font-family="Times,serif" font-size="14.00" style="">isPriceValid</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.isPriceValid -->
+<g id="edge17" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.isPriceValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M239.1,-910.14C284.19,-912.27 338.3,-914.83 380.11,-916.81" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="380.04,-920.31 390.19,-917.28 380.37,-913.31 380.04,-920.31" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.areNumMatchItemsValid -->
+<g id="node13" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.areNumMatchItemsValid">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-630" rx="109.94" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-625.8" font-family="Times,serif" font-size="14.00" style="">areNumMatchItemsValid</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.areNumMatchItemsValid -->
+<g id="edge19" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.areNumMatchItemsValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M240.44,-903.3C257.06,-898.87 272.9,-891.35 284.78,-879 354.07,-806.96 251.84,-729.38 320.78,-657 326.46,-651.03 333.11,-646.22 340.33,-642.35" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="342.18,-645.35 349.76,-637.95 339.22,-639.01 342.18,-645.35" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.doItemsIntersect -->
+<g id="edge20" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.doItemsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M192.25,-890.02C218.65,-883.39 253.75,-876.28 284.78,-870 311.62,-864.57 340.95,-858.63 367.23,-853.76" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="367.93,-857.19 377.14,-851.95 366.68,-850.3 367.93,-857.19" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication.doItemsIntersect -->
+<g id="edge21" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication.doItemsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M232.86,-898.31C250.01,-895.04 267.99,-891.4 284.78,-888 322.81,-880.3 365.84,-871.58 398.13,-863.74" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="399.36,-867.04 408.21,-861.23 397.66,-860.25 399.36,-867.04" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge14" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M230.36,-897.32C250.64,-893.06 270.68,-885.12 284.78,-870 369.14,-779.52 236.87,-684.9 320.78,-594 343.03,-569.89 381.05,-564.47 409.69,-565.94" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="409.52,-569.44 419.77,-566.77 410.09,-562.46 409.52,-569.44" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecMatchOrder&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge15" class="edge" data-name="InfinityOrderBookComplication.canExecMatchOrder-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M230.36,-914.6C250.64,-911.06 270.68,-903.12 284.78,-888 369.14,-797.52 236.87,-702.9 320.78,-612 342.08,-588.92 377.82,-582.97 405.96,-580.89" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="406.18,-584.38 415.94,-580.27 405.74,-577.39 406.18,-584.38" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOneOrder -->
+<g id="node5" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.canExecTakeOneOrder">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-852" rx="101.79" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-847.8" font-family="Times,serif" font-size="14.00" style="">canExecTakeOneOrder</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOneOrder&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge23" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOneOrder-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M248.56,-847.22C262.23,-842.59 274.95,-835.54 284.78,-825 369.14,-734.52 229.88,-632.91 320.78,-549 331.98,-538.66 524.19,-533.36 631.33,-531.21" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="631.5,-534.7 641.42,-531.01 631.36,-527.71 631.5,-534.7" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOneOrder&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge22" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOneOrder-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M248.28,-846.95C261.98,-842.36 274.79,-835.39 284.78,-825 354.07,-752.96 251.84,-675.38 320.78,-603 342.14,-580.57 377.15,-574.45 405,-573.58" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="405.32,-577.08 415.28,-573.48 405.25,-570.08 405.32,-577.08" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOrder -->
+<g id="node6" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.canExecTakeOrder">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-798" rx="85.61" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-793.8" font-family="Times,serif" font-size="14.00" style="">canExecTakeOrder</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOrder&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge25" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOrder-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M235.7,-796.59C254.05,-792.36 271.82,-784.6 284.78,-771 358.25,-693.84 240.35,-603.87 320.78,-534 343.66,-514.12 528.97,-520.64 632.58,-525.96" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="632.48,-529.46 642.65,-526.48 632.85,-522.47 632.48,-529.46" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.areNumTakerItemsValid -->
+<g id="node14" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.areNumTakerItemsValid">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="448.73" cy="-482" rx="107.63" ry="18" style=""/>
+<text text-anchor="middle" x="448.73" y="-477.8" font-family="Times,serif" font-size="14.00" style="">areNumTakerItemsValid</text>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOrder&#45;&gt;InfinityOrderBookComplication.areNumTakerItemsValid -->
+<g id="edge26" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOrder-&gt;InfinityOrderBookComplication.areNumTakerItemsValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M235.82,-796.7C254.16,-792.46 271.9,-784.68 284.78,-771 363.83,-687.01 243.73,-599.83 320.78,-514 327.91,-506.05 336.7,-499.95 346.3,-495.27" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="347.93,-498.38 355.73,-491.21 345.16,-491.95 347.93,-498.38" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOrder&#45;&gt;InfinityOrderBookComplication.doItemsIntersect -->
+<g id="edge27" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOrder-&gt;InfinityOrderBookComplication.doItemsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M218.63,-808.89C265.5,-816.48 327.96,-826.6 375.82,-834.35" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="375.37,-837.83 385.8,-835.97 376.49,-830.92 375.37,-837.83" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.canExecTakeOrder&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge24" class="edge" data-name="InfinityOrderBookComplication.canExecTakeOrder-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M235.47,-795.95C253.72,-791.72 271.5,-784.12 284.78,-771 339.08,-717.31 266.74,-656.95 320.78,-603 342.62,-581.19 377.44,-574.99 405.09,-573.94" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="405.36,-577.44 415.3,-573.77 405.24,-570.44 405.36,-577.44" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToOneOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge28" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToOneOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M537.04,-778.83C551.9,-774.22 565.97,-767.12 576.67,-756 641.73,-688.41 550.5,-618.26 612.67,-548 618.04,-541.94 624.71,-537.21 631.98,-533.6" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="633.59,-536.72 641.44,-529.61 630.87,-530.27 633.59,-536.72" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToOneOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge29" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToOneOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M564.3,-784.26C568.76,-781.3 572.92,-777.9 576.67,-774 641.73,-706.41 550.5,-636.26 612.67,-566 621.66,-555.84 634.33,-549.44 647.31,-545.11" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="648.64,-548.36 657.24,-542.17 646.65,-541.65 648.64,-548.36" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToManyOrders -->
+<g id="node8" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.verifyMatchOneToManyOrders">
+
+<ellipse fill="#ff9797" stroke="#ff9797" stroke-width="3" cx="150.39" cy="-744" rx="134.28" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-739.8" font-family="Times,serif" font-size="14.00" style="">verifyMatchOneToManyOrders</text>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToManyOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge31" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToManyOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M245.79,-731.18C260.49,-726.45 274.27,-719.2 284.78,-708 365.22,-622.3 232.19,-523.25 320.78,-446 363.64,-408.63 521.86,-430.86 576.67,-446 616.88,-457.1 657.17,-484.88 680.85,-505.72" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="678.49,-508.3 688.22,-512.49 683.22,-503.14 678.49,-508.3" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToManyOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge33" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToManyOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M272.5,-736.45C276.93,-733.43 281.06,-729.96 284.78,-726 365.22,-640.3 232.19,-541.25 320.78,-464 363.64,-426.63 521.86,-448.86 576.67,-464 609.12,-472.96 641.63,-492.79 665.41,-508.55" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="663.51,-511.49 673.77,-514.15 667.41,-505.67 663.51,-511.49" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToManyOrders&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge30" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToManyOrders-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M240.83,-730.65C256.93,-726.09 272.48,-719.06 284.78,-708 324.29,-672.48 281.44,-629.72 320.78,-594 344.52,-572.44 381.1,-566.51 408.9,-567.04" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="408.93,-570.54 419.08,-567.54 409.27,-563.55 408.93,-570.54" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOneToManyOrders&#45;&gt;InfinityOrderBookComplication._hash -->
+<g id="edge32" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOneToManyOrders-&gt;InfinityOrderBookComplication._hash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M271.09,-736C275.96,-733.11 280.56,-729.79 284.78,-726 324.29,-690.48 281.44,-647.72 320.78,-612 343.78,-591.11 378.83,-584.89 406.28,-582.19" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="406.73,-585.67 416.39,-581.31 406.12,-578.7 406.73,-585.67" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge34" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M520.71,-728.31C541.09,-724.16 561.79,-716.59 576.67,-702 626.87,-652.8 564.58,-599.26 612.67,-548 618.13,-542.18 624.8,-537.6 632.01,-534.06" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="633.51,-537.23 641.37,-530.12 630.8,-530.77 633.51,-537.23" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.verifyMatchOrders&#45;&gt;InfinityOrderBookComplication.isOrderValid -->
+<g id="edge35" class="edge" data-name="InfinityOrderBookComplication.verifyMatchOrders-&gt;InfinityOrderBookComplication.isOrderValid">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M529.31,-743.81C546.79,-739.89 563.88,-732.54 576.67,-720 626.87,-670.8 564.58,-617.26 612.67,-566 622.14,-555.91 635.22,-549.55 648.46,-545.22" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="649.47,-548.57 658.08,-542.4 647.5,-541.85 649.47,-548.57" style=""/>
+</g>
+<!-- EnumerableSet.AddressSet.contains -->
+<g id="node28" class="node" pointer-events="visible" data-name="EnumerableSet.AddressSet.contains">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-250" rx="43.44" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-245.8" font-family="Times,serif" font-size="14.00" style="">contains</text>
+</g>
+<!-- InfinityOrderBookComplication.isOrderValid&#45;&gt;EnumerableSet.AddressSet.contains -->
+<g id="edge37" class="edge" data-name="InfinityOrderBookComplication.isOrderValid-&gt;EnumerableSet.AddressSet.contains">
+
+<path fill="none" stroke="white" stroke-width="2" d="M724.03,-512.82C744.31,-494.31 775.28,-463.04 793.49,-430 821.39,-379.4 795.04,-351.6 829.2,-305 840.58,-289.47 857.77,-277.06 873.58,-267.98" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="875.57,-270.88 882.67,-263.02 872.22,-264.74 875.57,-270.88" style=""/>
+</g>
+<!-- SignatureChecker.verify -->
+<g id="node32" class="node" pointer-events="visible" data-name="SignatureChecker.verify">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-335" rx="34.19" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-330.8" font-family="Times,serif" font-size="14.00" style="">verify</text>
+</g>
+<!-- InfinityOrderBookComplication.isOrderValid&#45;&gt;SignatureChecker.verify -->
+<g id="edge36" class="edge" data-name="InfinityOrderBookComplication.isOrderValid-&gt;SignatureChecker.verify">
+
+<path fill="none" stroke="white" stroke-width="2" d="M719.59,-512.66C737.43,-492.72 767.58,-459 793.49,-430 809.37,-412.23 811.17,-405.59 829.2,-390 845.11,-376.24 864.67,-363.15 880.82,-353.2" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="882.66,-356.18 889.4,-348 879.03,-350.19 882.66,-356.18" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.isPriceValid&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge38" class="edge" data-name="InfinityOrderBookComplication.isPriceValid-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M506.99,-922.64C546.67,-927.18 599.47,-934.88 640.13,-942.01" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="639.74,-945.5 650.2,-943.81 640.97,-938.61 639.74,-945.5" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.isPriceValid&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge39" class="edge" data-name="InfinityOrderBookComplication.isPriceValid-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M493.68,-931.71C527.99,-938.21 576.67,-945.73 618.35,-951.12" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="618.15,-954.62 628.51,-952.41 619.03,-947.68 618.15,-954.62" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.doTokenIdsIntersect -->
+<g id="node16" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.doTokenIdsIntersect">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="703.08" cy="-846" rx="90.32" ry="18" style=""/>
+<text text-anchor="middle" x="703.08" y="-841.8" font-family="Times,serif" font-size="14.00" style="">doTokenIdsIntersect</text>
+</g>
+<!-- InfinityOrderBookComplication.doItemsIntersect&#45;&gt;InfinityOrderBookComplication.doTokenIdsIntersect -->
+<g id="edge40" class="edge" data-name="InfinityOrderBookComplication.doItemsIntersect-&gt;InfinityOrderBookComplication.doTokenIdsIntersect">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M524.42,-846C548.8,-846 576.27,-846 602.19,-846" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="602.42,-849.5 612.42,-846 602.42,-842.5 602.42,-849.5" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._nftsHash -->
+<g id="node18" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication._nftsHash">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="703.08" cy="-584" rx="50.4" ry="18" style=""/>
+<text text-anchor="middle" x="703.08" y="-579.8" font-family="Times,serif" font-size="14.00" style="">_nftsHash</text>
+</g>
+<!-- InfinityOrderBookComplication._hash&#45;&gt;InfinityOrderBookComplication._nftsHash -->
+<g id="edge41" class="edge" data-name="InfinityOrderBookComplication._hash-&gt;InfinityOrderBookComplication._nftsHash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M482.46,-577.04C523.01,-578.32 592.85,-580.54 642.89,-582.12" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="642.83,-585.62 652.94,-582.44 643.05,-578.63 642.83,-585.62" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._tokensHash -->
+<g id="node19" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication._tokensHash">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-584" rx="60.85" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-579.8" font-family="Times,serif" font-size="14.00" style="">_tokensHash</text>
+</g>
+<!-- InfinityOrderBookComplication._nftsHash&#45;&gt;InfinityOrderBookComplication._tokensHash -->
+<g id="edge42" class="edge" data-name="InfinityOrderBookComplication._nftsHash-&gt;InfinityOrderBookComplication._tokensHash">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M753.45,-584C779.93,-584 813.01,-584 842.13,-584" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="842.25,-587.5 852.25,-584 842.25,-580.5 842.25,-587.5" style=""/>
+</g>
+<!-- InfinityOrderBookComplication._sumCurrentPrices&#45;&gt;InfinityOrderBookComplication._getCurrentPrice -->
+<g id="edge43" class="edge" data-name="InfinityOrderBookComplication._sumCurrentPrices-&gt;InfinityOrderBookComplication._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M507.62,-1000.92C546.26,-992.2 597.11,-980.71 637.13,-971.67" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="638.07,-975.05 647.05,-969.43 636.53,-968.22 638.07,-975.05" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.addCurrency -->
+<g id="node22" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.addCurrency">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-582" rx="60.82" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-577.8" font-family="Times,serif" font-size="14.00" style="">addCurrency</text>
+</g>
+<!-- InfinityOrderBookComplication.addCurrency&#45;&gt;EnumerableSet.AddressSet.add -->
+<g id="edge44" class="edge" data-name="InfinityOrderBookComplication.addCurrency-&gt;EnumerableSet.AddressSet.add">
+
+<path fill="none" stroke="white" stroke-width="2" d="M210.98,-584.19C237.01,-581.92 265.85,-574.49 284.78,-555 350.45,-487.39 256.77,-415.19 320.78,-346 397.89,-262.65 760.52,-213.73 876.59,-200.01" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="877.2,-203.46 886.72,-198.82 876.38,-196.51 877.2,-203.46" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.removeCurrency -->
+<g id="node23" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.removeCurrency">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-528" rx="75.85" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-523.8" font-family="Times,serif" font-size="14.00" style="">removeCurrency</text>
+</g>
+<!-- EnumerableSet.AddressSet.remove -->
+<g id="node29" class="node" pointer-events="visible" data-name="EnumerableSet.AddressSet.remove">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-142" rx="39.99" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-137.8" font-family="Times,serif" font-size="14.00" style="">remove</text>
+</g>
+<!-- InfinityOrderBookComplication.removeCurrency&#45;&gt;EnumerableSet.AddressSet.remove -->
+<g id="edge45" class="edge" data-name="InfinityOrderBookComplication.removeCurrency-&gt;EnumerableSet.AddressSet.remove">
+
+<path fill="none" stroke="white" stroke-width="2" d="M226.43,-528.55C247.98,-524.93 269.71,-516.99 284.78,-501 363.27,-417.7 241.22,-328.29 320.78,-246 395.6,-168.61 734.51,-148.4 862.9,-143.48" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="863.36,-146.97 873.22,-143.1 863.1,-139.97 863.36,-146.97" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.numCurrencies -->
+<g id="node24" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.numCurrencies">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-474" rx="70.07" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-469.8" font-family="Times,serif" font-size="14.00" style="">numCurrencies</text>
+</g>
+<!-- EnumerableSet.AddressSet.length -->
+<g id="node30" class="node" pointer-events="visible" data-name="EnumerableSet.AddressSet.length">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-88" rx="35.35" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-83.8" font-family="Times,serif" font-size="14.00" style="">length</text>
+</g>
+<!-- InfinityOrderBookComplication.numCurrencies&#45;&gt;EnumerableSet.AddressSet.length -->
+<g id="edge46" class="edge" data-name="InfinityOrderBookComplication.numCurrencies-&gt;EnumerableSet.AddressSet.length">
+
+<path fill="none" stroke="white" stroke-width="2" d="M220.31,-475.61C243.86,-472.53 268.37,-464.65 284.78,-447 371.09,-354.12 231.18,-253.71 320.78,-164 397.31,-87.37 743.71,-85.23 867.92,-87.01" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="868.15,-90.51 878.2,-87.17 868.26,-83.51 868.15,-90.51" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.getCurrencyAt -->
+<g id="node25" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.getCurrencyAt">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-420" rx="68.34" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-415.8" font-family="Times,serif" font-size="14.00" style="">getCurrencyAt</text>
+</g>
+<!-- EnumerableSet.AddressSet.at -->
+<g id="node31" class="node" pointer-events="visible" data-name="EnumerableSet.AddressSet.at">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="913.42" cy="-34" rx="27" ry="18" style=""/>
+<text text-anchor="middle" x="913.42" y="-29.8" font-family="Times,serif" font-size="14.00" style="">at</text>
+</g>
+<!-- InfinityOrderBookComplication.getCurrencyAt&#45;&gt;EnumerableSet.AddressSet.at -->
+<g id="edge47" class="edge" data-name="InfinityOrderBookComplication.getCurrencyAt-&gt;EnumerableSet.AddressSet.at">
+
+<path fill="none" stroke="white" stroke-width="2" d="M154.58,-401.89C165.66,-345.06 208.08,-169.46 320.78,-93 499.01,27.92 779.72,-9.07 877.47,-26.9" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="876.94,-30.36 887.41,-28.76 878.23,-23.48 876.94,-30.36" style=""/>
+</g>
+<!-- InfinityOrderBookComplication.isValidCurrency -->
+<g id="node26" class="node" pointer-events="visible" data-name="InfinityOrderBookComplication.isValidCurrency">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="150.39" cy="-690" rx="74.73" ry="18" style=""/>
+<text text-anchor="middle" x="150.39" y="-685.8" font-family="Times,serif" font-size="14.00" style="">isValidCurrency</text>
+</g>
+<!-- InfinityOrderBookComplication.isValidCurrency&#45;&gt;EnumerableSet.AddressSet.contains -->
+<g id="edge48" class="edge" data-name="InfinityOrderBookComplication.isValidCurrency-&gt;EnumerableSet.AddressSet.contains">
+
+<path fill="none" stroke="white" stroke-width="2" d="M225.26,-690.6C247.15,-687.06 269.36,-679.15 284.78,-663 357.13,-587.21 248.17,-505.55 320.78,-430 401.08,-346.45 465.34,-412.16 576.67,-380 687.26,-348.06 812.47,-294.8 874.05,-267.43" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="875.67,-270.53 883.38,-263.26 872.82,-264.14 875.67,-270.53" style=""/>
+</g>
+<!-- key -->
+<g id="node33" class="node" pointer-events="visible" data-name="key">
+
+<polygon fill="#edad56" stroke="transparent" stroke-width="3" points="215.39,-1169 85.39,-1169 85.39,-1081 215.39,-1081 215.39,-1169" style=""/>
+<text text-anchor="start" x="135.03" y="-1150.4" font-family="Times,serif" font-size="14.00" style="">Internal Call</text>
+<text text-anchor="start" x="131.14" y="-1130.4" font-family="Times,serif" font-size="14.00" style="">External Call</text>
+<text text-anchor="start" x="108.59" y="-1110.4" font-family="Times,serif" font-size="14.00" style="">Defined Contract</text>
+<text text-anchor="start" x="94.99" y="-1090.4" font-family="Times,serif" font-size="14.00" style="">Undefined Contract</text>
+</g>
+<!-- key2 -->
+<g id="node34" class="node" pointer-events="visible" data-name="key2">
+
+<polygon fill="#edad56" stroke="transparent" stroke-width="3" points="475.73,-1169 421.73,-1169 421.73,-1081 475.73,-1081 475.73,-1169" style=""/>
+<text text-anchor="start" x="438.73" y="-1150.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<text text-anchor="start" x="438.73" y="-1130.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<polygon fill="#445773" stroke="transparent" points="436.73,-1105 436.73,-1125 461.73,-1125 461.73,-1105 436.73,-1105" style=""/>
+<text text-anchor="start" x="438.73" y="-1110.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<polygon fill="none" stroke="#e8726d" points="438.73,-1087 438.73,-1103 459.73,-1103 459.73,-1087 438.73,-1087" style=""/>
+</g>
+<!-- key&#45;&gt;key2 -->
+<g id="edge49" class="edge" data-name="key-&gt;key2">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M208.39,-1155C305.97,-1155 332.87,-1155 425.62,-1155" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="425.73,-1158.5 435.73,-1155 425.73,-1151.5 425.73,-1158.5" style=""/>
+</g>
+<!-- key&#45;&gt;key2 -->
+<g id="edge50" class="edge" data-name="key-&gt;key2">
+
+<path fill="none" stroke="white" stroke-width="2" d="M208.39,-1135C305.97,-1135 332.87,-1135 425.62,-1135" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="425.73,-1138.5 435.73,-1135 425.73,-1131.5 425.73,-1138.5" style=""/>
+</g>
+</g>
+</svg>
