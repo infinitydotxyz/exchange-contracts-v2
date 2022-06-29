@@ -1,0 +1,720 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2357pt" height="778pt" viewBox="0.00 0.00 2356.67 778.00">
+<g id="graph0" class="graph" transform="translate(4,774) scale(1)" data-name="G">
+
+<polygon fill="#2e3e56" stroke="transparent" points="-4,4 -4,-774 2352.67,-774 2352.67,4 -4,4" style=""/>
+<g id="clust1" class="cluster" data-name="clusterInfinityExchange">
+
+<path fill="#445773" stroke="#445773" d="M20,-8C20,-8 2328.67,-8 2328.67,-8 2334.67,-8 2340.67,-14 2340.67,-20 2340.67,-20 2340.67,-613 2340.67,-613 2340.67,-619 2334.67,-625 2328.67,-625 2328.67,-625 20,-625 20,-625 14,-625 8,-619 8,-613 8,-613 8,-20 8,-20 8,-14 14,-8 20,-8" style=""/>
+<text text-anchor="middle" x="1174.33" y="-608.4" font-family="Times,serif" font-size="14.00" fill="#f0f0f0" style="">InfinityExchange</text>
+</g>
+<g id="clust2" class="cluster" data-name="cluster_01">
+
+<polygon fill="#2e3e56" stroke="black" points="48.41,-633 48.41,-762 408.08,-762 408.08,-633 48.41,-633" style=""/>
+<text text-anchor="middle" x="228.25" y="-745.4" font-family="Times,serif" font-size="14.00" style="">Legend</text>
+</g>
+<!-- InfinityExchange.&lt;Constructor&gt; -->
+<g id="node1" class="node" pointer-events="visible" data-name="InfinityExchange.&lt;Constructor&gt;">
+
+<ellipse fill="#ff9797" stroke="#ff9797" stroke-width="3" cx="121.41" cy="-574" rx="67.55" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-569.8" font-family="Times,serif" font-size="14.00" style="">&lt;Constructor&gt;</text>
+</g>
+<!-- InfinityExchange.matchOneToOneOrders -->
+<g id="node2" class="node" pointer-events="visible" data-name="InfinityExchange.matchOneToOneOrders">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="373.08" cy="-243" rx="103.63" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-238.8" font-family="Times,serif" font-size="14.00" style="">matchOneToOneOrders</text>
+</g>
+<!-- InfinityExchange._matchOneToOneOrders -->
+<g id="node11" class="node" pointer-events="visible" data-name="InfinityExchange._matchOneToOneOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-238" rx="108.79" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-233.8" font-family="Times,serif" font-size="14.00" style="">_matchOneToOneOrders</text>
+</g>
+<!-- InfinityExchange.matchOneToOneOrders&#45;&gt;InfinityExchange._matchOneToOneOrders -->
+<g id="edge1" class="edge" data-name="InfinityExchange.matchOneToOneOrders-&gt;InfinityExchange._matchOneToOneOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M476.56,-241.39C507.89,-240.9 542.59,-240.35 574.83,-239.85" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="575.27,-243.34 585.21,-239.68 575.16,-236.34 575.27,-243.34" style=""/>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders -->
+<g id="node3" class="node" pointer-events="visible" data-name="InfinityExchange.matchOneToManyOrders">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="373.08" cy="-518" rx="110.01" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-513.8" font-family="Times,serif" font-size="14.00" style="">matchOneToManyOrders</text>
+</g>
+<!-- InfinityExchange._matchOneMakerSellToManyMakerBuys -->
+<g id="node12" class="node" pointer-events="visible" data-name="InfinityExchange._matchOneMakerSellToManyMakerBuys">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-500" rx="174.18" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-495.8" font-family="Times,serif" font-size="14.00" style="">_matchOneMakerSellToManyMakerBuys</text>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange._matchOneMakerSellToManyMakerBuys -->
+<g id="edge3" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange._matchOneMakerSellToManyMakerBuys">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M477.44,-512.16C494.21,-511.21 511.93,-510.21 529.7,-509.2" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="530.38,-512.67 540.17,-508.61 529.99,-505.68 530.38,-512.67" style=""/>
+</g>
+<!-- InfinityExchange._matchOneMakerBuyToManyMakerSells -->
+<g id="node13" class="node" pointer-events="visible" data-name="InfinityExchange._matchOneMakerBuyToManyMakerSells">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-446" rx="174.18" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-441.8" font-family="Times,serif" font-size="14.00" style="">_matchOneMakerBuyToManyMakerSells</text>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange._matchOneMakerBuyToManyMakerSells -->
+<g id="edge4" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange._matchOneMakerBuyToManyMakerSells">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M420.71,-501.65C448.97,-492.23 485.9,-480.74 519.34,-473 537.3,-468.84 556.45,-465.14 575.23,-461.91" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="576.03,-465.32 585.32,-460.21 574.87,-458.42 576.03,-465.32" style=""/>
+</g>
+<!-- InfinityExchange.IComplication -->
+<g id="node39" class="node" pointer-events="visible" data-name="InfinityExchange.IComplication">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-338" rx="66.65" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-333.8" font-family="Times,serif" font-size="14.00" style="">IComplication</text>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge2" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M394,-499.93C420.51,-477 469.81,-438.15 519.34,-419 609.65,-384.08 887.86,-356.03 1021.81,-344.15" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1022.33,-347.61 1031.98,-343.25 1021.71,-340.64 1022.33,-347.61" style=""/>
+</g>
+<!-- InfinityExchange.IERC20 -->
+<g id="node40" class="node" pointer-events="visible" data-name="InfinityExchange.IERC20">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1729.54" cy="-497" rx="42.88" ry="18" style=""/>
+<text text-anchor="middle" x="1729.54" y="-492.8" font-family="Times,serif" font-size="14.00" style="">IERC20</text>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge5" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M458.91,-506.64C478.73,-507.33 499.77,-508.39 519.34,-509 861.35,-519.59 947.24,-520.25 1289.23,-509 1431.09,-504.33 1598.25,-490.66 1679.4,-490.36" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1679.79,-493.86 1689.8,-490.4 1679.82,-486.86 1679.79,-493.86" style=""/>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge6" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M474.85,-525.05C489.76,-525.86 504.94,-526.55 519.34,-527 861.35,-537.59 947.24,-538.25 1289.23,-527 1430.09,-522.37 1595.91,-508.85 1677.69,-501.64" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1678.06,-505.13 1687.71,-500.76 1677.44,-498.15 1678.06,-505.13" style=""/>
+</g>
+<!-- InfinityExchange.matchOneToManyOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge7" class="edge" data-name="InfinityExchange.matchOneToManyOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M408.39,-535.07C437.81,-540.92 481.33,-543.82 519.34,-545 861.35,-555.59 947.24,-556.25 1289.23,-545 1436.21,-540.17 1610.35,-525.66 1687.84,-511.11" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1688.56,-514.53 1697.69,-509.15 1687.2,-507.67 1688.56,-514.53" style=""/>
+</g>
+<!-- InfinityExchange.matchOrders -->
+<g id="node4" class="node" pointer-events="visible" data-name="InfinityExchange.matchOrders">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="373.08" cy="-307" rx="60.82" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-302.8" font-family="Times,serif" font-size="14.00" style="">matchOrders</text>
+</g>
+<!-- InfinityExchange._matchOrders -->
+<g id="node14" class="node" pointer-events="visible" data-name="InfinityExchange._matchOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-312" rx="65.98" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-307.8" font-family="Times,serif" font-size="14.00" style="">_matchOrders</text>
+</g>
+<!-- InfinityExchange.matchOrders&#45;&gt;InfinityExchange._matchOrders -->
+<g id="edge8" class="edge" data-name="InfinityExchange.matchOrders-&gt;InfinityExchange._matchOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M433.96,-307.94C485.93,-308.76 561.41,-309.94 617.4,-310.82" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="617.57,-314.32 627.62,-310.98 617.68,-307.33 617.57,-314.32" style=""/>
+</g>
+<!-- InfinityExchange.takeMultipleOneOrders -->
+<g id="node5" class="node" pointer-events="visible" data-name="InfinityExchange.takeMultipleOneOrders">
+
+<ellipse fill="#ffbdb9" stroke="brown" stroke-width="3" cx="373.08" cy="-361" rx="103" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-356.8" font-family="Times,serif" font-size="14.00" style="">takeMultipleOneOrders</text>
+</g>
+<!-- InfinityExchange._execTakeOneOrder -->
+<g id="node22" class="node" pointer-events="visible" data-name="InfinityExchange._execTakeOneOrder">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-184" rx="91.42" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-179.8" font-family="Times,serif" font-size="14.00" style="">_execTakeOneOrder</text>
+</g>
+<!-- InfinityExchange.takeMultipleOneOrders&#45;&gt;InfinityExchange._execTakeOneOrder -->
+<g id="edge11" class="edge" data-name="InfinityExchange.takeMultipleOneOrders-&gt;InfinityExchange._execTakeOneOrder">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M457.13,-350.51C466.8,-346.52 475.86,-341.17 483.34,-334 524.46,-294.59 476.53,-248.58 519.34,-211 540,-192.86 567.65,-184.17 594.78,-180.51" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="595.2,-183.98 604.74,-179.38 594.41,-177.03 595.2,-183.98" style=""/>
+</g>
+<!-- InfinityExchange._getCurrentPrice -->
+<g id="node31" class="node" pointer-events="visible" data-name="InfinityExchange._getCurrentPrice">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-392" rx="77.01" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-387.8" font-family="Times,serif" font-size="14.00" style="">_getCurrentPrice</text>
+</g>
+<!-- InfinityExchange.takeMultipleOneOrders&#45;&gt;InfinityExchange._getCurrentPrice -->
+<g id="edge10" class="edge" data-name="InfinityExchange.takeMultipleOneOrders-&gt;InfinityExchange._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M473.24,-365.26C615.69,-371.38 875.82,-382.56 1010.12,-388.34" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1010.21,-391.84 1020.35,-388.78 1010.51,-384.85 1010.21,-391.84" style=""/>
+</g>
+<!-- InfinityExchange.takeMultipleOneOrders&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge9" class="edge" data-name="InfinityExchange.takeMultipleOneOrders-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M474.38,-357.8C620.42,-353.15 888.43,-344.6 1019.35,-340.42" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1019.8,-343.91 1029.68,-340.09 1019.58,-336.92 1019.8,-343.91" style=""/>
+</g>
+<!-- InfinityExchange.takeOrders -->
+<g id="node6" class="node" pointer-events="visible" data-name="InfinityExchange.takeOrders">
+
+<ellipse fill="#ffbdb9" stroke="brown" stroke-width="3" cx="121.41" cy="-520" rx="53.3" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-515.8" font-family="Times,serif" font-size="14.00" style="">takeOrders</text>
+</g>
+<!-- InfinityExchange._takeOrders -->
+<g id="node23" class="node" pointer-events="visible" data-name="InfinityExchange._takeOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="373.08" cy="-189" rx="58.46" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-184.8" font-family="Times,serif" font-size="14.00" style="">_takeOrders</text>
+</g>
+<!-- InfinityExchange.takeOrders&#45;&gt;InfinityExchange._takeOrders -->
+<g id="edge13" class="edge" data-name="InfinityExchange.takeOrders-&gt;InfinityExchange._takeOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M174.68,-518.33C193.72,-514.99 213.75,-507.81 226.83,-493 309.01,-399.95 180.14,-308.6 262.83,-216 273.71,-203.81 289.15,-196.7 305,-192.66" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="305.85,-196.06 314.88,-190.52 304.37,-189.21 305.85,-196.06" style=""/>
+</g>
+<!-- InfinityExchange.takeOrders&#45;&gt;InfinityExchange._getCurrentPrice -->
+<g id="edge12" class="edge" data-name="InfinityExchange.takeOrders-&gt;InfinityExchange._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M164.52,-509.17C264.85,-483.37 510.39,-420.33 519.34,-419 691.7,-393.3 895.99,-390.07 1009.1,-390.63" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1009.4,-394.13 1019.42,-390.69 1009.44,-387.13 1009.4,-394.13" style=""/>
+</g>
+<!-- InfinityExchange.transferMultipleNFTs -->
+<g id="node7" class="node" pointer-events="visible" data-name="InfinityExchange.transferMultipleNFTs">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="1459.08" cy="-184" rx="95.58" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-179.8" font-family="Times,serif" font-size="14.00" style="">transferMultipleNFTs</text>
+</g>
+<!-- InfinityExchange._transferMultipleNFTs -->
+<g id="node27" class="node" pointer-events="visible" data-name="InfinityExchange._transferMultipleNFTs">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1729.54" cy="-258" rx="100.74" ry="18" style=""/>
+<text text-anchor="middle" x="1729.54" y="-253.8" font-family="Times,serif" font-size="14.00" style="">_transferMultipleNFTs</text>
+</g>
+<!-- InfinityExchange.transferMultipleNFTs&#45;&gt;InfinityExchange._transferMultipleNFTs -->
+<g id="edge14" class="edge" data-name="InfinityExchange.transferMultipleNFTs-&gt;InfinityExchange._transferMultipleNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1521.13,-197.84C1543.76,-203.2 1569.59,-209.58 1592.92,-216 1618.62,-223.06 1646.79,-231.65 1670.78,-239.22" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1669.84,-242.59 1680.43,-242.28 1671.96,-235.92 1669.84,-242.59" style=""/>
+</g>
+<!-- InfinityExchange.cancelAllOrders -->
+<g id="node8" class="node" pointer-events="visible" data-name="InfinityExchange.cancelAllOrders">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-466" rx="74.12" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-461.8" font-family="Times,serif" font-size="14.00" style="">cancelAllOrders</text>
+</g>
+<!-- InfinityExchange.cancelMultipleOrders -->
+<g id="node9" class="node" pointer-events="visible" data-name="InfinityExchange.cancelMultipleOrders">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-412" rx="95.47" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-407.8" font-family="Times,serif" font-size="14.00" style="">cancelMultipleOrders</text>
+</g>
+<!-- InfinityExchange.isNonceValid -->
+<g id="node10" class="node" pointer-events="visible" data-name="InfinityExchange.isNonceValid">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-358" rx="64.27" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-353.8" font-family="Times,serif" font-size="14.00" style="">isNonceValid</text>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders -->
+<g id="node15" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOneToOneOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1459.08" cy="-406" rx="127.31" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-401.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOneToOneOrders</text>
+</g>
+<!-- InfinityExchange._matchOneToOneOrders&#45;&gt;InfinityExchange._execMatchOneToOneOrders -->
+<g id="edge16" class="edge" data-name="InfinityExchange._matchOneToOneOrders-&gt;InfinityExchange._execMatchOneToOneOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M786.73,-228.71C933.58,-215.9 1211.79,-200.34 1289.23,-257 1328.03,-285.39 1291.25,-324.99 1325.23,-359 1338.14,-371.92 1354.83,-381.31 1371.98,-388.11" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1370.94,-391.46 1381.54,-391.64 1373.37,-384.89 1370.94,-391.46" style=""/>
+</g>
+<!-- InfinityExchange._matchOneToOneOrders&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge15" class="edge" data-name="InfinityExchange._matchOneToOneOrders-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M794.07,-244.84C819.2,-249.61 845.33,-257.4 867.52,-270 888.61,-281.98 882.18,-299.48 903.52,-311 938.69,-329.99 982.55,-337.17 1019.45,-339.41" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1019.5,-342.91 1029.66,-339.91 1019.85,-335.92 1019.5,-342.91" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys -->
+<g id="node16" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-500" rx="192.71" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-495.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOneMakerSellToManyMakerBuys</text>
+</g>
+<!-- InfinityExchange._matchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange._execMatchOneMakerSellToManyMakerBuys -->
+<g id="edge18" class="edge" data-name="InfinityExchange._matchOneMakerSellToManyMakerBuys-&gt;InfinityExchange._execMatchOneMakerSellToManyMakerBuys">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M867.67,-500C876.19,-500 884.78,-500 893.38,-500" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="893.47,-503.5 903.47,-500 893.47,-496.5 893.47,-503.5" style=""/>
+</g>
+<!-- InfinityExchange._matchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange._getCurrentPrice -->
+<g id="edge19" class="edge" data-name="InfinityExchange._matchOneMakerSellToManyMakerBuys-&gt;InfinityExchange._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M832.95,-489.22C845.15,-485.1 856.89,-479.8 867.52,-473 891.83,-457.46 879.1,-434.35 903.52,-419 935.01,-399.2 975.09,-391.47 1010.47,-389.07" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1011,-392.55 1020.8,-388.51 1010.62,-385.56 1011,-392.55" style=""/>
+</g>
+<!-- InfinityExchange._matchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge17" class="edge" data-name="InfinityExchange._matchOneMakerSellToManyMakerBuys-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M839.69,-490.11C849.73,-485.68 859.16,-480.07 867.52,-473 906.16,-440.33 864.64,-397.38 903.52,-365 936.69,-337.38 984.82,-330.66 1024.57,-330.84" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1024.68,-334.34 1034.74,-331.03 1024.81,-327.34 1024.68,-334.34" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerBuyToManyMakerSells -->
+<g id="node17" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOneMakerBuyToManyMakerSells">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-446" rx="192.71" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-441.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOneMakerBuyToManyMakerSells</text>
+</g>
+<!-- InfinityExchange._matchOneMakerBuyToManyMakerSells&#45;&gt;InfinityExchange._execMatchOneMakerBuyToManyMakerSells -->
+<g id="edge21" class="edge" data-name="InfinityExchange._matchOneMakerBuyToManyMakerSells-&gt;InfinityExchange._execMatchOneMakerBuyToManyMakerSells">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M867.67,-446C876.19,-446 884.78,-446 893.38,-446" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="893.47,-449.5 903.47,-446 893.47,-442.5 893.47,-449.5" style=""/>
+</g>
+<!-- InfinityExchange._matchOneMakerBuyToManyMakerSells&#45;&gt;InfinityExchange._getCurrentPrice -->
+<g id="edge22" class="edge" data-name="InfinityExchange._matchOneMakerBuyToManyMakerSells-&gt;InfinityExchange._getCurrentPrice">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M800.3,-431.74C869.09,-422.48 957.16,-410.62 1019.11,-402.27" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1019.77,-405.71 1029.21,-400.91 1018.83,-398.78 1019.77,-405.71" style=""/>
+</g>
+<!-- InfinityExchange._matchOneMakerBuyToManyMakerSells&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge20" class="edge" data-name="InfinityExchange._matchOneMakerBuyToManyMakerSells-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M732.1,-428.37C773.3,-409.8 841.74,-381.09 903.52,-365 942.05,-354.97 985.97,-348.44 1022.05,-344.32" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1022.46,-347.8 1032.01,-343.22 1021.69,-340.84 1022.46,-347.8" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrders -->
+<g id="node19" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-284" rx="84.5" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-279.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOrders</text>
+</g>
+<!-- InfinityExchange._matchOrders&#45;&gt;InfinityExchange._execMatchOrders -->
+<g id="edge24" class="edge" data-name="InfinityExchange._matchOrders-&gt;InfinityExchange._execMatchOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M757.52,-307.59C824.18,-302.94 929.9,-295.56 1005.31,-290.29" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1006.01,-293.75 1015.75,-289.56 1005.53,-286.77 1006.01,-293.75" style=""/>
+</g>
+<!-- InfinityExchange._matchOrders&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge23" class="edge" data-name="InfinityExchange._matchOrders-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M757.52,-316.09C828.92,-320.72 945.12,-328.26 1020.91,-333.17" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1021.12,-336.69 1031.33,-333.85 1021.58,-329.71 1021.12,-336.69" style=""/>
+</g>
+<!-- InfinityExchange._emitMatchEvent -->
+<g id="node21" class="node" pointer-events="visible" data-name="InfinityExchange._emitMatchEvent">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1729.54" cy="-341" rx="80.45" ry="18" style=""/>
+<text text-anchor="middle" x="1729.54" y="-336.8" font-family="Times,serif" font-size="14.00" style="">_emitMatchEvent</text>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange._emitMatchEvent -->
+<g id="edge27" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange._emitMatchEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1524.61,-390.49C1546.32,-385.26 1570.67,-379.39 1592.92,-374 1616.31,-368.34 1641.96,-362.1 1664.6,-356.59" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1665.55,-359.96 1674.43,-354.2 1663.89,-353.16 1665.55,-359.96" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange._transferMultipleNFTs -->
+<g id="edge25" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange._transferMultipleNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1526.07,-390.6C1548.6,-383.35 1573.08,-373.11 1592.92,-359 1613.8,-344.16 1609.4,-330.58 1628.92,-314 1644.76,-300.55 1664.32,-288.73 1681.89,-279.46" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1683.58,-282.53 1690.88,-274.85 1680.38,-276.3 1683.58,-282.53" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge26" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1494.24,-388.69C1521.43,-387.86 1560.2,-395.13 1592.92,-406 1638.63,-421.18 1689.09,-447.84 1713.57,-471.65" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1711.22,-474.27 1720.57,-479.26 1716.38,-469.53 1711.22,-474.27" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge28" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1565.48,-416.01C1574.84,-418.4 1584.1,-421.07 1592.92,-424 1632.21,-437.05 1675.02,-458.58 1701.82,-475.18" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1699.95,-478.15 1710.26,-480.6 1703.74,-472.26 1699.95,-478.15" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge29" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1514.5,-422.24C1538.84,-427.37 1567.68,-433.62 1592.92,-442 1625.27,-452.75 1660,-469.24 1686.22,-481.59" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1684.93,-484.85 1695.47,-485.93 1687.91,-478.51 1684.93,-484.85" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToOneOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge30" class="edge" data-name="InfinityExchange._execMatchOneToOneOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1474.33,-424.06C1498.97,-438.03 1550.93,-446.05 1592.92,-460 1621.61,-469.53 1652.16,-483.58 1677,-493.57" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1675.98,-496.93 1686.57,-497.31 1678.53,-490.41 1675.98,-496.93" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToManyOrders -->
+<g id="node18" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOneToManyOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1459.08" cy="-332" rx="133.69" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-327.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOneToManyOrders</text>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange._execMatchOneToManyOrders -->
+<g id="edge31" class="edge" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys-&gt;InfinityExchange._execMatchOneToManyOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1261.09,-490.43C1271.2,-485.84 1280.71,-480.12 1289.23,-473 1328.39,-440.3 1287.7,-398.55 1325.23,-364 1332.29,-357.5 1340.44,-352.26 1349.15,-348.03" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1350.64,-351.2 1358.41,-343.99 1347.84,-344.78 1350.64,-351.2" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange._emitMatchEvent -->
+<g id="edge32" class="edge" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys-&gt;InfinityExchange._emitMatchEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1259.79,-490.37C1270.33,-485.83 1280.28,-480.12 1289.23,-473 1324.23,-445.13 1289.34,-405.71 1325.23,-379 1349.16,-361.19 1563.26,-362.07 1592.92,-359 1611.95,-357.03 1632.42,-354.52 1651.55,-352" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1652.27,-355.43 1661.72,-350.64 1651.35,-348.5 1652.27,-355.43" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge33" class="edge" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1232.52,-487.24C1332.16,-485.39 1470.99,-486.25 1592.92,-484 1625.16,-483.41 1661.68,-482.02 1688.7,-483.6" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1688.68,-487.11 1698.92,-484.4 1689.22,-480.13 1688.68,-487.11" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge34" class="edge" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1287.11,-502.76C1379.4,-503.59 1491.96,-503.86 1592.92,-502 1620.67,-501.49 1651.59,-500.39 1676.89,-499.35" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1677.16,-502.84 1687,-498.93 1676.87,-495.85 1677.16,-502.84" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerSellToManyMakerBuys&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge35" class="edge" data-name="InfinityExchange._execMatchOneMakerSellToManyMakerBuys-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1197.05,-515.36C1297.12,-521.13 1455.72,-522.53 1592.92,-520 1627.18,-519.37 1666.28,-517.84 1693.67,-513.34" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1694.38,-516.77 1703.55,-511.46 1693.08,-509.89 1694.38,-516.77" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerBuyToManyMakerSells&#45;&gt;InfinityExchange._execMatchOneToManyOrders -->
+<g id="edge36" class="edge" data-name="InfinityExchange._execMatchOneMakerBuyToManyMakerSells-&gt;InfinityExchange._execMatchOneToManyOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1254.33,-435.51C1266.62,-431.26 1278.44,-425.85 1289.23,-419 1313.9,-403.34 1301.35,-380.83 1325.23,-364 1334.38,-357.55 1344.67,-352.4 1355.37,-348.27" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1356.6,-351.55 1364.85,-344.91 1354.26,-344.95 1356.6,-351.55" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneMakerBuyToManyMakerSells&#45;&gt;InfinityExchange._emitMatchEvent -->
+<g id="edge37" class="edge" data-name="InfinityExchange._execMatchOneMakerBuyToManyMakerSells-&gt;InfinityExchange._emitMatchEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1261.2,-436.55C1271.28,-431.94 1280.76,-426.17 1289.23,-419 1329.79,-384.67 1282.37,-336.41 1325.23,-305 1373.21,-269.84 1533.94,-297.3 1592.92,-305 1620.2,-308.56 1649.81,-315.98 1674.38,-323.17" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1673.64,-326.61 1684.23,-326.12 1675.65,-319.9 1673.64,-326.61" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToManyOrders&#45;&gt;InfinityExchange._transferMultipleNFTs -->
+<g id="edge38" class="edge" data-name="InfinityExchange._execMatchOneToManyOrders-&gt;InfinityExchange._transferMultipleNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1518.66,-315.85C1561.55,-304.03 1619.73,-287.99 1663.96,-275.8" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1665.03,-279.14 1673.74,-273.1 1663.17,-272.39 1665.03,-279.14" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOneToManyOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge39" class="edge" data-name="InfinityExchange._execMatchOneToManyOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1520.38,-348.04C1543.9,-355.63 1570.52,-365.93 1592.92,-379 1637.58,-405.05 1681.23,-446.79 1706.47,-473.01" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1703.97,-475.46 1713.4,-480.29 1709.04,-470.64 1703.97,-475.46" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrder -->
+<g id="node20" class="node" pointer-events="visible" data-name="InfinityExchange._execMatchOrder">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1459.08" cy="-258" rx="80.99" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-253.8" font-family="Times,serif" font-size="14.00" style="">_execMatchOrder</text>
+</g>
+<!-- InfinityExchange._execMatchOrders&#45;&gt;InfinityExchange._execMatchOrder -->
+<g id="edge40" class="edge" data-name="InfinityExchange._execMatchOrders-&gt;InfinityExchange._execMatchOrder">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1176.53,-278.29C1234.27,-274.13 1312.46,-268.5 1371.79,-264.22" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1372.16,-267.7 1381.89,-263.49 1371.66,-260.72 1372.16,-267.7" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrders&#45;&gt;InfinityExchange._emitMatchEvent -->
+<g id="edge41" class="edge" data-name="InfinityExchange._execMatchOrders-&gt;InfinityExchange._emitMatchEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1145.7,-269.36C1191.44,-256.32 1262.29,-238.22 1325.23,-231 1384.33,-224.22 1540.47,-202.93 1592.92,-231 1618.35,-244.61 1607.77,-265.39 1628.92,-285 1644.29,-299.24 1663.93,-311.26 1681.7,-320.47" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1680.28,-323.68 1690.79,-325.03 1683.42,-317.42 1680.28,-323.68" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge42" class="edge" data-name="InfinityExchange._execMatchOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1126.05,-267.12C1167.76,-255.05 1244.99,-251.42 1289.23,-293 1347.41,-347.68 1264.01,-417.75 1325.23,-469 1338.67,-480.25 1577.57,-480.02 1681.21,-487.99" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1681.14,-491.49 1691.4,-488.84 1681.72,-484.52 1681.14,-491.49" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge43" class="edge" data-name="InfinityExchange._execMatchOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1170.72,-275.37C1210.64,-274.87 1258.1,-281.74 1289.23,-311 1347.41,-365.68 1264.01,-435.75 1325.23,-487 1338.47,-498.08 1570.59,-498.02 1676.55,-497.41" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1676.73,-500.91 1686.71,-497.35 1676.68,-493.91 1676.73,-500.91" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrders&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge44" class="edge" data-name="InfinityExchange._execMatchOrders-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1174.03,-291.33C1213.25,-293.27 1258.96,-300.55 1289.23,-329 1347.41,-383.68 1264.01,-453.75 1325.23,-505 1338.7,-516.27 1578.72,-516.02 1681.96,-506.72" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1682.49,-510.18 1692.1,-505.73 1681.81,-503.22 1682.49,-510.18" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrder&#45;&gt;InfinityExchange._transferMultipleNFTs -->
+<g id="edge45" class="edge" data-name="InfinityExchange._execMatchOrder-&gt;InfinityExchange._transferMultipleNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1539.9,-258C1564.57,-258 1592.19,-258 1618.52,-258" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1618.55,-261.5 1628.55,-258 1618.55,-254.5 1618.55,-261.5" style=""/>
+</g>
+<!-- InfinityExchange._execMatchOrder&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge46" class="edge" data-name="InfinityExchange._execMatchOrder-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1520.6,-269.69C1545.09,-276.75 1572.36,-287.83 1592.92,-305 1617.67,-325.67 1611.03,-341.17 1628.92,-368 1654.04,-405.64 1686.65,-446.6 1707.59,-472.03" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1705.15,-474.57 1714.22,-480.04 1710.54,-470.1 1705.15,-474.57" style=""/>
+</g>
+<!-- InfinityExchange._emitTakerEvent -->
+<g id="node25" class="node" pointer-events="visible" data-name="InfinityExchange._emitTakerEvent">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-130" rx="78.14" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-125.8" font-family="Times,serif" font-size="14.00" style="">_emitTakerEvent</text>
+</g>
+<!-- InfinityExchange._execTakeOneOrder&#45;&gt;InfinityExchange._emitTakerEvent -->
+<g id="edge48" class="edge" data-name="InfinityExchange._execTakeOneOrder-&gt;InfinityExchange._emitTakerEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M755.76,-170.72C823.89,-159.46 934.32,-144.39 1010.67,-135.78" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1011.19,-139.24 1020.74,-134.66 1010.41,-132.29 1011.19,-139.24" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOneOrder&#45;&gt;InfinityExchange._emitTakerEvent -->
+<g id="edge50" class="edge" data-name="InfinityExchange._execTakeOneOrder-&gt;InfinityExchange._emitTakerEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M779.95,-178.13C854.55,-169.7 961.22,-155.17 1029.39,-144.05" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1030.27,-147.45 1039.57,-142.36 1029.13,-140.54 1030.27,-147.45" style=""/>
+</g>
+<!-- InfinityExchange._transferNFTsAndFees -->
+<g id="node26" class="node" pointer-events="visible" data-name="InfinityExchange._transferNFTsAndFees">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1096.38" cy="-184" rx="101.88" ry="18" style=""/>
+<text text-anchor="middle" x="1096.38" y="-179.8" font-family="Times,serif" font-size="14.00" style="">_transferNFTsAndFees</text>
+</g>
+<!-- InfinityExchange._execTakeOneOrder&#45;&gt;InfinityExchange._transferNFTsAndFees -->
+<g id="edge47" class="edge" data-name="InfinityExchange._execTakeOneOrder-&gt;InfinityExchange._transferNFTsAndFees">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M780.44,-178.34C841.71,-177.02 924.42,-176.9 989.71,-177.97" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="989.97,-181.48 1000.03,-178.15 990.09,-174.48 989.97,-181.48" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOneOrder&#45;&gt;InfinityExchange._transferNFTsAndFees -->
+<g id="edge49" class="edge" data-name="InfinityExchange._execTakeOneOrder-&gt;InfinityExchange._transferNFTsAndFees">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M780.44,-189.66C841.71,-190.98 924.42,-191.1 989.71,-190.03" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="990.09,-193.52 1000.03,-189.85 989.97,-186.52 990.09,-193.52" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOrders -->
+<g id="node24" class="node" pointer-events="visible" data-name="InfinityExchange._execTakeOrders">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="693.43" cy="-130" rx="79.26" ry="18" style=""/>
+<text text-anchor="middle" x="693.43" y="-125.8" font-family="Times,serif" font-size="14.00" style="">_execTakeOrders</text>
+</g>
+<!-- InfinityExchange._takeOrders&#45;&gt;InfinityExchange._execTakeOrders -->
+<g id="edge52" class="edge" data-name="InfinityExchange._takeOrders-&gt;InfinityExchange._execTakeOrders">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M419.73,-178.18C448.27,-171.61 485.84,-163.3 519.34,-157 550.76,-151.09 585.56,-145.49 615.67,-140.93" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="616.32,-144.37 625.69,-139.42 615.28,-137.45 616.32,-144.37" style=""/>
+</g>
+<!-- InfinityExchange._takeOrders&#45;&gt;InfinityExchange.IComplication -->
+<g id="edge51" class="edge" data-name="InfinityExchange._takeOrders-&gt;InfinityExchange.IComplication">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M428.26,-194.75C446.88,-198.64 467.1,-205.13 483.34,-216 505.8,-231.03 495.59,-252.11 519.34,-265 587.45,-301.97 794.49,-259.05 867.52,-285 886.12,-291.61 885.21,-303.63 903.52,-311 940.03,-325.69 983.24,-332.6 1019.4,-335.76" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1019.16,-339.25 1029.4,-336.56 1019.71,-332.27 1019.16,-339.25" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOrders&#45;&gt;InfinityExchange._emitTakerEvent -->
+<g id="edge54" class="edge" data-name="InfinityExchange._execTakeOrders-&gt;InfinityExchange._emitTakerEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M769.37,-124.6C838.18,-122.87 940,-122.8 1011.49,-124.39" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1011.73,-127.9 1021.82,-124.64 1011.9,-120.9 1011.73,-127.9" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOrders&#45;&gt;InfinityExchange._emitTakerEvent -->
+<g id="edge56" class="edge" data-name="InfinityExchange._execTakeOrders-&gt;InfinityExchange._emitTakerEvent">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M769.37,-135.4C838.18,-137.13 940,-137.2 1011.49,-135.61" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1011.9,-139.1 1021.82,-135.36 1011.73,-132.1 1011.9,-139.1" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOrders&#45;&gt;InfinityExchange._transferNFTsAndFees -->
+<g id="edge53" class="edge" data-name="InfinityExchange._execTakeOrders-&gt;InfinityExchange._transferNFTsAndFees">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M769.85,-134.75C841.63,-142.62 949.03,-157.09 1020.6,-168.53" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1020.46,-172.06 1030.89,-170.2 1021.57,-165.15 1020.46,-172.06" style=""/>
+</g>
+<!-- InfinityExchange._execTakeOrders&#45;&gt;InfinityExchange._transferNFTsAndFees -->
+<g id="edge55" class="edge" data-name="InfinityExchange._execTakeOrders-&gt;InfinityExchange._transferNFTsAndFees">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M751.03,-142.5C813.41,-152.94 915.1,-167.01 991.83,-176.05" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="991.67,-179.55 1002.01,-177.23 992.48,-172.6 991.67,-179.55" style=""/>
+</g>
+<!-- InfinityExchange._transferNFTsAndFees&#45;&gt;InfinityExchange._transferMultipleNFTs -->
+<g id="edge57" class="edge" data-name="InfinityExchange._transferNFTsAndFees-&gt;InfinityExchange._transferMultipleNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1176.04,-172.75C1295.81,-156.78 1517.89,-132.13 1592.92,-157 1637.87,-171.9 1680.02,-208.12 1705.05,-232.88" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1702.74,-235.52 1712.26,-240.16 1707.71,-230.59 1702.74,-235.52" style=""/>
+</g>
+<!-- InfinityExchange._transferFees -->
+<g id="node30" class="node" pointer-events="visible" data-name="InfinityExchange._transferFees">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1459.08" cy="-460" rx="63.11" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-455.8" font-family="Times,serif" font-size="14.00" style="">_transferFees</text>
+</g>
+<!-- InfinityExchange._transferNFTsAndFees&#45;&gt;InfinityExchange._transferFees -->
+<g id="edge58" class="edge" data-name="InfinityExchange._transferNFTsAndFees-&gt;InfinityExchange._transferFees">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1175.45,-195.47C1215.07,-205.3 1260.73,-223.46 1289.23,-257 1340.94,-317.83 1268.74,-376.58 1325.23,-433 1341.19,-448.94 1363.81,-456.73 1385.88,-460.23" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1385.58,-463.72 1395.95,-461.56 1386.49,-456.78 1385.58,-463.72" style=""/>
+</g>
+<!-- InfinityExchange._transferNFTs -->
+<g id="node28" class="node" pointer-events="visible" data-name="InfinityExchange._transferNFTs">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="1933.52" cy="-258" rx="67.21" ry="18" style=""/>
+<text text-anchor="middle" x="1933.52" y="-253.8" font-family="Times,serif" font-size="14.00" style="">_transferNFTs</text>
+</g>
+<!-- InfinityExchange._transferMultipleNFTs&#45;&gt;InfinityExchange._transferNFTs -->
+<g id="edge59" class="edge" data-name="InfinityExchange._transferMultipleNFTs-&gt;InfinityExchange._transferNFTs">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1830.34,-258C1838.96,-258 1847.6,-258 1855.99,-258" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1856.09,-261.5 1866.09,-258 1856.09,-254.5 1856.09,-261.5" style=""/>
+</g>
+<!-- InfinityExchange._transferERC721s -->
+<g id="node29" class="node" pointer-events="visible" data-name="InfinityExchange._transferERC721s">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="2119.25" cy="-204" rx="82.26" ry="18" style=""/>
+<text text-anchor="middle" x="2119.25" y="-199.8" font-family="Times,serif" font-size="14.00" style="">_transferERC721s</text>
+</g>
+<!-- InfinityExchange._transferNFTs&#45;&gt;InfinityExchange._transferERC721s -->
+<g id="edge62" class="edge" data-name="InfinityExchange._transferNFTs-&gt;InfinityExchange._transferERC721s">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1979.46,-244.79C2003.58,-237.7 2033.59,-228.88 2059.53,-221.26" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="2060.65,-224.58 2069.25,-218.4 2058.67,-217.86 2060.65,-224.58" style=""/>
+</g>
+<!-- InfinityExchange.IERC165 -->
+<g id="node41" class="node" pointer-events="visible" data-name="InfinityExchange.IERC165">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="2119.25" cy="-258" rx="47.54" ry="18" style=""/>
+<text text-anchor="middle" x="2119.25" y="-253.8" font-family="Times,serif" font-size="14.00" style="">IERC165</text>
+</g>
+<!-- InfinityExchange._transferNFTs&#45;&gt;InfinityExchange.IERC165 -->
+<g id="edge60" class="edge" data-name="InfinityExchange._transferNFTs-&gt;InfinityExchange.IERC165">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1996.46,-251.58C2018.4,-251.08 2042.89,-251.15 2064.12,-251.78" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="2064.14,-255.29 2074.26,-252.14 2064.39,-248.29 2064.14,-255.29" style=""/>
+</g>
+<!-- InfinityExchange._transferNFTs&#45;&gt;InfinityExchange.IERC165 -->
+<g id="edge61" class="edge" data-name="InfinityExchange._transferNFTs-&gt;InfinityExchange.IERC165">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1996.46,-264.42C2018.4,-264.92 2042.89,-264.85 2064.12,-264.22" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="2064.39,-267.71 2074.26,-263.86 2064.14,-260.71 2064.39,-267.71" style=""/>
+</g>
+<!-- InfinityExchange.IERC721 -->
+<g id="node42" class="node" pointer-events="visible" data-name="InfinityExchange.IERC721">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="2285.15" cy="-204" rx="47.54" ry="18" style=""/>
+<text text-anchor="middle" x="2285.15" y="-199.8" font-family="Times,serif" font-size="14.00" style="">IERC721</text>
+</g>
+<!-- InfinityExchange._transferERC721s&#45;&gt;InfinityExchange.IERC721 -->
+<g id="edge63" class="edge" data-name="InfinityExchange._transferERC721s-&gt;InfinityExchange.IERC721">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M2201.72,-204C2210.31,-204 2218.9,-204 2227.12,-204" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="2227.31,-207.5 2237.31,-204 2227.31,-200.5 2227.31,-207.5" style=""/>
+</g>
+<!-- InfinityExchange._transferFees&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge64" class="edge" data-name="InfinityExchange._transferFees-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1521.67,-462.71C1570.93,-468.04 1638.87,-477.59 1683.24,-485.55" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1682.69,-489.01 1693.16,-487.38 1683.96,-482.12 1682.69,-489.01" style=""/>
+</g>
+<!-- InfinityExchange._transferFees&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge65" class="edge" data-name="InfinityExchange._transferFees-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1507.15,-471.77C1554.6,-480.21 1627.66,-490.33 1676.73,-495.32" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1676.53,-498.82 1686.82,-496.3 1677.21,-491.85 1676.53,-498.82" style=""/>
+</g>
+<!-- InfinityExchange.withdrawETH -->
+<g id="node32" class="node" pointer-events="visible" data-name="InfinityExchange.withdrawETH">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-304" rx="66.06" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-299.8" font-family="Times,serif" font-size="14.00" style="">withdrawETH</text>
+</g>
+<!-- InfinityExchange.withdrawTokens -->
+<g id="node33" class="node" pointer-events="visible" data-name="InfinityExchange.withdrawTokens">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="1459.08" cy="-574" rx="75.88" ry="18" style=""/>
+<text text-anchor="middle" x="1459.08" y="-569.8" font-family="Times,serif" font-size="14.00" style="">withdrawTokens</text>
+</g>
+<!-- InfinityExchange.withdrawTokens&#45;&gt;InfinityExchange.IERC20 -->
+<g id="edge66" class="edge" data-name="InfinityExchange.withdrawTokens-&gt;InfinityExchange.IERC20">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M1515.29,-561.8C1539.27,-556.21 1567.6,-549.24 1592.92,-542 1624.65,-532.93 1660.02,-521.14 1686.68,-511.9" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="1688.15,-515.09 1696.44,-508.5 1685.85,-508.48 1688.15,-515.09" style=""/>
+</g>
+<!-- InfinityExchange.updateMatchExecutor -->
+<g id="node34" class="node" pointer-events="visible" data-name="InfinityExchange.updateMatchExecutor">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-250" rx="96.11" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-245.8" font-family="Times,serif" font-size="14.00" style="">updateMatchExecutor</text>
+</g>
+<!-- InfinityExchange.updateWethTransferGas -->
+<g id="node35" class="node" pointer-events="visible" data-name="InfinityExchange.updateWethTransferGas">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-196" rx="105.33" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-191.8" font-family="Times,serif" font-size="14.00" style="">updateWethTransferGas</text>
+</g>
+<!-- InfinityExchange.updateProtocolFee -->
+<g id="node36" class="node" pointer-events="visible" data-name="InfinityExchange.updateProtocolFee">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-142" rx="83.39" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-137.8" font-family="Times,serif" font-size="14.00" style="">updateProtocolFee</text>
+</g>
+<!-- InfinityExchange.pause -->
+<g id="node37" class="node" pointer-events="visible" data-name="InfinityExchange.pause">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-88" rx="33.05" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-83.8" font-family="Times,serif" font-size="14.00" style="">pause</text>
+</g>
+<!-- InfinityExchange._pause -->
+<g id="node43" class="node" pointer-events="visible" data-name="InfinityExchange._pause">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="373.08" cy="-88" rx="37.71" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-83.8" font-family="Times,serif" font-size="14.00" style="">_pause</text>
+</g>
+<!-- InfinityExchange.pause&#45;&gt;InfinityExchange._pause -->
+<g id="edge67" class="edge" data-name="InfinityExchange.pause-&gt;InfinityExchange._pause">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M154.54,-88C197.82,-88 275.16,-88 325.01,-88" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="325.21,-91.5 335.21,-88 325.21,-84.5 325.21,-91.5" style=""/>
+</g>
+<!-- InfinityExchange.unpause -->
+<g id="node38" class="node" pointer-events="visible" data-name="InfinityExchange.unpause">
+
+<ellipse fill="#ffbdb9" stroke="#ffbdb9" stroke-width="3" cx="121.41" cy="-34" rx="42.86" ry="18" style=""/>
+<text text-anchor="middle" x="121.41" y="-29.8" font-family="Times,serif" font-size="14.00" style="">unpause</text>
+</g>
+<!-- InfinityExchange._unpause -->
+<g id="node44" class="node" pointer-events="visible" data-name="InfinityExchange._unpause">
+
+<ellipse fill="#edad56" stroke="#edad56" stroke-width="3" cx="373.08" cy="-34" rx="47.52" ry="18" style=""/>
+<text text-anchor="middle" x="373.08" y="-29.8" font-family="Times,serif" font-size="14.00" style="">_unpause</text>
+</g>
+<!-- InfinityExchange.unpause&#45;&gt;InfinityExchange._unpause -->
+<g id="edge68" class="edge" data-name="InfinityExchange.unpause-&gt;InfinityExchange._unpause">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M164.2,-34C205.63,-34 269.39,-34 315.37,-34" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="315.48,-37.5 325.48,-34 315.48,-30.5 315.48,-37.5" style=""/>
+</g>
+<!-- key -->
+<g id="node45" class="node" pointer-events="visible" data-name="key">
+
+<polygon fill="#edad56" stroke="transparent" stroke-width="3" points="186.41,-729 56.41,-729 56.41,-641 186.41,-641 186.41,-729" style=""/>
+<text text-anchor="start" x="106.05" y="-710.4" font-family="Times,serif" font-size="14.00" style="">Internal Call</text>
+<text text-anchor="start" x="102.16" y="-690.4" font-family="Times,serif" font-size="14.00" style="">External Call</text>
+<text text-anchor="start" x="79.62" y="-670.4" font-family="Times,serif" font-size="14.00" style="">Defined Contract</text>
+<text text-anchor="start" x="66.01" y="-650.4" font-family="Times,serif" font-size="14.00" style="">Undefined Contract</text>
+</g>
+<!-- key2 -->
+<g id="node46" class="node" pointer-events="visible" data-name="key2">
+
+<polygon fill="#edad56" stroke="transparent" stroke-width="3" points="400.08,-729 346.08,-729 346.08,-641 400.08,-641 400.08,-729" style=""/>
+<text text-anchor="start" x="363.08" y="-710.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<text text-anchor="start" x="363.08" y="-690.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<polygon fill="#445773" stroke="transparent" points="361.08,-665 361.08,-685 386.08,-685 386.08,-665 361.08,-665" style=""/>
+<text text-anchor="start" x="363.08" y="-670.4" font-family="Times,serif" font-size="14.00" style="">   </text>
+<polygon fill="none" stroke="#e8726d" points="363.08,-647 363.08,-663 384.08,-663 384.08,-647 363.08,-647" style=""/>
+</g>
+<!-- key&#45;&gt;key2 -->
+<g id="edge69" class="edge" data-name="key-&gt;key2">
+
+<path fill="none" stroke="#1bc6a6" stroke-width="2" d="M179.41,-715C256.26,-715 277.95,-715 350.06,-715" style=""/>
+<polygon fill="#1bc6a6" stroke="#1bc6a6" stroke-width="2" points="350.08,-718.5 360.08,-715 350.08,-711.5 350.08,-718.5" style=""/>
+</g>
+<!-- key&#45;&gt;key2 -->
+<g id="edge70" class="edge" data-name="key-&gt;key2">
+
+<path fill="none" stroke="white" stroke-width="2" d="M179.41,-695C256.26,-695 277.95,-695 350.06,-695" style=""/>
+<polygon fill="white" stroke="white" stroke-width="2" points="350.08,-698.5 360.08,-695 350.08,-691.5 350.08,-698.5" style=""/>
+</g>
+</g>
+</svg>
