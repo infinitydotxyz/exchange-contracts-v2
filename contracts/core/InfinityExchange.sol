@@ -87,7 +87,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     address indexed buyer,
     address complication, // address of the complication that defines the execution
     address indexed currency, // token address of the transacting currency
-    uint256 amount // amount spent on the order
+    uint256 amount, // amount spent on the order
+    OrderTypes.OrderItem[] nfts // items in the order
   );
   event TakeOrderFulfilled(
     bytes32 orderHash,
@@ -95,7 +96,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     address indexed buyer,
     address complication, // address of the complication that defines the execution
     address indexed currency, // token address of the transacting currency
-    uint256 amount // amount spent on the order
+    uint256 amount, // amount spent on the order
+    OrderTypes.OrderItem[] nfts // items in the order
   );
   event CancelAllOrders(address indexed user, uint256 newMinNonce);
   event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
@@ -636,7 +638,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
       buy.signer,
       buy.execParams[0],
       buy.execParams[1],
-      execPrice
+      execPrice,
+      buy.nfts
     );
     uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
@@ -687,7 +690,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
       buy.signer,
       buy.execParams[0],
       buy.execParams[1],
-      execPrice
+      execPrice,
+      buy.nfts
     );
     uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
@@ -731,7 +735,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
       buy.signer,
       buy.execParams[0],
       buy.execParams[1],
-      execPrice
+      execPrice,
+      sell.nfts
     );
     return protocolFee;
   }
@@ -797,7 +802,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
       buy.signer,
       buy.execParams[0],
       buy.execParams[1],
-      execPrice
+      execPrice,
+      constructedNfts
     );
     uint256 gasCost = (startGasPerOrder - gasleft() + _wethTransferGasUnits) * tx.gasprice;
     // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
@@ -836,9 +842,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     address buyer,
     address complication,
     address currency,
-    uint256 amount
+    uint256 amount,
+    OrderTypes.OrderItem[] calldata nfts
   ) internal {
-    emit MatchOrderFulfilled(sellOrderHash, buyOrderHash, seller, buyer, complication, currency, amount);
+    emit MatchOrderFulfilled(sellOrderHash, buyOrderHash, seller, buyer, complication, currency, amount, nfts);
   }
 
   /**
@@ -859,10 +866,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] = true;
     if (isMakerSeller) {
       _transferNFTsAndFees(makerOrder.signer, msg.sender, makerOrder.nfts, makerOrder.execParams[1], execPrice);
-      _emitTakerEvent(makerOrderHash, makerOrder.signer, msg.sender, makerOrder, execPrice);
+      _emitTakerEvent(makerOrderHash, makerOrder.signer, msg.sender, makerOrder, execPrice, makerOrder.nfts);
     } else {
       _transferNFTsAndFees(msg.sender, makerOrder.signer, makerOrder.nfts, makerOrder.execParams[1], execPrice);
-      _emitTakerEvent(makerOrderHash, msg.sender, makerOrder.signer, makerOrder, execPrice);
+      _emitTakerEvent(makerOrderHash, msg.sender, makerOrder.signer, makerOrder, execPrice, makerOrder.nfts);
     }
   }
 
@@ -910,10 +917,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.constraints[5]] = true;
     if (isMakerSeller) {
       _transferNFTsAndFees(makerOrder.signer, msg.sender, takerItems, makerOrder.execParams[1], execPrice);
-      _emitTakerEvent(makerOrderHash, makerOrder.signer, msg.sender, makerOrder, execPrice);
+      _emitTakerEvent(makerOrderHash, makerOrder.signer, msg.sender, makerOrder, execPrice, takerItems);
     } else {
       _transferNFTsAndFees(msg.sender, makerOrder.signer, takerItems, makerOrder.execParams[1], execPrice);
-      _emitTakerEvent(makerOrderHash, msg.sender, makerOrder.signer, makerOrder, execPrice);
+      _emitTakerEvent(makerOrderHash, msg.sender, makerOrder.signer, makerOrder, execPrice, takerItems);
     }
   }
 
@@ -923,9 +930,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     address seller,
     address buyer,
     OrderTypes.MakerOrder calldata order,
-    uint256 amount
+    uint256 amount,
+    OrderTypes.OrderItem[] calldata nfts
   ) internal {
-    emit TakeOrderFulfilled(orderHash, seller, buyer, order.execParams[0], order.execParams[1], amount);
+    emit TakeOrderFulfilled(orderHash, seller, buyer, order.execParams[0], order.execParams[1], amount, nfts);
   }
 
   /**

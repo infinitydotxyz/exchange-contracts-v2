@@ -331,7 +331,7 @@ export async function signOBOrder(
     order.startTime,
     order.endTime,
     order.nonce,
-    100
+    100e9
   ];
   const execParams = [order.execParams.complicationAddress, order.execParams.currencyAddress];
   const extraParams = defaultAbiCoder.encode(['address'], [order.extraParams.buyer ?? NULL_ADDRESS]);
