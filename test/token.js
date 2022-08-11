@@ -3,7 +3,7 @@ const { parseEther, formatEther } = require('ethers/lib/utils');
 const { ethers, network } = require('hardhat');
 
 describe('Infinity_Token', function () {
-  let signers, token;
+  let signers, signer1, signer2, token;
   const MINUTE = 60;
   const HOUR = MINUTE * 60;
   const DAY = HOUR * 24;
@@ -23,7 +23,10 @@ describe('Infinity_Token', function () {
   }
 
   before(async () => {
+    // signers
     signers = await ethers.getSigners();
+    signer1 = signers[0];
+    signer2 = signers[1];
     const InfinityToken = await ethers.getContractFactory('InfinityToken');
     token = await InfinityToken.deploy(signers[0].address, INITIAL_SUPPLY.toString());
     await token.deployed();
@@ -103,6 +106,19 @@ describe('Infinity_Token', function () {
     it('Should not allow advancing past epoch limit', async function () {
       await network.provider.send('evm_increaseTime', [EPOCH_DURATION]);
       await expect(token.advanceEpoch()).to.be.revertedWith('no epochs left');
+    });
+  });
+
+  describe('Admin', () => {
+    it('Default admin', async function () {
+      expect(await token.admin()).to.equal(signer1.address);
+    });
+    it('Should not allow changing admin by a non-admin', async function () {
+      await expect(token.connect(signer2).changeAdmin(signer2.address)).to.be.revertedWith('only admin');
+    });
+    it('Should allow changing admin by admin', async function () {
+      await token.changeAdmin(signer2.address);
+      expect(await token.admin()).to.equal(signer2.address);
     });
   });
 });

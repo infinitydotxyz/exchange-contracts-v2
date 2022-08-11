@@ -23,6 +23,7 @@ contract InfinityToken is ERC20('Infinity', 'NFT'), ERC20Permit('Infinity'), ERC
   address public admin;
 
   event EpochAdvanced(uint256 currentEpoch, uint256 supplyMinted);
+  event AdminChanged(address oldAdmin, address newAdmin);
 
   /**
     @param _admin The address of the admin who will be sent the minted tokens
@@ -66,6 +67,12 @@ contract InfinityToken is ERC20('Infinity', 'NFT'), ERC20Permit('Infinity'), ERC
     _mint(admin, supplyToMint);
 
     emit EpochAdvanced(currentEpoch, supplyToMint);
+  }
+
+  function changeAdmin(address newAdmin) external onlyAdmin {
+    require(newAdmin != address(0), 'zero address');
+    admin = newAdmin;
+    emit AdminChanged(admin, newAdmin);
   }
 
   // =============================================== HOOKS =========================================================
