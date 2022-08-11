@@ -22,14 +22,8 @@ describe('Staker', function () {
   const MINUTE = 60;
   const HOUR = MINUTE * 60;
   const DAY = HOUR * 24;
-  const MONTH = DAY * 30;
   const UNIT = toBN(1e18);
-  const INFLATION = toBN(250_000_000).mul(UNIT);
-  const CLIFF = toBN(6);
-  const CLIFF_PERIOD = CLIFF.mul(MONTH);
-  const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-  const TIMELOCK = 30 * DAY;
-  const INITIAL_SUPPLY = toBN(250_000_000).mul(UNIT);
+  const INITIAL_SUPPLY = toBN(500_000_000).mul(UNIT);
 
   const totalNFTSupply = 100;
   const numNFTsToTransfer = 50;
@@ -49,14 +43,7 @@ describe('Staker', function () {
     signer1 = signers[0];
     signer2 = signers[1];
     // token
-    const tokenArgs = [
-      signer1.address,
-      INFLATION.toString(),
-      EPOCH_DURATION.toString(),
-      CLIFF_PERIOD.toString(),
-      TIMELOCK.toString(),
-      INITIAL_SUPPLY.toString()
-    ];
+    const tokenArgs = [signer1.address, INITIAL_SUPPLY.toString()];
     token = await deployContract(
       'InfinityToken',
       await ethers.getContractFactory('InfinityToken'),

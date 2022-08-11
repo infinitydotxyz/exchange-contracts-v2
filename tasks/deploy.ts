@@ -11,23 +11,10 @@ require('dotenv').config();
 const WETH_ADDRESS = '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6';
 
 // other vars
-let infinityToken: Contract,
-  infinityExchange: Contract,
-  infinityOBComplication: Contract,
-  infinityTreasurer: string,
-  infinityStaker: Contract;
+let infinityToken: Contract, infinityTreasurer: string;
 
-const MINUTE = 60;
-const HOUR = MINUTE * 60;
-const DAY = HOUR * 24;
-const MONTH = DAY * 30;
 const UNIT = toBN(1e18);
-const INFLATION = toBN(250_000_000).mul(UNIT);
-const CLIFF = toBN(6);
-const CLIFF_PERIOD = CLIFF.mul(MONTH);
-const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-const TIMELOCK = 30 * DAY;
-const INITIAL_SUPPLY = toBN(250_000_000).mul(UNIT);
+const INITIAL_SUPPLY = toBN(500_000_000).mul(UNIT);
 
 function toBN(val: any) {
   return ethers.BigNumber.from(val.toString());
@@ -43,20 +30,20 @@ task('deployAll', 'Deploy all contracts')
       verify: args.verify
     });
 
-    infinityExchange = await run('deployInfinityExchange', {
+    await run('deployInfinityExchange', {
       verify: args.verify,
       wethaddress: WETH_ADDRESS,
       matchexecutor: signer2.address
     });
 
-    infinityOBComplication = await run('deployInfinityOrderBookComplication', {
+    await run('deployInfinityOrderBookComplication', {
       verify: args.verify,
       wethaddress: WETH_ADDRESS
     });
 
     infinityTreasurer = signer1.address;
 
-    infinityStaker = await run('deployInfinityStaker', {
+    await run('deployInfinityStaker', {
       verify: args.verify,
       token: infinityToken.address,
       treasurer: infinityTreasurer
@@ -69,14 +56,7 @@ task('deployInfinityToken', 'Deploy Infinity token contract')
   .setAction(async (args, { ethers, run }) => {
     const signer1 = (await ethers.getSigners())[0];
 
-    const tokenArgs = [
-      args.admin,
-      INFLATION.toString(),
-      EPOCH_DURATION.toString(),
-      CLIFF_PERIOD.toString(),
-      TIMELOCK.toString(),
-      INITIAL_SUPPLY.toString()
-    ];
+    const tokenArgs = [args.admin, INITIAL_SUPPLY.toString()];
 
     const infinityToken = await deployContract(
       'InfinityToken',
