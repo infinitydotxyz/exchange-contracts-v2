@@ -24,7 +24,7 @@ contract InfinityToken is
   bytes32 public immutable EPOCH_INFLATION = keccak256('Inflation');
   bytes32 public immutable EPOCH_DURATION = keccak256('EpochDuration');
   bytes32 public immutable EPOCH_CLIFF = keccak256('Cliff');
-  bytes32 public immutable MAX_EPOCHS = keccak256('MaxEpochs');
+  uint256 public constant MAX_EPOCHS = 3;
 
   /* storage */
   uint256 public immutable currentEpochTimestamp;
@@ -38,7 +38,6 @@ contract InfinityToken is
     @param epochInflation Inflation per epoch
     @param epochDuration Duration of an epoch in seconds
     @param epochCliff The initial cliff for the first epoch
-    @param maxEpochs The maximum number of epochs
     @param timelock The time needed before any config changes can go into effect
     @param supply Initial supply of the token
    */
@@ -47,14 +46,12 @@ contract InfinityToken is
     uint256 epochInflation,
     uint256 epochDuration,
     uint256 epochCliff,
-    uint256 maxEpochs,
     uint256 timelock,
     uint256 supply
   ) TimelockConfig(admin, timelock) {
     TimelockConfig._setRawConfig(EPOCH_INFLATION, epochInflation);
     TimelockConfig._setRawConfig(EPOCH_DURATION, epochDuration);
     TimelockConfig._setRawConfig(EPOCH_CLIFF, epochCliff);
-    TimelockConfig._setRawConfig(MAX_EPOCHS, maxEpochs);
 
     previousEpochTimestamp = block.timestamp;
     currentEpochTimestamp = block.timestamp;
@@ -66,13 +63,12 @@ contract InfinityToken is
   // =============================================== ADMIN FUNCTIONS =========================================================
 
   function advanceEpoch() external onlyAdmin {
-    uint256 maxEpochs = getMaxEpochs();
-    require(currentEpoch < maxEpochs, 'no epochs left');
+    require(currentEpoch < MAX_EPOCHS, 'no epochs left');
     require(block.timestamp >= currentEpochTimestamp + getCliff(), 'cliff not passed');
     require(block.timestamp >= previousEpochTimestamp + getEpochDuration(), 'not ready to advance');
 
     uint256 epochsPassedSinceLastAdvance = (block.timestamp - previousEpochTimestamp) / getEpochDuration();
-    uint256 epochsLeft = maxEpochs - currentEpoch;
+    uint256 epochsLeft = MAX_EPOCHS - currentEpoch;
     epochsPassedSinceLastAdvance = epochsPassedSinceLastAdvance > epochsLeft
       ? epochsLeft
       : epochsPassedSinceLastAdvance;
@@ -133,10 +129,6 @@ contract InfinityToken is
 
   function getCliff() public view returns (uint256) {
     return TimelockConfig.getConfig(EPOCH_CLIFF).value;
-  }
-
-  function getMaxEpochs() public view returns (uint256) {
-    return TimelockConfig.getConfig(MAX_EPOCHS).value;
   }
 
   function getEpochDuration() public view returns (uint256) {

@@ -26,7 +26,6 @@ const INFLATION = toBN(250_000_000).mul(UNIT);
 const CLIFF = toBN(6);
 const CLIFF_PERIOD = CLIFF.mul(MONTH);
 const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-const MAX_EPOCHS = 3;
 const TIMELOCK = 30 * DAY;
 const INITIAL_SUPPLY = toBN(250_000_000).mul(UNIT);
 
@@ -75,7 +74,6 @@ task('deployInfinityToken', 'Deploy Infinity token contract')
       INFLATION.toString(),
       EPOCH_DURATION.toString(),
       CLIFF_PERIOD.toString(),
-      MAX_EPOCHS.toString(),
       TIMELOCK.toString(),
       INITIAL_SUPPLY.toString()
     ];

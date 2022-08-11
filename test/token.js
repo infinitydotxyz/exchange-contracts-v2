@@ -30,7 +30,6 @@ describe('Infinity_Token', function () {
       INFLATION.toString(),
       EPOCH_DURATION.toString(),
       CLIFF_PERIOD.toString(),
-      MAX_EPOCHS.toString(),
       TIMELOCK.toString(),
       INITIAL_SUPPLY.toString()
     );
@@ -46,7 +45,7 @@ describe('Infinity_Token', function () {
       expect(await token.getTimelock()).to.equal(TIMELOCK);
       expect(await token.getInflation()).to.equal(INFLATION);
       expect(await token.getCliff()).to.equal(CLIFF_PERIOD);
-      expect(await token.getMaxEpochs()).to.equal(MAX_EPOCHS);
+      expect(await token.MAX_EPOCHS()).to.equal(MAX_EPOCHS);
       expect(await token.getEpochDuration()).to.equal(EPOCH_DURATION);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
       expect(await token.balanceOf(signers[0].address)).to.equal(INITIAL_SUPPLY);
@@ -114,46 +113,38 @@ describe('Infinity_Token', function () {
       await expect(token.advanceEpoch()).to.be.revertedWith('no epochs left');
     });
   });
+
   describe('Update values', () => {
     it('Should not allow a non-owner to make a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await expect(token.connect(signers[1]).requestChange(maxEpochsConfig, MAX_EPOCHS + 1)).to.be.revertedWith(
+      let inflationConfig = await token.EPOCH_INFLATION();
+      await expect(token.connect(signers[1]).requestChange(inflationConfig, 10000)).to.be.revertedWith(
         'only admin'
       );
     });
     it('Should allow owner to make a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.requestChange(maxEpochsConfig, MAX_EPOCHS + 1);
-      expect((await token.getMaxEpochs()).toNumber()).to.equal(MAX_EPOCHS); // should keep old epoch for now
+      const oldInflation = (await token.getInflation()).toString();
+      let inflationConfig = await token.EPOCH_INFLATION();
+      await token.requestChange(inflationConfig, 10000);
+      expect((await token.getInflation()).toString()).to.equal(oldInflation); // should keep old epoch for now
     });
     it('Should not allow confirmation before period has passed', async function () {
       await network.provider.send('evm_increaseTime', [TIMELOCK - 5 * MINUTE]);
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await expect(token.confirmChange(maxEpochsConfig)).to.be.revertedWith('too early');
-    });
-    it('Should not enact a proposed change in the contract', async function () {
-      await expect(token.advanceEpoch()).to.be.revertedWith('no epochs left');
+      let inflationConfig = await token.EPOCH_INFLATION();
+      await expect(token.confirmChange(inflationConfig)).to.be.revertedWith('too early');
     });
     it('Should allow confirmation after period has passed', async function () {
       await network.provider.send('evm_increaseTime', [5 * MINUTE]);
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.confirmChange(maxEpochsConfig);
-      expect((await token.getMaxEpochs()).toNumber()).to.equal(MAX_EPOCHS + 1);
-    });
-    it('Should enact the confirmed change in the contract and should only pay out the one period even if multiple epochs have been missed', async function () {
-      await network.provider.send('evm_increaseTime', [12 * EPOCH_DURATION]);
-      await token.advanceEpoch();
-      expect((await token.balanceOf(signers[0].address)).toString()).to.equal(
-        INITIAL_SUPPLY.add(toBN(MAX_EPOCHS + 1).mul(INFLATION)).toString()
-      );
+      let inflationConfig = await token.EPOCH_INFLATION();
+      await token.confirmChange(inflationConfig);
+      expect((await token.getInflation()).toNumber()).to.equal( 10000);
     });
     it('Should allow owner to cancel a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.requestChange(maxEpochsConfig, MAX_EPOCHS + 1);
-      expect(await token.isPending(maxEpochsConfig));
+      let inflationConfig = await token.EPOCH_INFLATION();
+      await token.requestChange(inflationConfig, 10000);
+      expect(await token.isPending(inflationConfig));
       expect((await token.getPendingCount()).toString()).to.equal('1');
-      await token.cancelChange(maxEpochsConfig);
-      expect(!(await token.isPending(maxEpochsConfig)));
+      await token.cancelChange(inflationConfig);
+      expect(!(await token.isPending(inflationConfig)));
       expect((await token.getPendingCount()).toString()).to.equal('0');
     });
     it('Should allow the owner to be changed', async function () {
