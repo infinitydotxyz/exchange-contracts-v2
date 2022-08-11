@@ -7,9 +7,7 @@ describe('Staker', function () {
   let signers,
     signer1,
     signer2,
-    signer3,
     token,
-    infinityExchange,
     mock721Contract1,
     mock721Contract2,
     mock721Contract3,
@@ -50,7 +48,6 @@ describe('Staker', function () {
     signers = await ethers.getSigners();
     signer1 = signers[0];
     signer2 = signers[1];
-    signer3 = signers[2];
     // token
     const tokenArgs = [
       signer1.address,
@@ -80,14 +77,6 @@ describe('Staker', function () {
       'Mock NFT 3',
       'MCKNFT3'
     ]);
-
-    // Exchange
-    infinityExchange = await deployContract(
-      'InfinityExchange',
-      await ethers.getContractFactory('InfinityExchange'),
-      signer1,
-      [token.address, signer3.address]
-    );
 
     // OB complication
     obComplication = await deployContract(
