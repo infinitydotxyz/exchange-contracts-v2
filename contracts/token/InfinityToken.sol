@@ -10,7 +10,7 @@ import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Vo
 /**
  * @title InfinityTokens
  * @author nneverlander. Twitter @nneverlander
- * @notice The Infinity Token ($NFT). Implements timelock config to control token release schedule.
+ * @notice The Infinity Token ($NFT).
  */
 contract InfinityToken is ERC20('Infinity', 'INFT'), ERC20Permit('Infinity'), ERC20Burnable, ERC20Snapshot, ERC20Votes {
   uint256 public constant EPOCH_INFLATION = 25e7 ether;
