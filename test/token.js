@@ -9,12 +9,12 @@ describe('Infinity_Token', function () {
   const DAY = HOUR * 24;
   const MONTH = DAY * 30;
   const UNIT = toBN(1e18);
-  const INFLATION = toBN(500_000_000).mul(UNIT);
+  const INFLATION = toBN(250_000_000).mul(UNIT);
   const CLIFF = toBN(6);
   const CLIFF_PERIOD = CLIFF.mul(MONTH);
   const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-  const MAX_EPOCHS = 3;
-  const INITIAL_SUPPLY = toBN(500_000_000).mul(UNIT);
+  const MAX_EPOCHS = 4;
+  const INITIAL_SUPPLY = toBN(1_000_000_000).mul(UNIT);
 
   let epochsSinceLastAdvance = 0;
 
@@ -85,7 +85,7 @@ describe('Infinity_Token', function () {
     it('Should vest full amount if an epoch is missed', async function () {
       await network.provider.send('evm_increaseTime', [EPOCH_DURATION * 2]);
       await token.advanceEpoch();
-      epochsSinceLastAdvance++;
+      epochsSinceLastAdvance += 2;
       expect((await token.balanceOf(signers[0].address)).toString()).to.equal(
         INITIAL_SUPPLY.add(INFLATION.mul(epochsSinceLastAdvance)).toString()
       );
