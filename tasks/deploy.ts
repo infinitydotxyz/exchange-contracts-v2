@@ -14,7 +14,7 @@ const WETH_ADDRESS = '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6';
 let infinityToken: Contract, infinityTreasurer: string;
 
 const UNIT = toBN(1e18);
-const INITIAL_SUPPLY = toBN(500_000_000).mul(UNIT);
+const INITIAL_SUPPLY = toBN(1_000_000_000).mul(UNIT);
 
 function toBN(val: any) {
   return ethers.BigNumber.from(val.toString());
