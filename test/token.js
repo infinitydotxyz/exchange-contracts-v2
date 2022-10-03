@@ -1,8 +1,9 @@
 const { expect } = require('chai');
+const { parseEther, formatEther } = require('ethers/lib/utils');
 const { ethers, network } = require('hardhat');
 
 describe('Infinity_Token', function () {
-  let signers, token;
+  let signers, signer1, signer2, token;
   const MINUTE = 60;
   const HOUR = MINUTE * 60;
   const DAY = HOUR * 24;
@@ -12,9 +13,8 @@ describe('Infinity_Token', function () {
   const CLIFF = toBN(6);
   const CLIFF_PERIOD = CLIFF.mul(MONTH);
   const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-  const MAX_EPOCHS = 3;
-  const TIMELOCK = 30 * DAY;
-  const INITIAL_SUPPLY = toBN(250_000_000).mul(UNIT);
+  const MAX_EPOCHS = 4;
+  const INITIAL_SUPPLY = toBN(1_000_000_000).mul(UNIT);
 
   let epochsSinceLastAdvance = 0;
 
@@ -23,17 +23,12 @@ describe('Infinity_Token', function () {
   }
 
   before(async () => {
+    // signers
     signers = await ethers.getSigners();
+    signer1 = signers[0];
+    signer2 = signers[1];
     const InfinityToken = await ethers.getContractFactory('InfinityToken');
-    token = await InfinityToken.deploy(
-      signers[0].address,
-      INFLATION.toString(),
-      EPOCH_DURATION.toString(),
-      CLIFF_PERIOD.toString(),
-      MAX_EPOCHS.toString(),
-      TIMELOCK.toString(),
-      INITIAL_SUPPLY.toString()
-    );
+    token = await InfinityToken.deploy(signers[0].address, INITIAL_SUPPLY.toString());
     await token.deployed();
   });
 
@@ -42,12 +37,11 @@ describe('Infinity_Token', function () {
       expect(await token.name()).to.equal('Infinity');
       expect(await token.symbol()).to.equal('NFT');
       expect(await token.decimals()).to.equal(18);
-      expect(await token.getAdmin()).to.equal(signers[0].address);
-      expect(await token.getTimelock()).to.equal(TIMELOCK);
-      expect(await token.getInflation()).to.equal(INFLATION);
-      expect(await token.getCliff()).to.equal(CLIFF_PERIOD);
-      expect(await token.getMaxEpochs()).to.equal(MAX_EPOCHS);
-      expect(await token.getEpochDuration()).to.equal(EPOCH_DURATION);
+      expect(await token.admin()).to.equal(signers[0].address);
+      expect(await token.EPOCH_INFLATION()).to.equal(INFLATION);
+      expect(await token.EPOCH_CLIFF()).to.equal(CLIFF_PERIOD);
+      expect(await token.MAX_EPOCHS()).to.equal(MAX_EPOCHS);
+      expect(await token.EPOCH_DURATION()).to.equal(EPOCH_DURATION);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
       expect(await token.balanceOf(signers[0].address)).to.equal(INITIAL_SUPPLY);
     });
@@ -91,7 +85,7 @@ describe('Infinity_Token', function () {
     it('Should vest full amount if an epoch is missed', async function () {
       await network.provider.send('evm_increaseTime', [EPOCH_DURATION * 2]);
       await token.advanceEpoch();
-      epochsSinceLastAdvance++;
+      epochsSinceLastAdvance += 2;
       expect((await token.balanceOf(signers[0].address)).toString()).to.equal(
         INITIAL_SUPPLY.add(INFLATION.mul(epochsSinceLastAdvance)).toString()
       );
@@ -107,62 +101,24 @@ describe('Infinity_Token', function () {
       expect((await token.balanceOf(signers[0].address)).toString()).to.equal(
         INITIAL_SUPPLY.add(toBN(MAX_EPOCHS).mul(INFLATION)).toString()
       );
-      // console.log('final balance:', (await token.balanceOf(signers[0].address)).toString());
+      console.log('Final balance:', formatEther(await token.balanceOf(signers[0].address)));
     });
     it('Should not allow advancing past epoch limit', async function () {
       await network.provider.send('evm_increaseTime', [EPOCH_DURATION]);
       await expect(token.advanceEpoch()).to.be.revertedWith('no epochs left');
     });
   });
-  describe('Update values', () => {
-    it('Should not allow a non-owner to make a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await expect(token.connect(signers[1]).requestChange(maxEpochsConfig, MAX_EPOCHS + 1)).to.be.revertedWith(
-        'only admin'
-      );
+
+  describe('Admin', () => {
+    it('Default admin', async function () {
+      expect(await token.admin()).to.equal(signer1.address);
     });
-    it('Should allow owner to make a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.requestChange(maxEpochsConfig, MAX_EPOCHS + 1);
-      expect((await token.getMaxEpochs()).toNumber()).to.equal(MAX_EPOCHS); // should keep old epoch for now
+    it('Should not allow changing admin by a non-admin', async function () {
+      await expect(token.connect(signer2).changeAdmin(signer2.address)).to.be.revertedWith('only admin');
     });
-    it('Should not allow confirmation before period has passed', async function () {
-      await network.provider.send('evm_increaseTime', [TIMELOCK - 5 * MINUTE]);
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await expect(token.confirmChange(maxEpochsConfig)).to.be.revertedWith('too early');
-    });
-    it('Should not enact a proposed change in the contract', async function () {
-      await expect(token.advanceEpoch()).to.be.revertedWith('no epochs left');
-    });
-    it('Should allow confirmation after period has passed', async function () {
-      await network.provider.send('evm_increaseTime', [5 * MINUTE]);
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.confirmChange(maxEpochsConfig);
-      expect((await token.getMaxEpochs()).toNumber()).to.equal(MAX_EPOCHS + 1);
-    });
-    it('Should enact the confirmed change in the contract and should only pay out the one period even if multiple epochs have been missed', async function () {
-      await network.provider.send('evm_increaseTime', [12 * EPOCH_DURATION]);
-      await token.advanceEpoch();
-      expect((await token.balanceOf(signers[0].address)).toString()).to.equal(
-        INITIAL_SUPPLY.add(toBN(MAX_EPOCHS + 1).mul(INFLATION)).toString()
-      );
-    });
-    it('Should allow owner to cancel a proposal', async function () {
-      let maxEpochsConfig = await token.MAX_EPOCHS();
-      await token.requestChange(maxEpochsConfig, MAX_EPOCHS + 1);
-      expect(await token.isPending(maxEpochsConfig));
-      expect((await token.getPendingCount()).toString()).to.equal('1');
-      await token.cancelChange(maxEpochsConfig);
-      expect(!(await token.isPending(maxEpochsConfig)));
-      expect((await token.getPendingCount()).toString()).to.equal('0');
-    });
-    it('Should allow the owner to be changed', async function () {
-      let adminConfig = await token.ADMIN();
-      await token.requestChange(adminConfig, signers[1].address);
-      expect(await token.getAdmin()).to.equal(signers[0].address);
-      await network.provider.send('evm_increaseTime', [TIMELOCK]);
-      await token.confirmChange(adminConfig);
-      expect(await token.getAdmin()).to.equal(signers[1].address);
+    it('Should allow changing admin by admin', async function () {
+      await token.changeAdmin(signer2.address);
+      expect(await token.admin()).to.equal(signer2.address);
     });
   });
 });
