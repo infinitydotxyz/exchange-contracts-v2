@@ -18,9 +18,17 @@ contract TokenBroker is Ownable, Pausable {
   address public intermediary;
 
   /*//////////////////////////////////////////////////////////////
+                              EXCHANGE STATES
+      //////////////////////////////////////////////////////////////*/
+
+  /// @notice Mapping to keep track of which exchanges are enabled
+  mapping(address => bool) public exchanges;
+
+  /*//////////////////////////////////////////////////////////////
                                 EVENTS
       //////////////////////////////////////////////////////////////*/
   event IntermediaryUpdated(address indexed intermediary);
+  event ExchangeUpdated(address indexed exchange, bool indexed isEnabled);
 
   /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -28,6 +36,15 @@ contract TokenBroker is Ownable, Pausable {
 
   constructor(address _intermediary) public {
     _updateIntermediary(_intermediary);
+  }
+
+  /// @notice Enable or disable the specified exchange
+  /// @param _exchange The exchange to enable or disable
+  /// @param _isEnabled The state to update the exchange to 
+  function updateExchange(address _exchange, bool _isEnabled) external onlyOwner {
+      require(exchanges[_exchange] != _isEnabled, 'update must be meaningful');
+      exchanges[_exchange] = _isEnabled;
+      emit ExchangeUpdated(_exchange, _isEnabled);
   }
 
   /// @notice Update the intermediary to a different EOA
