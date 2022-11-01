@@ -17,6 +17,9 @@ contract TokenBroker is Ownable, Pausable {
   /// @notice The address of the EOA that acts as an intermediary in the brokerage process
   address public intermediary;
 
+  /// @notice The initiator that is allowed to start the brokerage process
+  address public initiator;
+
   /*//////////////////////////////////////////////////////////////
                               EXCHANGE STATES
       //////////////////////////////////////////////////////////////*/
@@ -29,22 +32,36 @@ contract TokenBroker is Ownable, Pausable {
       //////////////////////////////////////////////////////////////*/
   event IntermediaryUpdated(address indexed intermediary);
   event ExchangeUpdated(address indexed exchange, bool indexed isEnabled);
+  event InitiatorUpdated(address indexed initiator);
 
   /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-  constructor(address _intermediary) public {
+  constructor(address _intermediary, address _initiator) public {
     _updateIntermediary(_intermediary);
+    _updateInitiator(_initiator);
   }
 
   /// @notice Enable or disable the specified exchange
   /// @param _exchange The exchange to enable or disable
-  /// @param _isEnabled The state to update the exchange to 
+  /// @param _isEnabled The state to update the exchange to
   function updateExchange(address _exchange, bool _isEnabled) external onlyOwner {
-      require(exchanges[_exchange] != _isEnabled, 'update must be meaningful');
-      exchanges[_exchange] = _isEnabled;
-      emit ExchangeUpdated(_exchange, _isEnabled);
+    require(exchanges[_exchange] != _isEnabled, 'update must be meaningful');
+    exchanges[_exchange] = _isEnabled;
+    emit ExchangeUpdated(_exchange, _isEnabled);
+  }
+
+  /// @notice Update the address that is allowed to initiate the brokerage process
+  /// @param _initiator The address to use as the initiator
+  function updateInitiator(address _initiator) external onlyOwner {
+    _updateInitiator(_initiator);
+  }
+
+  function _updateInitiator(address _initiator) internal {
+    require(_initiator != address(0), 'initiator cannot be 0');
+    initiator = _initiator;
+    emit InitiatorUpdated(_initiator);
   }
 
   /// @notice Update the intermediary to a different EOA
