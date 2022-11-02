@@ -7,6 +7,7 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
+import { ITokenBroker } from "../interfaces/ITokenBroker.sol";
 import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 
@@ -15,7 +16,7 @@ import { OrderTypes } from "../libs/OrderTypes.sol";
 @author Joe
 @notice The contract that brokers trades among other exchanges
 */
-contract TokenBroker is Ownable, Pausable, IERC721Receiver {
+contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
       //////////////////////////////////////////////////////////////*/
@@ -99,20 +100,20 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
     }
 
     /**
-     * @notice Broker a transaction by executing the specified steps
-     * @param params A transaction containing steps to be executed
+     * @notice broker a trade by fulfilling orders on other exchanges
+     * @param fulfillments A specification of the external fulfillments to make
      */
     function broker(
-        BrokerageTypes.Brokerage calldata params
+        BrokerageTypes.ExternalFulfillments calldata fulfillments
     ) external whenNotPaused {
         require(
             msg.sender == initiator,
             "only the initiator can initiate the brokerage process"
         );
 
-        uint256 numCalls = params.calls.length;
+        uint256 numCalls = fulfillments.calls.length;
         for (uint256 i; i < numCalls; ) {
-            _call(params.calls[i]);
+            _call(fulfillments.calls[i]);
             unchecked {
                 ++i;
             }
@@ -122,7 +123,7 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
         _transferMultipleNFTs(
             address(this),
             intermediary,
-            params.nftsToTransfer
+            fulfillments.nftsToTransfer
         );
     }
 

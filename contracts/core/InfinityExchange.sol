@@ -11,7 +11,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
 
 // internal imports
 import { OrderTypes } from "../libs/OrderTypes.sol";
+import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
 import { IComplication } from "../interfaces/IComplication.sol";
+import { ITokenBroker } from "../interfaces/ITokenBroker.sol";
 
 /**
 @title InfinityExchange
@@ -50,6 +52,8 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     address public immutable WETH;
     /// @dev This is the address that is used to send auto sniped orders for execution on chain
     address public matchExecutor;
+    /// @dev This is the address that is used to broker trades with other exchanges
+    ITokenBroker public broker;
     /// @dev Gas cost for auto sniped orders are paid by the buyers and refunded to this contract in the form of WETH
     uint32 public wethTransferGasUnits = 5e4;
     /// @notice max weth transfer gas units
@@ -111,12 +115,156 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
     @param _weth address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
     @param _matchExecutor address of the match executor used by match* functions to auto execute orders 
    */
-    constructor(address _weth, address _matchExecutor) {
+    constructor(address _weth, address _matchExecutor, ITokenBroker _broker) {
         WETH = _weth;
         matchExecutor = _matchExecutor;
+        broker = _broker;
     }
 
     // =================================================== USER FUNCTIONS =======================================================
+
+    function brokerOrders(
+        BrokerageTypes.BrokerageBatch[] calldata batches
+    ) external nonReentrant whenNotPaused {
+        uint256 startGas = gasleft();
+        require(msg.sender == matchExecutor, "only match executor");
+        uint256 numBatches = batches.length;
+
+        // the below 3 variables are copied locally once to save on gas
+        // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
+        // since these values won't change during function execution, we can save on gas by copying them locally once
+        // instead of SLOADing once for each loop iteration
+        uint32 _protocolFeeBps = protocolFeeBps;
+        uint32 _wethTransferGasUnits = wethTransferGasUnits;
+        address weth = WETH;
+
+        uint256 batchSharedCost = (startGas - gasleft()) / numBatches;
+        for (uint256 batchIndex; batchIndex < numBatches; ) {
+            uint256 startGasPerBatch = gasleft() + batchSharedCost;
+            // broker the trades on other exchanges
+            broker.broker(batches[batchIndex].externalFulfillments);
+
+            // fulfill the trades here
+            uint256 numMatches = batches[batchIndex].matches.length;
+            uint256 matchSharedCost = (startGasPerBatch - gasleft()) /
+                numMatches;
+            for (uint256 matchIndex; matchIndex < numMatches; ) {
+                uint256 startGasPerMatch = gasleft() + matchSharedCost;
+                BrokerageTypes.MatchOrdersType matchType = batches[batchIndex]
+                    .matches[matchIndex]
+                    .matchType;
+                if (
+                    matchType == BrokerageTypes.MatchOrdersType.OneToOneSpecific
+                ) {
+                    uint256 numMakerOrders = batches[batchIndex]
+                        .matches[matchIndex]
+                        .buys
+                        .length;
+                    require(
+                        numMakerOrders ==
+                            batches[batchIndex]
+                                .matches[matchIndex]
+                                .sells
+                                .length,
+                        "mismatched lengths"
+                    );
+                    uint256 orderSharedCost = (startGasPerMatch - gasleft()) /
+                        numMakerOrders;
+                    for (uint256 i; i < numMakerOrders; ) {
+                        uint256 startGasPerOrder = gasleft() + orderSharedCost;
+                        _matchOneToOneOrders(
+                            batches[batchIndex].matches[matchIndex].buys[i],
+                            batches[batchIndex].matches[matchIndex].sells[i],
+                            startGasPerOrder,
+                            _protocolFeeBps,
+                            _wethTransferGasUnits,
+                            weth
+                        );
+                        unchecked {
+                            ++i;
+                        }
+                    }
+                } else if (
+                    matchType ==
+                    BrokerageTypes.MatchOrdersType.OneToOneUnspecific
+                ) {
+                    uint256 numSells = batches[batchIndex]
+                        .matches[matchIndex]
+                        .sells
+                        .length;
+                    require(
+                        batches[batchIndex].matches[matchIndex].buys.length ==
+                            numSells,
+                        "mismatched lengths"
+                    );
+                    require(
+                        numSells ==
+                            batches[batchIndex]
+                                .matches[matchIndex]
+                                .constructs
+                                .length,
+                        "mismatched lengths"
+                    );
+                    uint256 orderSharedCost = (startGasPerMatch - gasleft()) /
+                        numSells;
+                    for (uint256 i; i < numSells; ) {
+                        uint256 startGasPerOrder = gasleft() + orderSharedCost;
+                        _matchOrders(
+                            batches[batchIndex].matches[matchIndex].sells[i],
+                            batches[batchIndex].matches[matchIndex].buys[i],
+                            batches[batchIndex].matches[matchIndex].constructs[
+                                i
+                            ],
+                            startGasPerOrder,
+                            _protocolFeeBps,
+                            _wethTransferGasUnits,
+                            weth
+                        );
+                        unchecked {
+                            ++i;
+                        }
+                    }
+                } else if (
+                    matchType == BrokerageTypes.MatchOrdersType.OneToMany
+                ) {
+                    if (
+                        batches[batchIndex].matches[matchIndex].buys.length == 1
+                    ) {
+                        _matchOneToManyOrders(
+                            startGasPerMatch,
+                            _protocolFeeBps,
+                            _wethTransferGasUnits,
+                            weth,
+                            batches[batchIndex].matches[matchIndex].buys[0],
+                            batches[batchIndex].matches[matchIndex].sells
+                        );
+                    } else if (
+                        batches[batchIndex].matches[matchIndex].sells.length ==
+                        1
+                    ) {
+                        _matchOneToManyOrders(
+                            startGasPerMatch,
+                            _protocolFeeBps,
+                            _wethTransferGasUnits,
+                            weth,
+                            batches[batchIndex].matches[matchIndex].sells[0],
+                            batches[batchIndex].matches[matchIndex].buys
+                        );
+                    } else {
+                        revert("invalid one to many order");
+                    }
+                } else {
+                    revert("invalid match type");
+                }
+                unchecked {
+                    ++matchIndex;
+                }
+            }
+            unchecked {
+                ++batchIndex;
+            }
+        }
+    }
 
     /**
    @notice Matches orders one to one where each order has 1 NFT. Example: Match 1 specific NFT buy with one specific NFT sell.
@@ -172,18 +320,6 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
 
-        (bool canExec, bytes32 makerOrderHash) = IComplication(
-            makerOrder.execParams[0]
-        ).canExecMatchOneToMany(makerOrder, manyMakerOrders);
-        require(canExec, "cannot execute");
-
-        bool makerOrderExpired = isUserOrderNonceExecutedOrCancelled[
-            makerOrder.signer
-        ][makerOrder.constraints[5]] ||
-            makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
-        require(!makerOrderExpired, "maker order expired");
-
-        uint256 ordersLength = manyMakerOrders.length;
         // the below 3 variables are copied locally once to save on gas
         // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
         // since these values won't change during function execution, we can save on gas by copying them locally once
@@ -191,77 +327,14 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
         uint32 _protocolFeeBps = protocolFeeBps;
         uint32 _wethTransferGasUnits = wethTransferGasUnits;
         address weth = WETH;
-        if (makerOrder.isSellOrder) {
-            // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
-            uint256 sharedCost = (startGas + 20000 - gasleft()) / ordersLength;
-            for (uint256 i; i < ordersLength; ) {
-                uint256 startGasPerOrder = gasleft() + sharedCost;
-                _matchOneMakerSellToManyMakerBuys(
-                    makerOrderHash,
-                    makerOrder,
-                    manyMakerOrders[i],
-                    startGasPerOrder,
-                    _protocolFeeBps,
-                    _wethTransferGasUnits,
-                    weth
-                );
-                unchecked {
-                    ++i;
-                }
-            }
-            isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
-                makerOrder.constraints[5]
-            ] = true;
-        } else {
-            // check gas price constraint
-            if (makerOrder.constraints[6] > 0) {
-                require(
-                    tx.gasprice <= makerOrder.constraints[6],
-                    "gas price too high"
-                );
-            }
-            uint256 protocolFee;
-            for (uint256 i; i < ordersLength; ) {
-                protocolFee =
-                    protocolFee +
-                    _matchOneMakerBuyToManyMakerSells(
-                        makerOrderHash,
-                        manyMakerOrders[i],
-                        makerOrder,
-                        _protocolFeeBps
-                    );
-                unchecked {
-                    ++i;
-                }
-            }
-            isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
-                makerOrder.constraints[5]
-            ] = true;
-            uint256 gasCost = (startGas - gasleft() + _wethTransferGasUnits) *
-                tx.gasprice;
-            // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
-            // else we need to send the protocol fee separately in the execution currency
-            // since the buyer is common across many sell orders, this part can be executed outside the above for loop
-            // in contrast to the case where if the one order is a sell order, we need to do this in each for loop
-            if (makerOrder.execParams[1] == weth) {
-                IERC20(weth).transferFrom(
-                    makerOrder.signer,
-                    address(this),
-                    protocolFee + gasCost
-                );
-            } else {
-                IERC20(makerOrder.execParams[1]).transferFrom(
-                    makerOrder.signer,
-                    address(this),
-                    protocolFee
-                );
-                IERC20(weth).transferFrom(
-                    makerOrder.signer,
-                    address(this),
-                    gasCost
-                );
-            }
-        }
+        _matchOneToManyOrders(
+            startGas,
+            _protocolFeeBps,
+            _wethTransferGasUnits,
+            weth,
+            makerOrder,
+            manyMakerOrders
+        );
     }
 
     /**
@@ -555,6 +628,99 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
             _wethTransferGasUnits,
             weth
         );
+    }
+
+    function _matchOneToManyOrders(
+        uint256 startGas,
+        uint32 _protocolFeeBps,
+        uint32 _wethTransferGasUnits,
+        address weth,
+        OrderTypes.MakerOrder calldata makerOrder,
+        OrderTypes.MakerOrder[] calldata manyMakerOrders
+    ) internal {
+        (bool canExec, bytes32 makerOrderHash) = IComplication(
+            makerOrder.execParams[0]
+        ).canExecMatchOneToMany(makerOrder, manyMakerOrders);
+        require(canExec, "cannot execute");
+
+        bool makerOrderExpired = isUserOrderNonceExecutedOrCancelled[
+            makerOrder.signer
+        ][makerOrder.constraints[5]] ||
+            makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
+        require(!makerOrderExpired, "maker order expired");
+
+        uint256 ordersLength = manyMakerOrders.length;
+        if (makerOrder.isSellOrder) {
+            // 20000 for the SSTORE op that updates maker nonce status from zero to a non zero status
+            uint256 sharedCost = (startGas + 20000 - gasleft()) / ordersLength;
+            for (uint256 i; i < ordersLength; ) {
+                uint256 startGasPerOrder = gasleft() + sharedCost;
+                _matchOneMakerSellToManyMakerBuys(
+                    makerOrderHash,
+                    makerOrder,
+                    manyMakerOrders[i],
+                    startGasPerOrder,
+                    _protocolFeeBps,
+                    _wethTransferGasUnits,
+                    weth
+                );
+                unchecked {
+                    ++i;
+                }
+            }
+            isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
+                makerOrder.constraints[5]
+            ] = true;
+        } else {
+            // check gas price constraint
+            if (makerOrder.constraints[6] > 0) {
+                require(
+                    tx.gasprice <= makerOrder.constraints[6],
+                    "gas price too high"
+                );
+            }
+            uint256 protocolFee;
+            for (uint256 i; i < ordersLength; ) {
+                protocolFee =
+                    protocolFee +
+                    _matchOneMakerBuyToManyMakerSells(
+                        makerOrderHash,
+                        manyMakerOrders[i],
+                        makerOrder,
+                        _protocolFeeBps
+                    );
+                unchecked {
+                    ++i;
+                }
+            }
+            isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
+                makerOrder.constraints[5]
+            ] = true;
+            uint256 gasCost = (startGas - gasleft() + _wethTransferGasUnits) *
+                tx.gasprice;
+            // if the execution currency is weth, we can send the protocol fee and gas cost in one transfer to save gas
+            // else we need to send the protocol fee separately in the execution currency
+            // since the buyer is common across many sell orders, this part can be executed outside the above for loop
+            // in contrast to the case where if the one order is a sell order, we need to do this in each for loop
+            if (makerOrder.execParams[1] == weth) {
+                IERC20(weth).transferFrom(
+                    makerOrder.signer,
+                    address(this),
+                    protocolFee + gasCost
+                );
+            } else {
+                IERC20(makerOrder.execParams[1]).transferFrom(
+                    makerOrder.signer,
+                    address(this),
+                    protocolFee
+                );
+                IERC20(weth).transferFrom(
+                    makerOrder.signer,
+                    address(this),
+                    gasCost
+                );
+            }
+        }
     }
 
     /**

@@ -6,24 +6,26 @@ import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInf
 import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { parseEther } from "ethers/lib/utils";
 
 const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExchangeConfig) => {
   const userAddress = signer.address;
-  let orderNonce = 0;
+  let orderNonce = 1;
   const chainId = network.config.chainId ?? 31337;
 
-  const _createOrder = (
+  const _createOrder = async (
     isSellOrder: boolean,
     nfts: OrderItem[],
     numItems = 1,
     execParams: ExecParams,
     startPrice: BigNumberish = ethers.utils.parseEther("1"),
     endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = nowSeconds(),
+    startTime: BigNumberish = -1,
     endTime: BigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
+    if(startTime === -1) {
+      startTime = (await infinityExchange.contract.provider.getBlock('latest')).timestamp - 15
+    }
     const orderId = ethers.utils.solidityKeccak256(
       ["address", "uint256", "uint256"],
       [userAddress, orderNonce, chainId]
@@ -33,7 +35,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
       chainId,
       isSellOrder,
       signerAddress: userAddress,
-      nonce: orderNonce,
+      nonce: `${orderNonce}`,
       numItems: numItems,
       nfts,
       startPrice,
@@ -60,7 +62,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     return { order, prepare };
   };
 
-  const createListing = (
+  const createListing = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
       complicationAddress: infinityExchange.obComplication.address,
@@ -69,11 +71,12 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     numItems = 1,
     startPrice: BigNumberish = ethers.utils.parseEther("1"),
     endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = nowSeconds(),
+    startTime: BigNumberish = -1,
     endTime: BigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
-    return _createOrder(
+
+    return await _createOrder(
       true,
       nfts,
       numItems,
@@ -86,7 +89,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     );
   };
 
-  const createOffer = (
+  const createOffer = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
       complicationAddress: infinityExchange.obComplication.address,
@@ -95,7 +98,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     numItems = 1,
     startPrice: BigNumberish = ethers.utils.parseEther("1"),
     endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = nowSeconds(),
+    startTime: BigNumberish = -1,
     endTime: BigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
@@ -175,7 +178,8 @@ describe("Token_Broker", () => {
       ethers.getContractFactory,
       signer1,
       mock20Contract.address,
-      signer2
+      signer2,
+      tokenBroker.contract.address
     );
 
     orderClientBySigner.set(signer1, getOrderClient(signer1, infinityExchange));
@@ -352,10 +356,21 @@ describe("Token_Broker", () => {
           tokens: [{ tokenId, numTokens: "1" }],
         },
       ];
-      const listing = orderClientBySigner.get(tokenBroker.initiator)!.createListing(orderItems);
+
+
+      const initialOwner = trimLowerCase(await mock721Contract.ownerOf(tokenId));
+      expect(initialOwner).to.equal(trimLowerCase(tokenBroker.initiator.address));
+
+      await mock721Contract.connect(tokenBroker.initiator).setApprovalForAll(infinityExchange.contract.address, true);
+      const isApproved = await mock721Contract.isApprovedForAll(tokenBroker.initiator.address, infinityExchange.contract.address);
+      expect(isApproved).to.be.true;
+
+      const listing = await orderClientBySigner.get(tokenBroker.initiator)!.createListing(orderItems);
       const signedListing = await listing.prepare();
 
       const price = listing.order.startPrice;
+      expect(trimLowerCase(listing.order.execParams.currencyAddress)).to.equal(trimLowerCase(mock20Contract.address));
+
       await mock20Contract
         .connect(tokenBroker.initiator)
         .transfer(tokenBroker.contract.address, price);
@@ -368,7 +383,7 @@ describe("Token_Broker", () => {
       const approveWETH = mock20Contract.interface.getFunction("approve");
       const approveWETHData = mock20Contract.interface.encodeFunctionData(approveWETH, [
         infinityExchange.contract.address,
-        price,
+        price
       ]);
 
       /**
@@ -378,7 +393,7 @@ describe("Token_Broker", () => {
        */
       const takeOrdersArgs = [[signedListing], [orderItems]];
       const takeOrders = infinityExchange.contract.interface.getFunction("takeOrders");
-      const data = infinityExchange.contract.interface.encodeFunctionData(
+      const takeOrdersData = infinityExchange.contract.interface.encodeFunctionData(
         takeOrders,
         takeOrdersArgs
       );
@@ -392,20 +407,19 @@ describe("Token_Broker", () => {
             isPayable: false,
           },
           {
-            data,
+            data: takeOrdersData,
             value: 0,
             to: infinityExchange.contract.address,
             isPayable: false,
           },
         ],
-        nftsToTransfer: orderItems,
+        nftsToTransfer: orderItems, 
       };
 
       try {
         await tokenBroker.contract.broker(brokerage);
       } catch (err) {
         console.error(err);
-        expect(err).to.be.false;
       }
 
       const owner = trimLowerCase(await mock721Contract.ownerOf(tokenId));

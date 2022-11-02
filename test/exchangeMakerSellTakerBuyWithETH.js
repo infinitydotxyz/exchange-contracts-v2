@@ -69,7 +69,7 @@ describe('Exchange_Maker_Sell_Taker_Buy_ETH', function () {
       'InfinityExchange',
       await ethers.getContractFactory('InfinityExchange'),
       signer1,
-      [token.address, signer3.address]
+      [token.address, signer3.address,signer1.address]
     );
 
     // OB complication

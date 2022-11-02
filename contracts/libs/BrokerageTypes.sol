@@ -16,8 +16,29 @@ library BrokerageTypes {
         bool isPayable;
     }
 
-    struct Brokerage {
+    struct ExternalFulfillments {
         Call[] calls;
         OrderTypes.OrderItem[] nftsToTransfer;
+    }
+
+    enum MatchOrdersType {
+        OneToOneSpecific,
+        OneToOneUnspecific,
+        OneToMany
+    }
+
+    struct MatchOrders {
+        /**
+         * @notice the maker 1 orders
+         */
+        OrderTypes.MakerOrder[] buys;
+        OrderTypes.MakerOrder[] sells;
+        OrderTypes.OrderItem[][] constructs;
+        MatchOrdersType matchType;
+    }
+
+    struct BrokerageBatch {
+        ExternalFulfillments externalFulfillments;
+        MatchOrders[] matches;
     }
 }

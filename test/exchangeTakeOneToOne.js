@@ -73,7 +73,7 @@ describe('Exchange_Take_One_To_One', function () {
       'InfinityExchange',
       await ethers.getContractFactory('InfinityExchange'),
       signer1,
-      [token.address, signer3.address]
+      [token.address, signer3.address,signer1.address]
     );
 
     // OB complication

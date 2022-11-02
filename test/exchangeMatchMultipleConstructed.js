@@ -70,7 +70,7 @@ describe('Exchange_Match_Multiple_Constructed', function () {
       'InfinityExchange',
       await ethers.getContractFactory('InfinityExchange'),
       signer1,
-      [token.address, signer3.address]
+      [token.address, signer3.address,signer1.address]
     );
 
     // OB complication

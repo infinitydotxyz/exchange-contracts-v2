@@ -14,13 +14,14 @@ export async function setupInfinityExchange(
   getContractFactory: HardhatEthersHelpers["getContractFactory"],
   owner: SignerWithAddress,
   wethAddress: string,
-  matchExecutor: SignerWithAddress
+  matchExecutor: SignerWithAddress,
+  tokenBrokerAddress: string
 ) {
   const infinityExchange = await deployContract(
     "InfinityExchange",
     await getContractFactory("InfinityExchange"),
     owner,
-    [wethAddress, matchExecutor.address]
+    [wethAddress, matchExecutor.address, tokenBrokerAddress]
   );
 
   const obComplication = await deployContract(
