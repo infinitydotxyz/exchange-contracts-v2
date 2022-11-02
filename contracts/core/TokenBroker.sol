@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 import {BrokerageTypes} from "../libs/BrokerageTypes.sol";
 import {OrderTypes} from "../libs/OrderTypes.sol";
@@ -14,7 +15,7 @@ import {OrderTypes} from "../libs/OrderTypes.sol";
 @author Joe
 @notice The contract that brokers trades among other exchanges
 */
-contract TokenBroker is Ownable, Pausable {
+contract TokenBroker is Ownable, Pausable, IERC721Receiver {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
       //////////////////////////////////////////////////////////////*/
@@ -143,7 +144,11 @@ contract TokenBroker is Ownable, Pausable {
      * @param to the to address
      * @param nfts nfts to transfer
      */
-    function _transferMultipleNFTs(address from, address to, OrderTypes.OrderItem[] calldata nfts) internal {
+    function _transferMultipleNFTs(
+        address from,
+        address to,
+        OrderTypes.OrderItem[] calldata nfts
+    ) internal {
         for (uint256 i; i < nfts.length; ) {
             _transferNFTs(from, to, nfts[i]);
             unchecked {
@@ -159,7 +164,11 @@ contract TokenBroker is Ownable, Pausable {
      * @param to address of the recipient
      * @param item item to transfer
      */
-    function _transferNFTs(address from, address to, OrderTypes.OrderItem calldata item) internal {
+    function _transferNFTs(
+        address from,
+        address to,
+        OrderTypes.OrderItem calldata item
+    ) internal {
         require(
             IERC165(item.collection).supportsInterface(0x80ac58cd) &&
                 !IERC165(item.collection).supportsInterface(0xd9b67a26),
@@ -175,12 +184,25 @@ contract TokenBroker is Ownable, Pausable {
      * @param to address of the recipient
      * @param item item to transfer
      */
-    function _transferERC721s(address from, address to, OrderTypes.OrderItem calldata item) internal {
+    function _transferERC721s(
+        address from,
+        address to,
+        OrderTypes.OrderItem calldata item
+    ) internal {
         for (uint256 i; i < item.tokens.length; ) {
             IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
             unchecked {
                 ++i;
             }
         }
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }
