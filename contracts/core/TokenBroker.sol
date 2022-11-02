@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {Ownable} from "@openzeppelin/contracts/access";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import {BrokerageTypes} from "../libs/BrokerageTypes.sol";
+import {OrderTypes} from "../libs/OrderTypes.sol";
 
 /**
 @title TokenBroker
@@ -39,10 +42,7 @@ contract TokenBroker is Ownable, Pausable {
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(
-        address _intermediary,
-        address _initiator
-    ) public {
+    constructor(address _intermediary, address _initiator) {
         _updateIntermediary(_intermediary);
         _updateInitiator(_initiator);
     }
@@ -92,7 +92,7 @@ contract TokenBroker is Ownable, Pausable {
      * @notice Broker a transaction by executing the specified steps
      * @param params A transaction containing steps to be executed
      */
-    function broker(BrokerageTypes.Brokerage params) external whenNotPaused {
+    function broker(BrokerageTypes.Brokerage calldata params) external whenNotPaused {
         require(msg.sender == initiator, "only the initiator can initiate the brokerage process");
 
         uint256 numCalls = params.calls.length;
@@ -109,20 +109,20 @@ contract TokenBroker is Ownable, Pausable {
 
     /**
      * @notice Execute a call to the specified contract
-     * @param call The call to execute
+     * @param params The call to execute
      */
-    function _call(BrokerageTypes.Call params) internal returns (bytes memory) {
+    function _call(BrokerageTypes.Call calldata params) internal returns (bytes memory) {
         if (params.isPayable) {
             require(payableContracts[params.to], "contract is not payable");
             (bool _success, bytes memory _result) = params.to.call{value: params.value}(params.data);
             require(_success);
             return _result;
+        } else {
+            require(params.value == 0, "value must be zero in a non-payable call");
+            (bool _success, bytes memory _result) = params.to.call(params.data);
+            require(_success);
+            return _result;
         }
-
-        require(params.value == 0, "value must be zero in a non-payable call");
-        (bool _success, bytes memory _result) = params.to.call(params.data);
-        require(_success);
-        return _result;
     }
 
     function _updateInitiator(address _initiator) internal {
@@ -143,11 +143,7 @@ contract TokenBroker is Ownable, Pausable {
      * @param to the to address
      * @param nfts nfts to transfer
      */
-    function _transferMultipleNFTs(
-        address from,
-        address to,
-        OrderTypes.OrderItem[] calldata nfts
-    ) internal {
+    function _transferMultipleNFTs(address from, address to, OrderTypes.OrderItem[] calldata nfts) internal {
         for (uint256 i; i < nfts.length; ) {
             _transferNFTs(from, to, nfts[i]);
             unchecked {
@@ -163,11 +159,7 @@ contract TokenBroker is Ownable, Pausable {
      * @param to address of the recipient
      * @param item item to transfer
      */
-    function _transferNFTs(
-        address from,
-        address to,
-        OrderTypes.OrderItem calldata item
-    ) internal {
+    function _transferNFTs(address from, address to, OrderTypes.OrderItem calldata item) internal {
         require(
             IERC165(item.collection).supportsInterface(0x80ac58cd) &&
                 !IERC165(item.collection).supportsInterface(0xd9b67a26),
@@ -183,11 +175,7 @@ contract TokenBroker is Ownable, Pausable {
      * @param to address of the recipient
      * @param item item to transfer
      */
-    function _transferERC721s(
-        address from,
-        address to,
-        OrderTypes.OrderItem calldata item
-    ) internal {
+    function _transferERC721s(address from, address to, OrderTypes.OrderItem calldata item) internal {
         for (uint256 i; i < item.tokens.length; ) {
             IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
             unchecked {
