@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {OrderTypes} from "../libs/OrderTypes.sol";
+import { OrderTypes } from "../libs/OrderTypes.sol";
 
 /**
  * @title IComplication
@@ -25,7 +25,9 @@ interface IComplication {
         OrderTypes.OrderItem[] calldata constructedNfts
     ) external view returns (bool, bytes32, bytes32, uint256);
 
-    function canExecTakeOneOrder(OrderTypes.MakerOrder calldata makerOrder) external view returns (bool, bytes32);
+    function canExecTakeOneOrder(
+        OrderTypes.MakerOrder calldata makerOrder
+    ) external view returns (bool, bytes32);
 
     function canExecTakeOrder(
         OrderTypes.MakerOrder calldata makerOrder,

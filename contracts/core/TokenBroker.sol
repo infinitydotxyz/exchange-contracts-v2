@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
-import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-import {BrokerageTypes} from "../libs/BrokerageTypes.sol";
-import {OrderTypes} from "../libs/OrderTypes.sol";
+import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
+import { OrderTypes } from "../libs/OrderTypes.sol";
 
 /**
 @title TokenBroker
@@ -37,7 +37,10 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
                                 EVENTS
       //////////////////////////////////////////////////////////////*/
     event IntermediaryUpdated(address indexed intermediary);
-    event PayableContractUpdated(address indexed exchange, bool indexed isPayable);
+    event PayableContractUpdated(
+        address indexed exchange,
+        bool indexed isPayable
+    );
     event InitiatorUpdated(address indexed initiator);
 
     /*//////////////////////////////////////////////////////////////
@@ -53,8 +56,14 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
      * @param _payableContract The address to allow or disallow
      * @param _isPayable The state to update the address to
      */
-    function updatePayableContract(address _payableContract, bool _isPayable) external onlyOwner {
-        require(payableContracts[_payableContract] != _isPayable, "update must be meaningful");
+    function updatePayableContract(
+        address _payableContract,
+        bool _isPayable
+    ) external onlyOwner {
+        require(
+            payableContracts[_payableContract] != _isPayable,
+            "update must be meaningful"
+        );
         payableContracts[_payableContract] = _isPayable;
         emit PayableContractUpdated(_payableContract, _isPayable);
     }
@@ -93,8 +102,13 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
      * @notice Broker a transaction by executing the specified steps
      * @param params A transaction containing steps to be executed
      */
-    function broker(BrokerageTypes.Brokerage calldata params) external whenNotPaused {
-        require(msg.sender == initiator, "only the initiator can initiate the brokerage process");
+    function broker(
+        BrokerageTypes.Brokerage calldata params
+    ) external whenNotPaused {
+        require(
+            msg.sender == initiator,
+            "only the initiator can initiate the brokerage process"
+        );
 
         uint256 numCalls = params.calls.length;
         for (uint256 i; i < numCalls; ) {
@@ -105,21 +119,32 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
         }
 
         /// Transfer the nfts to the intermediary
-        _transferMultipleNFTs(address(this), intermediary, params.nftsToTransfer);
+        _transferMultipleNFTs(
+            address(this),
+            intermediary,
+            params.nftsToTransfer
+        );
     }
 
     /**
      * @notice Execute a call to the specified contract
      * @param params The call to execute
      */
-    function _call(BrokerageTypes.Call calldata params) internal returns (bytes memory) {
+    function _call(
+        BrokerageTypes.Call calldata params
+    ) internal returns (bytes memory) {
         if (params.isPayable) {
             require(payableContracts[params.to], "contract is not payable");
-            (bool _success, bytes memory _result) = params.to.call{value: params.value}(params.data);
+            (bool _success, bytes memory _result) = params.to.call{
+                value: params.value
+            }(params.data);
             require(_success);
             return _result;
         } else {
-            require(params.value == 0, "value must be zero in a non-payable call");
+            require(
+                params.value == 0,
+                "value must be zero in a non-payable call"
+            );
             (bool _success, bytes memory _result) = params.to.call(params.data);
             require(_success);
             return _result;
@@ -190,7 +215,11 @@ contract TokenBroker is Ownable, Pausable, IERC721Receiver {
         OrderTypes.OrderItem calldata item
     ) internal {
         for (uint256 i; i < item.tokens.length; ) {
-            IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
+            IERC721(item.collection).transferFrom(
+                from,
+                to,
+                item.tokens[i].tokenId
+            );
             unchecked {
                 ++i;
             }

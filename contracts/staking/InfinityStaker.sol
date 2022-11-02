@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
  * @title InfinityStaker
@@ -32,7 +32,8 @@ contract InfinityStaker is Ownable, Pausable {
     }
 
     ///@dev Storage variable to keep track of the staker's staked duration and amounts
-    mapping(address => mapping(Duration => StakeAmount)) public userstakedAmounts;
+    mapping(address => mapping(Duration => StakeAmount))
+        public userstakedAmounts;
 
     ///@dev Infinity token address
     address public immutable INFINITY_TOKEN;
@@ -56,10 +57,19 @@ contract InfinityStaker is Ownable, Pausable {
     uint32 public twelveMonthPenalty = 4;
 
     event Staked(address indexed user, uint256 amount, Duration duration);
-    event DurationChanged(address indexed user, uint256 amount, Duration oldDuration, Duration newDuration);
+    event DurationChanged(
+        address indexed user,
+        uint256 amount,
+        Duration oldDuration,
+        Duration newDuration
+    );
     event UnStaked(address indexed user, uint256 amount);
     event RageQuit(address indexed user, uint256 totalToUser, uint256 penalty);
-    event RageQuitPenaltiesUpdated(uint32 threeMonth, uint32 sixMonth, uint32 twelveMonth);
+    event RageQuitPenaltiesUpdated(
+        uint32 threeMonth,
+        uint32 sixMonth,
+        uint32 twelveMonth
+    );
     event StakeLevelThresholdUpdated(StakeLevel stakeLevel, uint32 threshold);
 
     /**
@@ -97,9 +107,16 @@ contract InfinityStaker is Ownable, Pausable {
      * @param oldDuration Old duration of the stake
      * @param newDuration New duration of the stake
      */
-    function changeDuration(uint256 amount, Duration oldDuration, Duration newDuration) external whenNotPaused {
+    function changeDuration(
+        uint256 amount,
+        Duration oldDuration,
+        Duration newDuration
+    ) external whenNotPaused {
         require(amount != 0, "amount cant be 0");
-        require(userstakedAmounts[msg.sender][oldDuration].amount >= amount, "insuf stake to change duration");
+        require(
+            userstakedAmounts[msg.sender][oldDuration].amount >= amount,
+            "insuf stake to change duration"
+        );
         require(newDuration > oldDuration, "new duration must exceed old");
 
         // update storage
@@ -123,14 +140,33 @@ contract InfinityStaker is Ownable, Pausable {
     function unstake(uint256 amount) external whenNotPaused {
         require(amount != 0, "unstake amount cant be 0");
         uint256 noVesting = userstakedAmounts[msg.sender][Duration.NONE].amount;
-        uint256 vestedThreeMonths = getVestedAmount(msg.sender, Duration.THREE_MONTHS);
-        uint256 vestedSixMonths = getVestedAmount(msg.sender, Duration.SIX_MONTHS);
-        uint256 vestedTwelveMonths = getVestedAmount(msg.sender, Duration.TWELVE_MONTHS);
-        uint256 totalVested = noVesting + vestedThreeMonths + vestedSixMonths + vestedTwelveMonths;
+        uint256 vestedThreeMonths = getVestedAmount(
+            msg.sender,
+            Duration.THREE_MONTHS
+        );
+        uint256 vestedSixMonths = getVestedAmount(
+            msg.sender,
+            Duration.SIX_MONTHS
+        );
+        uint256 vestedTwelveMonths = getVestedAmount(
+            msg.sender,
+            Duration.TWELVE_MONTHS
+        );
+        uint256 totalVested = noVesting +
+            vestedThreeMonths +
+            vestedSixMonths +
+            vestedTwelveMonths;
         require(totalVested >= amount, "insufficient balance to unstake");
 
         // update storage
-        _updateUserStakedAmounts(msg.sender, amount, noVesting, vestedThreeMonths, vestedSixMonths, vestedTwelveMonths);
+        _updateUserStakedAmounts(
+            msg.sender,
+            amount,
+            noVesting,
+            vestedThreeMonths,
+            vestedSixMonths,
+            vestedTwelveMonths
+        );
         // perform transfer
         IERC20(INFINITY_TOKEN).transfer(msg.sender, amount);
         // emit event
@@ -185,20 +221,35 @@ contract InfinityStaker is Ownable, Pausable {
      * @param user address of the user
      * @return Total amount to user and penalties
      */
-    function getRageQuitAmounts(address user) public view returns (uint256, uint256) {
+    function getRageQuitAmounts(
+        address user
+    ) public view returns (uint256, uint256) {
         uint256 noLock = userstakedAmounts[user][Duration.NONE].amount;
-        uint256 threeMonthLock = userstakedAmounts[user][Duration.THREE_MONTHS].amount;
-        uint256 sixMonthLock = userstakedAmounts[user][Duration.SIX_MONTHS].amount;
-        uint256 twelveMonthLock = userstakedAmounts[user][Duration.TWELVE_MONTHS].amount;
+        uint256 threeMonthLock = userstakedAmounts[user][Duration.THREE_MONTHS]
+            .amount;
+        uint256 sixMonthLock = userstakedAmounts[user][Duration.SIX_MONTHS]
+            .amount;
+        uint256 twelveMonthLock = userstakedAmounts[user][
+            Duration.TWELVE_MONTHS
+        ].amount;
 
-        uint256 totalStaked = noLock + threeMonthLock + sixMonthLock + twelveMonthLock;
+        uint256 totalStaked = noLock +
+            threeMonthLock +
+            sixMonthLock +
+            twelveMonthLock;
         require(totalStaked != 0, "nothing staked to rage quit");
 
         uint256 threeMonthVested = getVestedAmount(user, Duration.THREE_MONTHS);
         uint256 sixMonthVested = getVestedAmount(user, Duration.SIX_MONTHS);
-        uint256 twelveMonthVested = getVestedAmount(user, Duration.TWELVE_MONTHS);
+        uint256 twelveMonthVested = getVestedAmount(
+            user,
+            Duration.TWELVE_MONTHS
+        );
 
-        uint256 totalVested = noLock + threeMonthVested + sixMonthVested + twelveMonthVested;
+        uint256 totalVested = noLock +
+            threeMonthVested +
+            sixMonthVested +
+            twelveMonthVested;
 
         uint256 totalToUser = totalVested +
             ((threeMonthLock - threeMonthVested) / threeMonthPenalty) +
@@ -215,7 +266,9 @@ contract InfinityStaker is Ownable, Pausable {
      * @param user address of the user
      * @return StakeLevel
      */
-    function getUserStakeLevel(address user) external view returns (StakeLevel) {
+    function getUserStakeLevel(
+        address user
+    ) external view returns (StakeLevel) {
         uint256 totalPower = getUserStakePower(user);
 
         if (totalPower <= bronzeStakeThreshold) {
@@ -242,7 +295,8 @@ contract InfinityStaker is Ownable, Pausable {
             ((userstakedAmounts[user][Duration.NONE].amount) +
                 (userstakedAmounts[user][Duration.THREE_MONTHS].amount * 2) +
                 (userstakedAmounts[user][Duration.SIX_MONTHS].amount * 3) +
-                (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount * 4)) / (1e18);
+                (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount * 4)) /
+            (1e18);
     }
 
     /**
@@ -250,7 +304,9 @@ contract InfinityStaker is Ownable, Pausable {
      * @param user address of the user
      * @return Staking amounts for different durations
      */
-    function getStakingInfo(address user) external view returns (StakeAmount[] memory) {
+    function getStakingInfo(
+        address user
+    ) external view returns (StakeAmount[] memory) {
         StakeAmount[] memory stakingInfo = new StakeAmount[](4);
         stakingInfo[0] = userstakedAmounts[user][Duration.NONE];
         stakingInfo[1] = userstakedAmounts[user][Duration.THREE_MONTHS];
@@ -265,7 +321,10 @@ contract InfinityStaker is Ownable, Pausable {
      * @param duration the duration
      * @return Vested amount for the given duration
      */
-    function getVestedAmount(address user, Duration duration) public view returns (uint256) {
+    function getVestedAmount(
+        address user,
+        Duration duration
+    ) public view returns (uint256) {
         uint256 timestamp = userstakedAmounts[user][duration].timestamp;
         // short circuit if no vesting for this duration
         if (timestamp == 0) {
@@ -279,7 +338,9 @@ contract InfinityStaker is Ownable, Pausable {
 
     // ====================================================== INTERNAL FUNCTIONS ================================================
 
-    function _getDurationInSeconds(Duration duration) internal pure returns (uint256) {
+    function _getDurationInSeconds(
+        Duration duration
+    ) internal pure returns (uint256) {
         if (duration == Duration.THREE_MONTHS) {
             return 90 days;
         } else if (duration == Duration.SIX_MONTHS) {
@@ -308,34 +369,51 @@ contract InfinityStaker is Ownable, Pausable {
             amount = amount - noVesting;
             if (amount > vestedThreeMonths) {
                 if (vestedThreeMonths != 0) {
-                    delete userstakedAmounts[user][Duration.THREE_MONTHS].amount;
-                    delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+                    delete userstakedAmounts[user][Duration.THREE_MONTHS]
+                        .amount;
+                    delete userstakedAmounts[user][Duration.THREE_MONTHS]
+                        .timestamp;
                     amount = amount - vestedThreeMonths;
                 }
                 if (amount > vestedSixMonths) {
                     if (vestedSixMonths != 0) {
-                        delete userstakedAmounts[user][Duration.SIX_MONTHS].amount;
-                        delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+                        delete userstakedAmounts[user][Duration.SIX_MONTHS]
+                            .amount;
+                        delete userstakedAmounts[user][Duration.SIX_MONTHS]
+                            .timestamp;
                         amount = amount - vestedSixMonths;
                     }
                     if (amount > vestedTwelveMonths) {
                         revert("should not happen");
                     } else {
-                        userstakedAmounts[user][Duration.TWELVE_MONTHS].amount -= amount;
-                        if (userstakedAmounts[user][Duration.TWELVE_MONTHS].amount == 0) {
-                            delete userstakedAmounts[user][Duration.TWELVE_MONTHS].timestamp;
+                        userstakedAmounts[user][Duration.TWELVE_MONTHS]
+                            .amount -= amount;
+                        if (
+                            userstakedAmounts[user][Duration.TWELVE_MONTHS]
+                                .amount == 0
+                        ) {
+                            delete userstakedAmounts[user][
+                                Duration.TWELVE_MONTHS
+                            ].timestamp;
                         }
                     }
                 } else {
-                    userstakedAmounts[user][Duration.SIX_MONTHS].amount -= amount;
-                    if (userstakedAmounts[user][Duration.SIX_MONTHS].amount == 0) {
-                        delete userstakedAmounts[user][Duration.SIX_MONTHS].timestamp;
+                    userstakedAmounts[user][Duration.SIX_MONTHS]
+                        .amount -= amount;
+                    if (
+                        userstakedAmounts[user][Duration.SIX_MONTHS].amount == 0
+                    ) {
+                        delete userstakedAmounts[user][Duration.SIX_MONTHS]
+                            .timestamp;
                     }
                 }
             } else {
                 userstakedAmounts[user][Duration.THREE_MONTHS].amount -= amount;
-                if (userstakedAmounts[user][Duration.THREE_MONTHS].amount == 0) {
-                    delete userstakedAmounts[user][Duration.THREE_MONTHS].timestamp;
+                if (
+                    userstakedAmounts[user][Duration.THREE_MONTHS].amount == 0
+                ) {
+                    delete userstakedAmounts[user][Duration.THREE_MONTHS]
+                        .timestamp;
                 }
             }
         } else {
@@ -364,7 +442,10 @@ contract InfinityStaker is Ownable, Pausable {
     // ====================================================== ADMIN FUNCTIONS ================================================
 
     /// @dev Admin function to update stake level thresholds
-    function updateStakeLevelThreshold(StakeLevel stakeLevel, uint32 threshold) external onlyOwner {
+    function updateStakeLevelThreshold(
+        StakeLevel stakeLevel,
+        uint32 threshold
+    ) external onlyOwner {
         if (stakeLevel == StakeLevel.BRONZE) {
             bronzeStakeThreshold = threshold;
         } else if (stakeLevel == StakeLevel.SILVER) {
@@ -383,17 +464,32 @@ contract InfinityStaker is Ownable, Pausable {
         uint32 _sixMonthPenalty,
         uint32 _twelveMonthPenalty
     ) external onlyOwner {
-        require(_threeMonthPenalty > 0 && _threeMonthPenalty < threeMonthPenalty, "invalid value");
-        require(_sixMonthPenalty > 0 && _sixMonthPenalty < sixMonthPenalty, "invalid value");
-        require(_twelveMonthPenalty > 0 && _twelveMonthPenalty < twelveMonthPenalty, "invalid value");
+        require(
+            _threeMonthPenalty > 0 && _threeMonthPenalty < threeMonthPenalty,
+            "invalid value"
+        );
+        require(
+            _sixMonthPenalty > 0 && _sixMonthPenalty < sixMonthPenalty,
+            "invalid value"
+        );
+        require(
+            _twelveMonthPenalty > 0 && _twelveMonthPenalty < twelveMonthPenalty,
+            "invalid value"
+        );
         threeMonthPenalty = _threeMonthPenalty;
         sixMonthPenalty = _sixMonthPenalty;
         twelveMonthPenalty = _twelveMonthPenalty;
-        emit RageQuitPenaltiesUpdated(threeMonthPenalty, sixMonthPenalty, twelveMonthPenalty);
+        emit RageQuitPenaltiesUpdated(
+            threeMonthPenalty,
+            sixMonthPenalty,
+            twelveMonthPenalty
+        );
     }
 
     /// @dev Admin function to update Infinity treasury
-    function updateInfinityTreasury(address _infinityTreasury) external onlyOwner {
+    function updateInfinityTreasury(
+        address _infinityTreasury
+    ) external onlyOwner {
         require(_infinityTreasury != address(0), "invalid address");
         infinityTreasury = _infinityTreasury;
     }

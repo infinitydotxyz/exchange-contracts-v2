@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
 /**
  * @title SignatureChecker
@@ -16,11 +16,17 @@ library SignatureChecker {
      * @param s parameter
      * @param v parameter (27 or 28). This prevents malleability since the public key recovery equation has two possible solutions.
      */
-    function recover(bytes32 hashed, bytes32 r, bytes32 s, uint8 v) internal pure returns (address) {
+    function recover(
+        bytes32 hashed,
+        bytes32 r,
+        bytes32 s,
+        uint8 v
+    ) internal pure returns (address) {
         // https://ethereum.stackexchange.com/questions/83174/is-it-best-practice-to-check-signature-malleability-in-ecrecover
         // https://crypto.iacr.org/2019/affevents/wac/medias/Heninger-BiasedNonceSense.pdf
         require(
-            uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+            uint256(s) <=
+                0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
             "Signature: Invalid s parameter"
         );
 
@@ -53,11 +59,17 @@ library SignatureChecker {
     ) internal view returns (bool) {
         // \x19\x01 is the standardized encoding prefix
         // https://eips.ethereum.org/EIPS/eip-712#specification
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, orderHash));
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, orderHash)
+        );
 
         if (Address.isContract(signer)) {
             // 0x1626ba7e is the interfaceId for signature contracts (see IERC1271)
-            return IERC1271(signer).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e;
+            return
+                IERC1271(signer).isValidSignature(
+                    digest,
+                    abi.encodePacked(r, s, v)
+                ) == 0x1626ba7e;
         } else {
             return recover(digest, r, s, v) == signer;
         }

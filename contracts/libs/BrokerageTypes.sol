@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {OrderTypes} from "./OrderTypes.sol";
+import { OrderTypes } from "./OrderTypes.sol";
 
 /**
  * @title BrokerTypes

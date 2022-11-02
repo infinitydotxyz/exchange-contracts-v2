@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import {ERC20Snapshot} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import { ERC20Snapshot } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
+import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
  * @title InfinityTokens
  * @author nneverlander. Twitter @nneverlander
  * @notice The Infinity Token ($NFT).
  */
-contract InfinityToken is ERC20("Infinity", "INFT"), ERC20Permit("Infinity"), ERC20Burnable, ERC20Snapshot, ERC20Votes {
+contract InfinityToken is
+    ERC20("Infinity", "INFT"),
+    ERC20Permit("Infinity"),
+    ERC20Burnable,
+    ERC20Snapshot,
+    ERC20Votes
+{
     uint256 public constant EPOCH_INFLATION = 25e7 ether;
     uint256 public constant EPOCH_DURATION = 180 days;
     uint256 public constant EPOCH_CLIFF = 180 days;
@@ -47,10 +53,17 @@ contract InfinityToken is ERC20("Infinity", "INFT"), ERC20Permit("Infinity"), ER
 
     function advanceEpoch() external onlyAdmin {
         require(currentEpoch < MAX_EPOCHS, "no epochs left");
-        require(block.timestamp >= currentEpochTimestamp + EPOCH_CLIFF, "cliff not passed");
-        require(block.timestamp >= previousEpochTimestamp + EPOCH_DURATION, "not ready to advance");
+        require(
+            block.timestamp >= currentEpochTimestamp + EPOCH_CLIFF,
+            "cliff not passed"
+        );
+        require(
+            block.timestamp >= previousEpochTimestamp + EPOCH_DURATION,
+            "not ready to advance"
+        );
 
-        uint256 epochsPassedSinceLastAdvance = (block.timestamp - previousEpochTimestamp) / EPOCH_DURATION;
+        uint256 epochsPassedSinceLastAdvance = (block.timestamp -
+            previousEpochTimestamp) / EPOCH_DURATION;
         uint256 epochsLeft = MAX_EPOCHS - currentEpoch;
         epochsPassedSinceLastAdvance = epochsPassedSinceLastAdvance > epochsLeft
             ? epochsLeft
@@ -77,20 +90,34 @@ contract InfinityToken is ERC20("Infinity", "INFT"), ERC20Permit("Infinity"), ER
 
     // =============================================== HOOKS =========================================================
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Snapshot) {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Snapshot) {
         ERC20Snapshot._beforeTokenTransfer(from, to, amount);
     }
 
     // =============================================== REQUIRED OVERRIDES =========================================================
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Votes) {
         super._afterTokenTransfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount) internal override(ERC20, ERC20Votes) {
+    function _mint(
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Votes) {
         super._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount) internal override(ERC20, ERC20Votes) {
+    function _burn(
+        address account,
+        uint256 amount
+    ) internal override(ERC20, ERC20Votes) {
         super._burn(account, amount);
     }
 }
