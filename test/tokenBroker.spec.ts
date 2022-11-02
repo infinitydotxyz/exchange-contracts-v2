@@ -136,6 +136,10 @@ describe("Token_Broker", () => {
   let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getOrderClient>> = new Map();
 
   before(async () => {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [],
+    });
     // signers
     const [_signer1, _signer2] = await ethers.getSigners();
     signer1 = _signer1;
@@ -400,6 +404,7 @@ describe("Token_Broker", () => {
       try {
         await tokenBroker.contract.broker(brokerage);
       } catch (err) {
+        console.error(err);
         expect(err).to.be.false;
       }
 
