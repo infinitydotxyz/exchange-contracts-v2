@@ -4,9 +4,12 @@ pragma solidity 0.8.14;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
+import { IFlashLoanRecipient } from "../interfaces/IFlashLoanRecipient.sol";
+import { IBalancerVault } from "../interfaces/IBalancerVault.sol";
 import { ITokenBroker } from "../interfaces/ITokenBroker.sol";
 import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
@@ -16,16 +19,24 @@ import { OrderTypes } from "../libs/OrderTypes.sol";
 @author Joe
 @notice The contract that brokers trades among other exchanges
 */
-contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
+contract TokenBroker is
+    IFlashLoanRecipient,
+    ITokenBroker,
+    IERC721Receiver,
+    Ownable,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
       //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the EOA that acts as an intermediary in the brokerage process
-    address public intermediary;
+    address private intermediary;
 
     /// @notice The initiator that is allowed to start the brokerage process
-    address public initiator;
+    address private initiator;
+
+    IBalancerVault public immutable vault;
 
     /*//////////////////////////////////////////////////////////////
                               EXCHANGE STATES
@@ -47,9 +58,14 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(address _intermediary, address _initiator) {
+    constructor(
+        address _intermediary,
+        address _initiator,
+        IBalancerVault _vault
+    ) {
         _updateIntermediary(_intermediary);
         _updateInitiator(_initiator);
+        vault = _vault;
     }
 
     /**
@@ -99,16 +115,80 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
         _unpause();
     }
 
+    function receiveFlashLoan(
+        IERC20[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256[] calldata feeAmounts,
+        bytes calldata fulfillmentBytes
+    ) external {
+        require(msg.sender == address(vault), "only vault can call");
+        _broker(fulfillmentBytes);
+
+        /**
+         * payback the loan
+         */
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            IERC20 token = tokens[i];
+            uint256 amount = amounts[i];
+            uint256 feeAmount = feeAmounts[i];
+            token.transfer(address(vault), amount + feeAmount);
+        }
+    }
+
     /**
      * @notice broker a trade by fulfilling orders on other exchanges
-     * @param fulfillments A specification of the external fulfillments to make
+     * @param fulfillmentBytes A specification of the external fulfillments to make
      */
     function broker(
-        BrokerageTypes.ExternalFulfillments calldata fulfillments
+        bytes calldata fulfillmentBytes,
+        BrokerageTypes.Loans calldata loans
     ) external whenNotPaused {
         require(
             msg.sender == initiator,
             "only the initiator can initiate the brokerage process"
+        );
+
+        if (loans.tokens.length > 0) {
+            /**
+             * take out a flash loan
+             *
+             * receiveFlashLoan will handle decoding bytes and calling _broker
+             */
+            _makeFlashLoan(loans.tokens, loans.amounts, fulfillmentBytes);
+        } else {
+            require(loans.amounts.length == 0, "amounts must be empty");
+            _broker(fulfillmentBytes);
+        }
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function _makeFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        bytes memory fulfillmentBytes
+    ) internal {
+        vault.flashLoan(this, tokens, amounts, fulfillmentBytes);
+    }
+
+    function test(BrokerageTypes.ExternalFulfillments calldata fulfillments) external {    
+        bytes memory b = abi.encode(fulfillments);
+        IERC20[] memory tokens = new IERC20[](1);
+        uint256[] memory amounts = new uint256[](1);
+        vault.flashLoan(this, tokens, amounts, b);
+    }
+
+    function _broker(bytes calldata fulfillmentBytes) internal {
+        BrokerageTypes.ExternalFulfillments memory fulfillments = abi.decode(
+            fulfillmentBytes,
+            (BrokerageTypes.ExternalFulfillments)
         );
 
         uint256 numCalls = fulfillments.calls.length;
@@ -132,7 +212,7 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
      * @param params The call to execute
      */
     function _call(
-        BrokerageTypes.Call calldata params
+        BrokerageTypes.Call memory params
     ) internal returns (bytes memory) {
         if (params.isPayable) {
             require(payableContracts[params.to], "contract is not payable");
@@ -173,7 +253,7 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
     function _transferMultipleNFTs(
         address from,
         address to,
-        OrderTypes.OrderItem[] calldata nfts
+        OrderTypes.OrderItem[] memory nfts
     ) internal {
         for (uint256 i; i < nfts.length; ) {
             _transferNFTs(from, to, nfts[i]);
@@ -193,7 +273,7 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
     function _transferNFTs(
         address from,
         address to,
-        OrderTypes.OrderItem calldata item
+        OrderTypes.OrderItem memory item
     ) internal {
         require(
             IERC165(item.collection).supportsInterface(0x80ac58cd) &&
@@ -213,7 +293,7 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
     function _transferERC721s(
         address from,
         address to,
-        OrderTypes.OrderItem calldata item
+        OrderTypes.OrderItem memory item
     ) internal {
         for (uint256 i; i < item.tokens.length; ) {
             IERC721(item.collection).transferFrom(
@@ -225,14 +305,5 @@ contract TokenBroker is ITokenBroker, IERC721Receiver, Ownable, Pausable {
                 ++i;
             }
         }
-    }
-
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 }

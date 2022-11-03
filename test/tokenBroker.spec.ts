@@ -1,11 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber, BigNumberish, Contract } from "ethers";
+import { BigNumberish, Contract } from "ethers";
 import { ethers, network } from "hardhat";
 import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
 import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
 import { JsonRpcSigner } from "@ethersproject/providers";
+import {encodeExternalFulfillment} from '../utils/encoders';
+import { Call, ExternalFulfillments, Loans } from "../utils/brokerageTypes";
 
 const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExchangeConfig) => {
   const userAddress = signer.address;
@@ -134,6 +136,7 @@ describe("Token_Broker", () => {
 
   let mock721Contract: Contract;
   let mock20Contract: Contract;
+  let mockVaultContract: Contract;
 
   let infinityExchange: InfinityExchangeConfig;
   let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getOrderClient>> = new Map();
@@ -153,8 +156,10 @@ describe("Token_Broker", () => {
      */
     const ERC721 = await ethers.getContractFactory("MockERC721");
     const ERC20 = await ethers.getContractFactory("MockERC20");
+    const MockVault = await ethers.getContractFactory("MockBalancerVault");
     mock721Contract = await ERC721.connect(signer2).deploy("Mock NFT", "MCKNFT");
     mock20Contract = await ERC20.connect(signer2).deploy();
+    mockVaultContract = await MockVault.connect(signer2).deploy();
 
     // token broker
     const TokenBroker = await ethers.getContractFactory("TokenBroker");
@@ -163,7 +168,8 @@ describe("Token_Broker", () => {
     const tokenBrokerOwner = initiator;
     const tokenBrokerContract = await TokenBroker.connect(tokenBrokerOwner).deploy(
       intermediary.address,
-      initiator.address
+      initiator.address,
+      mockVaultContract.address
     );
     await tokenBrokerContract.deployed();
 
@@ -188,21 +194,25 @@ describe("Token_Broker", () => {
 
   describe("broker", () => {
     it("is only callable by the initiator", async () => {
-      const emptyBrokerage = {
+      const emptyBrokerage: ExternalFulfillments = {
         calls: [],
         nftsToTransfer: [],
       };
+      const loans: Loans = {
+        tokens: [],
+        amounts: []
+      }
 
       const invalidBrokerage = tokenBroker.contract
         .connect(tokenBroker.intermediary)
-        .broker(emptyBrokerage);
+        .broker(encodeExternalFulfillment(emptyBrokerage), loans);
       await expect(invalidBrokerage).to.be.revertedWith(
         "only the initiator can initiate the brokerage process"
       );
 
       const validBrokerage = tokenBroker.contract
         .connect(tokenBroker.initiator)
-        .broker(emptyBrokerage);
+        .broker(encodeExternalFulfillment(emptyBrokerage), loans);
       try {
         await validBrokerage;
       } catch (err) {
@@ -217,19 +227,24 @@ describe("Token_Broker", () => {
         0,
       ]);
 
-      const call = {
+      const call: Call = {
         data: data,
         value: 0,
         to: infinityExchange.contract.address,
         isPayable: false,
       };
 
-      const brokerage = {
+      const brokerage: ExternalFulfillments = {
         calls: [call],
         nftsToTransfer: [],
       };
 
-      const validBrokerage = tokenBroker.contract.connect(tokenBroker.initiator).broker(brokerage);
+      const loans: Loans = {
+        tokens: [],
+        amounts: []
+      }
+
+      const validBrokerage = tokenBroker.contract.connect(tokenBroker.initiator).broker(encodeExternalFulfillment(brokerage), loans);
 
       try {
         await validBrokerage;
@@ -253,24 +268,28 @@ describe("Token_Broker", () => {
       const isPayable = await tokenBroker.contract.payableContracts(contract);
       expect(isPayable).to.be.false;
 
-      const call = {
+      const call: Call = {
         data: data,
         value: 1,
         to: contract,
         isPayable: true,
       };
 
-      const brokerage = {
+      const brokerage: ExternalFulfillments= {
         calls: [call],
         nftsToTransfer: [],
       };
+      const loans: Loans = {
+        tokens: [],
+        amounts: []
+      }
 
       /**
        * attempt to broker a call to the non-payable contract with value
        */
       const invalidBrokerage = tokenBroker.contract
         .connect(tokenBroker.initiator)
-        .broker(brokerage);
+        .broker(encodeExternalFulfillment(brokerage), loans);
       await expect(invalidBrokerage).to.be.revertedWith("contract is not payable");
     });
 
@@ -284,21 +303,25 @@ describe("Token_Broker", () => {
       /**
        * note that the value is `1` but `isPayable` is `false`
        */
-      const call = {
+      const call: Call = {
         data: data,
         value: 1,
         to: infinityExchange.contract.address,
         isPayable: false,
       };
 
-      const brokerage = {
+      const brokerage: ExternalFulfillments = {
         calls: [call],
         nftsToTransfer: [],
       };
+      const loans: Loans = {
+        tokens: [],
+        amounts: []
+      }
 
       const invalidBrokerage = tokenBroker.contract
         .connect(tokenBroker.initiator)
-        .broker(brokerage);
+        .broker(encodeExternalFulfillment(brokerage), loans);
       await expect(invalidBrokerage).to.be.revertedWith("value must be zero in a non-payable call");
     });
 
@@ -309,10 +332,14 @@ describe("Token_Broker", () => {
         tokens: [{ tokenId, numTokens: "1" }],
       };
 
-      const brokerage = {
+      const brokerage: ExternalFulfillments = {
         calls: [],
         nftsToTransfer: [nftToTransfer],
       };
+      const loans: Loans= {
+        tokens: [],
+        amounts: []
+      }
 
       /**
        * attempting to transfer before the token broker is the owner of the token
@@ -320,7 +347,7 @@ describe("Token_Broker", () => {
        */
       const invalidBrokerage = tokenBroker.contract
         .connect(tokenBroker.initiator)
-        .broker(brokerage);
+        .broker(encodeExternalFulfillment(brokerage), loans);
       await expect(invalidBrokerage).to.be.revertedWith(
         "ERC721: transfer caller is not owner nor approved"
       );
@@ -340,7 +367,7 @@ describe("Token_Broker", () => {
       /**
        * transfer the nft to the intermediary via broker
        */
-      await tokenBroker.contract.connect(tokenBroker.initiator).broker(brokerage);
+      await tokenBroker.contract.connect(tokenBroker.initiator).broker(encodeExternalFulfillment(brokerage), loans);
       const newOwner = trimLowerCase(await mock721Contract.ownerOf(tokenId));
       expect(newOwner).to.equal(intermediary);
     });
@@ -350,7 +377,7 @@ describe("Token_Broker", () => {
        * generate the listing
        */
       const tokenId = "2";
-      const orderItems = [
+      const orderItems: OrderItem[] = [
         {
           collection: mock721Contract.address,
           tokens: [{ tokenId, numTokens: "1" }],
@@ -398,7 +425,7 @@ describe("Token_Broker", () => {
         takeOrdersArgs
       );
 
-      const brokerage = {
+      const brokerage: ExternalFulfillments = {
         calls: [
           {
             data: approveWETHData,
@@ -416,8 +443,13 @@ describe("Token_Broker", () => {
         nftsToTransfer: orderItems, 
       };
 
+      const loans: Loans = {
+        tokens: [],
+        amounts: []
+      }
+
       try {
-        await tokenBroker.contract.broker(brokerage);
+        await tokenBroker.contract.broker(encodeExternalFulfillment(brokerage), loans);
       } catch (err) {
         console.error(err);
       }

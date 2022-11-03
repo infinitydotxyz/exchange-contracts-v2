@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { OrderTypes } from "./OrderTypes.sol";
 
 /**
@@ -14,6 +16,11 @@ library BrokerageTypes {
         uint256 value;
         address payable to;
         bool isPayable;
+    }
+
+    struct Loans {
+        IERC20[] tokens;
+        uint256[] amounts;
     }
 
     struct ExternalFulfillments {
@@ -38,7 +45,8 @@ library BrokerageTypes {
     }
 
     struct BrokerageBatch {
-        ExternalFulfillments externalFulfillments;
+        bytes externalFulfillmentBytes;
+        Loans loans;
         MatchOrders[] matches;
     }
 }

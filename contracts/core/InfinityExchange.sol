@@ -142,7 +142,7 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
         for (uint256 batchIndex; batchIndex < numBatches; ) {
             uint256 startGasPerBatch = gasleft() + batchSharedCost;
             // broker the trades on other exchanges
-            broker.broker(batches[batchIndex].externalFulfillments);
+            broker.broker(batches[batchIndex].externalFulfillmentBytes, batches[batchIndex].loans);
 
             // fulfill the trades here
             uint256 numMatches = batches[batchIndex].matches.length;

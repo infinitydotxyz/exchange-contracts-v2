@@ -11,6 +11,7 @@ import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
  */
 interface ITokenBroker {
     function broker(
-        BrokerageTypes.ExternalFulfillments calldata fulfillments
+        bytes calldata fulfillmentBytes,
+        BrokerageTypes.Loans calldata loans
     ) external;
 }
