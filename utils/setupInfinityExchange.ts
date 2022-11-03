@@ -7,6 +7,7 @@ export type InfinityExchangeConfig = {
     contract: Contract,
     obComplication: Contract,
     WETH: string,
+    owner: SignerWithAddress,
     matchExecutor: SignerWithAddress,
 }
 
@@ -34,6 +35,7 @@ export async function setupInfinityExchange(
   return {
     contract: infinityExchange,
     obComplication,
+    owner,
     WETH: wethAddress,
     matchExecutor: matchExecutor,
   }

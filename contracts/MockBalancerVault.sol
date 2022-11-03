@@ -38,7 +38,9 @@ contract MockBalancerVault is IBalancerVault, ReentrancyGuard {
 
             require(
                 address(token) > address(previousToken),
-                address(token) == address(0) ? "received zero token" : "tokens not sorted"
+                address(token) == address(0)
+                    ? "received zero token"
+                    : "tokens not sorted"
             );
             previousToken = address(token);
 

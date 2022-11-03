@@ -178,13 +178,6 @@ contract TokenBroker is
         vault.flashLoan(this, tokens, amounts, fulfillmentBytes);
     }
 
-    function test(BrokerageTypes.ExternalFulfillments calldata fulfillments) external {    
-        bytes memory b = abi.encode(fulfillments);
-        IERC20[] memory tokens = new IERC20[](1);
-        uint256[] memory amounts = new uint256[](1);
-        vault.flashLoan(this, tokens, amounts, b);
-    }
-
     function _broker(bytes calldata fulfillmentBytes) internal {
         BrokerageTypes.ExternalFulfillments memory fulfillments = abi.decode(
             fulfillmentBytes,
