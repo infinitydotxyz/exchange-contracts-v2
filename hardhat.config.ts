@@ -2,15 +2,15 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import 'hardhat-gas-reporter';
+import "hardhat-contract-sizer"
 import './tasks/utils';
 import './tasks/deploy';
 import { HardhatUserConfig } from 'hardhat/config';
 import { parseUnits } from 'ethers/lib/utils';
+import { config } from "dotenv";
+config();
 
-require('dotenv').config();
-require('hardhat-contract-sizer');
-
-export default {
+const hardhatConfig: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
@@ -18,11 +18,11 @@ export default {
     },
     goerli: {
       url: 'https://eth-goerli.alchemyapi.io/v2/' + process.env.ALCHEMY_GOERLI_KEY,
-      accounts: [process.env.ETH_GOERLI_PRIV_KEY, process.env.ETH_GOERLI_PRIV_KEY_2]
+      accounts: [process.env.ETH_GOERLI_PRIV_KEY ?? '', process.env.ETH_GOERLI_PRIV_KEY_2 ?? '']
     },
     mainnet: {
       url: 'https://eth-mainnet.alchemyapi.io/v2/' + process.env.ALCHEMY_MAINNET_KEY,
-      accounts: [process.env.ETH_MAINNET_PRIV_KEY, process.env.ETH_MAINNET_PRIV_KEY_2],
+      accounts: [process.env.ETH_MAINNET_PRIV_KEY ?? '', process.env.ETH_MAINNET_PRIV_KEY_2 ?? ''],
       gasPrice: parseUnits('70', 'gwei').toNumber()
     }
   },
@@ -52,4 +52,7 @@ export default {
     runOnCompile: true,
     disambiguatePaths: false
   }
-} as HardhatUserConfig;
+};
+
+export default hardhatConfig;
+

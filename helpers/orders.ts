@@ -150,7 +150,7 @@ export async function prepareOBOrder(
   signer: JsonRpcSigner,
   order: OBOrder,
   infinityExchange: Contract,
-  obComplication: Contract,
+  obComplication: Contract
 ): Promise<SignedOBOrder | undefined> {
   const validOrder = await isOrderValid(user, order, infinityExchange, signer);
   if (!validOrder) {

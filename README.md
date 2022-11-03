@@ -50,7 +50,7 @@ Our contracts are the most efficient NFT exchange contracts in the world. Users 
 
 Match orders gas table (auto sniped by our matching engine):
 
-Min gas is for autosniping single NFTs and max gas is for multiple NFTs (10 in the highest case). 
+Min gas is for autosniping single NFTs and max gas is for multiple NFTs (10 in the highest case).
 
 ![Match_Orders](./static/matchOrdersGas.png)
 
@@ -67,7 +67,6 @@ The contracts have been extensively tested. All tests can be found in the `test`
 # Audits
 
 - [Immunefi bug bounty](https://immunefi.com/bounty/infinity/)
-  
 - [Code4Arena audit contest](https://code4rena.com/contests/2022-06-infinity-nft-marketplace-contest)
 
 # Links
