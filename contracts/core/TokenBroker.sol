@@ -13,6 +13,7 @@ import { IBalancerVault } from "../interfaces/IBalancerVault.sol";
 import { ITokenBroker } from "../interfaces/ITokenBroker.sol";
 import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
+import { IBrokerageInitiator } from "../interfaces/IBrokerageInitiator.sol";
 
 /**
 @title TokenBroker
@@ -34,7 +35,7 @@ contract TokenBroker is
     address private intermediary;
 
     /// @notice The initiator that is allowed to start the brokerage process
-    address private initiator;
+    IBrokerageInitiator private initiator;
 
     IBalancerVault public immutable vault;
 
@@ -60,7 +61,7 @@ contract TokenBroker is
     //////////////////////////////////////////////////////////////*/
     constructor(
         address _intermediary,
-        address _initiator,
+        IBrokerageInitiator _initiator,
         IBalancerVault _vault
     ) {
         _updateIntermediary(_intermediary);
@@ -89,7 +90,7 @@ contract TokenBroker is
      * @notice Update the address that is allowed to initiate the brokerage process
      * @param _initiator The address to use as the initiator
      */
-    function updateInitiator(address _initiator) external onlyOwner {
+    function updateInitiator(IBrokerageInitiator _initiator) external onlyOwner {
         _updateInitiator(_initiator);
     }
 
@@ -119,10 +120,15 @@ contract TokenBroker is
         IERC20[] calldata tokens,
         uint256[] calldata amounts,
         uint256[] calldata feeAmounts,
-        bytes calldata fulfillmentBytes
+        bytes calldata data
     ) external {
         require(msg.sender == address(vault), "only vault can call");
-        _broker(fulfillmentBytes);
+        (uint256 startGas, BrokerageTypes.BrokerageBatch[] memory batches) = abi
+            .decode(data, (uint256, BrokerageTypes.BrokerageBatch[]));
+        /**
+         * pass control back to the initiator
+         */
+        initiator.receiveBrokerage(startGas, batches);
 
         /**
          * payback the loan
@@ -135,58 +141,43 @@ contract TokenBroker is
         }
     }
 
-    /**
-     * @notice broker a trade by fulfilling orders on other exchanges
-     * @param fulfillmentBytes A specification of the external fulfillments to make
-     */
-    function broker(
-        bytes calldata fulfillmentBytes,
+    function makeFlashLoan(
+        uint256 startGas,
+        BrokerageTypes.BrokerageBatch[] calldata batches,
         BrokerageTypes.Loans calldata loans
-    ) external whenNotPaused {
-        require(
-            msg.sender == initiator,
-            "only the initiator can initiate the brokerage process"
-        );
+    ) external {
+        require(msg.sender == address(initiator), "only initiator can call");
+        require(loans.tokens.length == loans.amounts.length, "length mismatch");
 
         if (loans.tokens.length > 0) {
             /**
              * take out a flash loan
-             *
-             * receiveFlashLoan will handle decoding bytes and calling _broker
              */
-            _makeFlashLoan(loans.tokens, loans.amounts, fulfillmentBytes);
+            vault.flashLoan(this, loans.tokens, loans.amounts, abi.encode(startGas, batches));
         } else {
-            require(loans.amounts.length == 0, "amounts must be empty");
-            _broker(fulfillmentBytes);
+            /**
+             * no need to take a flash loan out
+             * pass control back to the initiator
+             */
+            initiator.receiveBrokerage(startGas, batches);
         }
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
-    function _makeFlashLoan(
-        IERC20[] memory tokens,
-        uint256[] memory amounts,
-        bytes memory fulfillmentBytes
-    ) internal {
-        vault.flashLoan(this, tokens, amounts, fulfillmentBytes);
-    }
-
-    function _broker(bytes calldata fulfillmentBytes) internal {
-        BrokerageTypes.ExternalFulfillments memory fulfillments = abi.decode(
-            fulfillmentBytes,
-            (BrokerageTypes.ExternalFulfillments)
+    /**
+     * @notice broker a trade by fulfilling orders on other exchanges
+     * @param externalFulfillments A specification of the external fulfillments to make
+     */
+    function broker(
+        BrokerageTypes.ExternalFulfillments memory externalFulfillments
+    ) external whenNotPaused {
+        require(
+            msg.sender == address(initiator),
+            "only the initiator can initiate the brokerage process"
         );
 
-        uint256 numCalls = fulfillments.calls.length;
+        uint256 numCalls = externalFulfillments.calls.length;
         for (uint256 i; i < numCalls; ) {
-            _call(fulfillments.calls[i]);
+            _call(externalFulfillments.calls[i]);
             unchecked {
                 ++i;
             }
@@ -196,8 +187,17 @@ contract TokenBroker is
         _transferMultipleNFTs(
             address(this),
             intermediary,
-            fulfillments.nftsToTransfer
+            externalFulfillments.nftsToTransfer
         );
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     /**
@@ -225,10 +225,10 @@ contract TokenBroker is
         }
     }
 
-    function _updateInitiator(address _initiator) internal {
-        require(_initiator != address(0), "initiator cannot be 0");
+    function _updateInitiator(IBrokerageInitiator _initiator) internal {
+        require(address(_initiator) != address(0), "initiator cannot be 0");
         initiator = _initiator;
-        emit InitiatorUpdated(_initiator);
+        emit InitiatorUpdated(address(_initiator));
     }
 
     function _updateIntermediary(address _intermediary) internal {

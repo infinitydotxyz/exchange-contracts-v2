@@ -14,6 +14,7 @@ import { OrderTypes } from "../libs/OrderTypes.sol";
 import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
 import { IComplication } from "../interfaces/IComplication.sol";
 import { ITokenBroker } from "../interfaces/ITokenBroker.sol";
+import { IBrokerageInitiator } from "../interfaces/IBrokerageInitiator.sol";
 
 /**
 @title InfinityExchange
@@ -47,7 +48,12 @@ NFTNFT                                                 NFTNFT
 NFTNFTNFT...........................................NFTNFTNFT 
 
 */
-contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
+contract InfinityExchange is
+    IBrokerageInitiator,
+    ReentrancyGuard,
+    Ownable,
+    Pausable
+{
     /// @dev WETH address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
     address public immutable WETH;
     /// @dev This is the address that is used to send auto sniped orders for execution on chain
@@ -123,12 +129,24 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
 
     // =================================================== USER FUNCTIONS =======================================================
 
-    function brokerOrders(
-        BrokerageTypes.BrokerageBatch[] calldata batches
+    /**
+     * @notice Function that initiates the brokerage process
+     *
+     * @param batches The steps to be executed in the brokerage process
+     * @param loan The loan required to be taken out by the TokenBroker
+     * in order to complete the batches
+     */
+    function initiateBrokerage(
+        BrokerageTypes.BrokerageBatch[] calldata batches,
+        BrokerageTypes.Loans calldata loan
     ) external nonReentrant whenNotPaused {
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
-        uint256 numBatches = batches.length;
+        broker.makeFlashLoan(startGas, batches, loan);
+    }
+
+    function receiveBrokerage(uint256 startGas, BrokerageTypes.BrokerageBatch[] calldata batches) external {
+        require(msg.sender == address(broker), "only broker");
 
         // the below 3 variables are copied locally once to save on gas
         // an SLOAD costs minimum 100 gas where an MLOAD only costs minimum 3 gas
@@ -138,13 +156,16 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
         uint32 _wethTransferGasUnits = wethTransferGasUnits;
         address weth = WETH;
 
+        uint256 numBatches = batches.length;
         uint256 batchSharedCost = (startGas - gasleft()) / numBatches;
         for (uint256 batchIndex; batchIndex < numBatches; ) {
             uint256 startGasPerBatch = gasleft() + batchSharedCost;
-            // broker the trades on other exchanges
+
+            /**
+             * broker trades on other exchanges
+             */
             broker.broker(
-                batches[batchIndex].externalFulfillmentBytes,
-                batches[batchIndex].loans
+                batches[batchIndex].externalFulfillments
             );
 
             // fulfill the trades here
@@ -156,6 +177,10 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
                 BrokerageTypes.MatchOrdersType matchType = batches[batchIndex]
                     .matches[matchIndex]
                     .matchType;
+
+                /**
+                 * execute one to one specific match
+                 */
                 if (
                     matchType == BrokerageTypes.MatchOrdersType.OneToOneSpecific
                 ) {
@@ -187,7 +212,12 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
                             ++i;
                         }
                     }
-                } else if (
+                } 
+
+                /**
+                 * execute one to one unspecific match
+                 */
+                else if (
                     matchType ==
                     BrokerageTypes.MatchOrdersType.OneToOneUnspecific
                 ) {
@@ -227,7 +257,11 @@ contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
                             ++i;
                         }
                     }
-                } else if (
+                } 
+                /**
+                 * execute one to many match
+                 */
+                else if (
                     matchType == BrokerageTypes.MatchOrdersType.OneToMany
                 ) {
                     if (

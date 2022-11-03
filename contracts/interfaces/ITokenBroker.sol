@@ -11,7 +11,12 @@ import { BrokerageTypes } from "../libs/BrokerageTypes.sol";
  */
 interface ITokenBroker {
     function broker(
-        bytes calldata fulfillmentBytes,
+        BrokerageTypes.ExternalFulfillments memory externalFulfillments
+    ) external;
+
+    function makeFlashLoan(
+        uint256 startGas,
+        BrokerageTypes.BrokerageBatch[] calldata batches,
         BrokerageTypes.Loans calldata loans
     ) external;
 }

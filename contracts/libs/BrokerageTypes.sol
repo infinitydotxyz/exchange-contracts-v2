@@ -35,9 +35,6 @@ library BrokerageTypes {
     }
 
     struct MatchOrders {
-        /**
-         * @notice the maker 1 orders
-         */
         OrderTypes.MakerOrder[] buys;
         OrderTypes.MakerOrder[] sells;
         OrderTypes.OrderItem[][] constructs;
@@ -45,8 +42,7 @@ library BrokerageTypes {
     }
 
     struct BrokerageBatch {
-        bytes externalFulfillmentBytes;
-        Loans loans;
+        ExternalFulfillments externalFulfillments;
         MatchOrders[] matches;
     }
 }
