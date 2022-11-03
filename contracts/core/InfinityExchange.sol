@@ -142,10 +142,21 @@ contract InfinityExchange is
     ) external nonReentrant whenNotPaused {
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
+        require(batches.length > 0, "no batches");
         broker.makeFlashLoan(startGas, batches, loan);
     }
 
-    function receiveBrokerage(uint256 startGas, BrokerageTypes.BrokerageBatch[] calldata batches) external {
+    /**
+     * @notice Function that returns control to the InfinityExchange after
+     * the flash loan has been taken out
+     *
+     * @param startGas the start gas from when execution started
+     * @param batches The steps to be executed in the brokerage process
+     */
+    function receiveBrokerage(
+        uint256 startGas,
+        BrokerageTypes.BrokerageBatch[] calldata batches
+    ) external {
         require(msg.sender == address(broker), "only broker");
 
         // the below 3 variables are copied locally once to save on gas
@@ -164,12 +175,38 @@ contract InfinityExchange is
             /**
              * broker trades on other exchanges
              */
-            broker.broker(
-                batches[batchIndex].externalFulfillments
-            );
+            broker.broker(batches[batchIndex].externalFulfillments);
 
-            // fulfill the trades here
+            /**
+             * fulfill orders on this exchange
+             */
             uint256 numMatches = batches[batchIndex].matches.length;
+
+            /**
+             * if there are no matches we should continue
+             *
+             * note: this puts the burden of the gas cost for this
+             * batch on the broker
+             */
+            if (numMatches == 0) {
+                uint256 gasCost = (startGasPerBatch -
+                    gasleft() +
+                    _wethTransferGasUnits) * tx.gasprice;
+                IERC20(weth).transferFrom(
+                    address(broker),
+                    address(this),
+                    gasCost
+                );
+
+                /**
+                 * increment batch index and continue
+                 */
+                unchecked {
+                    ++batchIndex;
+                }
+                continue;
+            }
+
             uint256 matchSharedCost = (startGasPerBatch - gasleft()) /
                 numMatches;
             for (uint256 matchIndex; matchIndex < numMatches; ) {
@@ -212,8 +249,7 @@ contract InfinityExchange is
                             ++i;
                         }
                     }
-                } 
-
+                }
                 /**
                  * execute one to one unspecific match
                  */
@@ -257,7 +293,7 @@ contract InfinityExchange is
                             ++i;
                         }
                     }
-                } 
+                }
                 /**
                  * execute one to many match
                  */

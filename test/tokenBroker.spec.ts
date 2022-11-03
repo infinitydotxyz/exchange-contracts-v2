@@ -6,8 +6,7 @@ import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInf
 import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { encodeExternalFulfillment } from "../utils/encoders";
-import { Call, ExternalFulfillments, Loans } from "../utils/brokerageTypes";
+import { BrokerageBatch, Call, ExternalFulfillments, Loans } from "../utils/brokerageTypes";
 import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
 import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
 import { MockVaultConfig, setupMockVault } from "../utils/setupMockVault";
@@ -131,8 +130,8 @@ describe("Token_Broker", () => {
   let mock20: MockERC20Config;
   let mock721: MockERC721Config;
   let mockVault: MockVaultConfig;
+  let tokenBroker: TokenBrokerConfig<Contract>;
   let tokenBrokerEOAInitiator: TokenBrokerConfig<SignerWithAddress>;
-  let tokenBrokerExchangeInitiator: TokenBrokerConfig<Contract>;
   let infinityExchange: InfinityExchangeConfig;
 
   let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getOrderClient>> = new Map();
@@ -146,18 +145,20 @@ describe("Token_Broker", () => {
     mock20 = await setupMockERC20(ethers.getContractFactory, signers.pop() as SignerWithAddress);
     mock721 = await setupMockERC721(ethers.getContractFactory, signers.pop() as SignerWithAddress);
     mockVault = await setupMockVault(ethers.getContractFactory, signers.pop() as SignerWithAddress);
-    tokenBrokerEOAInitiator = await setupTokenBroker<SignerWithAddress>(
-      ethers.getContractFactory,
-      signers.pop() as SignerWithAddress,
-      signers.pop() as SignerWithAddress,
-      signers.pop() as SignerWithAddress,
-      mockVault
-    );
-    tokenBrokerExchangeInitiator = await setupTokenBroker<Contract>(
+
+    tokenBroker = await setupTokenBroker(
       ethers.getContractFactory,
       signers.pop() as SignerWithAddress,
       signers.pop() as SignerWithAddress,
       signers.pop() as any,
+      mockVault
+    );
+
+    tokenBrokerEOAInitiator = await setupTokenBroker(
+      ethers.getContractFactory,
+      signers.pop() as SignerWithAddress,
+      signers.pop() as SignerWithAddress,
+      signers.pop() as any, // 
       mockVault
     );
 
@@ -166,14 +167,14 @@ describe("Token_Broker", () => {
       signers.pop() as SignerWithAddress,
       mock20.contract.address,
       signers.pop() as SignerWithAddress,
-      tokenBrokerExchangeInitiator.contract.address
+      tokenBroker.contract.address
     );
 
-    // set the initiator correctly
-    await tokenBrokerExchangeInitiator.contract
-      .connect(tokenBrokerExchangeInitiator.owner)
+    // set the initiator correctly for the exchange token broker
+    await tokenBroker.contract
+      .connect(tokenBroker.owner)
       .updateInitiator(infinityExchange.contract.address);
-    tokenBrokerExchangeInitiator.initiator = infinityExchange.contract;
+      tokenBroker.initiator = infinityExchange.contract;
 
     orderClientBySigner.set(mock20.minter, getOrderClient(mock20.minter, infinityExchange));
     orderClientBySigner.set(mock721.minter, getOrderClient(mock721.minter, infinityExchange));
@@ -185,21 +186,17 @@ describe("Token_Broker", () => {
         calls: [],
         nftsToTransfer: [],
       };
-      const loans: Loans = {
-        tokens: [],
-        amounts: [],
-      };
 
       const invalidBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.intermediary)
-        .broker(encodeExternalFulfillment(emptyBrokerage), loans);
+        .broker(emptyBrokerage);
       await expect(invalidBrokerage).to.be.revertedWith(
         "only the initiator can initiate the brokerage process"
       );
 
       const validBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(emptyBrokerage), loans);
+        .broker(emptyBrokerage);
       try {
         await validBrokerage;
       } catch (err) {
@@ -226,14 +223,9 @@ describe("Token_Broker", () => {
         nftsToTransfer: [],
       };
 
-      const loans: Loans = {
-        tokens: [],
-        amounts: [],
-      };
-
       const validBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
+        .broker(brokerage);
 
       try {
         await validBrokerage;
@@ -278,7 +270,7 @@ describe("Token_Broker", () => {
        */
       const invalidBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
+        .broker(brokerage);
       await expect(invalidBrokerage).to.be.revertedWith("contract is not payable");
     });
 
@@ -303,14 +295,10 @@ describe("Token_Broker", () => {
         calls: [call],
         nftsToTransfer: [],
       };
-      const loans: Loans = {
-        tokens: [],
-        amounts: [],
-      };
 
       const invalidBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
+        .broker(brokerage);
       await expect(invalidBrokerage).to.be.revertedWith("value must be zero in a non-payable call");
     });
 
@@ -325,10 +313,6 @@ describe("Token_Broker", () => {
         calls: [],
         nftsToTransfer: [nftToTransfer],
       };
-      const loans: Loans = {
-        tokens: [],
-        amounts: [],
-      };
 
       /**
        * attempting to transfer before the token broker is the owner of the token
@@ -336,7 +320,7 @@ describe("Token_Broker", () => {
        */
       const invalidBrokerage = tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
+        .broker(brokerage);
       await expect(invalidBrokerage).to.be.revertedWith(
         "ERC721: transfer caller is not owner nor approved"
       );
@@ -358,7 +342,7 @@ describe("Token_Broker", () => {
        */
       await tokenBrokerEOAInitiator.contract
         .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
+        .broker(brokerage);
       const newOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
       expect(newOwner).to.equal(intermediary);
     });
@@ -440,15 +424,10 @@ describe("Token_Broker", () => {
         nftsToTransfer: orderItems,
       };
 
-      const loans: Loans = {
-        tokens: [],
-        amounts: [],
-      };
-
       try {
         await tokenBrokerEOAInitiator.contract
           .connect(tokenBrokerEOAInitiator.initiator)
-          .broker(encodeExternalFulfillment(brokerage), loans);
+          .broker(brokerage);
       } catch (err) {
         console.error(err);
       }
@@ -458,56 +437,90 @@ describe("Token_Broker", () => {
     });
 
     it("can execute a flash loan", async () => {
+      const gasFees = parseEther("0.01").toString();
+      await mock20.contract.connect(mock20.minter).transfer(tokenBroker.contract.address, gasFees);
+      /**
+       * add some allowance to payback the gas fee
+       */
+      const approveWETH = mock20.contract.interface.getFunction("approve");
+      const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
+        infinityExchange.contract.address,
+        ethers.constants.MaxUint256,
+      ]);
+
       const brokerage: ExternalFulfillments = {
-        calls: [],
+        calls: [
+          {
+            data: approveWETHData,
+            value: 0,
+            to: mock20.contract.address,
+            isPayable: false,
+          }
+        ],
         nftsToTransfer: [],
       };
 
-      const loanAmount = parseEther("1").toString();
+      const brokerageBatches: BrokerageBatch[] = [{
+        externalFulfillments: brokerage,
+        /**
+         * by not having any matches in the batch, the token broker 
+         * is responsible for paying back the gas fees
+         */
+        matches: []
+      }];
 
-      const loans: Loans = {
+      const loanAmount = parseEther("1").toString();
+      const loan: Loans = {
         tokens: [mock20.contract.address],
         amounts: [loanAmount],
       };
 
-      // transfer some tokens to the vault
+      /**
+       * transfer some tokens to the vault
+       */
       await mock20.contract
         .connect(mock20.minter)
-        .transfer(tokenBrokerEOAInitiator.vault.contract.address, loanAmount);
+        .transfer(tokenBroker.vault.contract.address, loanAmount);
 
-      // execute a brokerage that will borrow the tokens
-      const result = await tokenBrokerEOAInitiator.contract
-        .connect(tokenBrokerEOAInitiator.initiator)
-        .broker(encodeExternalFulfillment(brokerage), loans);
-      const receipt = await tokenBrokerEOAInitiator.contract.provider.getTransactionReceipt(
-        result.hash
+      const initiator = await tokenBroker.contract.initiator();
+      expect(trimLowerCase(initiator)).to.equal(trimLowerCase(infinityExchange.contract.address));
+
+      /**
+       * execute the flash loan 
+       */
+      const txn = await infinityExchange.contract
+        .connect(infinityExchange.matchExecutor)
+        .initiateBrokerage(brokerageBatches, loan);
+      const receipt = await tokenBroker.contract.provider.getTransactionReceipt(
+        txn.hash
       );
-
       const logs = receipt.logs;
-      
+        
       /**
        * verify the tokens were loaned out
        */
-      const loan = mock20.contract.interface.parseLog(logs[0]);
-      expect(trimLowerCase(loan.args[0])).to.equal(
-        trimLowerCase(tokenBrokerEOAInitiator.vault.contract.address)
+      const transferToLog = mock20.contract.interface.parseLog(logs[0]);
+      expect(trimLowerCase(transferToLog.args[0])).to.equal(
+        trimLowerCase(tokenBroker.vault.contract.address)
       );
-      expect(trimLowerCase(loan.args[1])).to.equal(
-        trimLowerCase(tokenBrokerEOAInitiator.contract.address)
+      expect(trimLowerCase(transferToLog.args[1])).to.equal(
+        trimLowerCase(tokenBroker.contract.address)
       );
-      expect(BigNumber.from(loan.args[2]).toString()).to.equal(loanAmount);
+      expect(BigNumber.from(transferToLog.args[2]).toString()).to.equal(loanAmount);
 
       /**
        * verify the tokens were payed back
+       * 
+       * second to last log, the last line is the flash loan completed event
        */
-      const payback = mock20.contract.interface.parseLog(logs[1]);
-      expect(trimLowerCase(payback.args[0])).to.equal(
-        trimLowerCase(tokenBrokerEOAInitiator.contract.address)
+      const transferBackLog = mock20.contract.interface.parseLog(logs[logs.length - 2]); 
+      expect(trimLowerCase(transferBackLog.args[0])).to.equal(
+        trimLowerCase(tokenBroker.contract.address)
       );
-      expect(trimLowerCase(payback.args[1])).to.equal(
-        trimLowerCase(tokenBrokerEOAInitiator.vault.contract.address)
+      expect(trimLowerCase(transferBackLog.args[1])).to.equal(
+        trimLowerCase(tokenBroker.vault.contract.address)
       );
-      expect(BigNumber.from(payback.args[2]).toString()).to.equal(loanAmount);
+      expect(BigNumber.from(transferBackLog.args[2]).toString()).to.equal(loanAmount);
     });
   });
 });

@@ -32,6 +32,6 @@ export interface MatchOrders {
 }
 
 export interface BrokerageBatch {
-    externalFulfillmentBytes: string;
-    matchOrders: MatchOrders[];
+    externalFulfillments: ExternalFulfillments;
+    matches: MatchOrders[];
 }

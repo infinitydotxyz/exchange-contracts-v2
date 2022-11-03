@@ -32,10 +32,10 @@ contract TokenBroker is
       //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the EOA that acts as an intermediary in the brokerage process
-    address private intermediary;
+    address public intermediary;
 
     /// @notice The initiator that is allowed to start the brokerage process
-    IBrokerageInitiator private initiator;
+    IBrokerageInitiator public initiator;
 
     IBalancerVault public immutable vault;
 
@@ -90,7 +90,9 @@ contract TokenBroker is
      * @notice Update the address that is allowed to initiate the brokerage process
      * @param _initiator The address to use as the initiator
      */
-    function updateInitiator(IBrokerageInitiator _initiator) external onlyOwner {
+    function updateInitiator(
+        IBrokerageInitiator _initiator
+    ) external onlyOwner {
         _updateInitiator(_initiator);
     }
 
@@ -116,6 +118,13 @@ contract TokenBroker is
         _unpause();
     }
 
+    /**
+     * @notice Function called by the vault after a flash loan has been taken out
+     * @param tokens The tokens that were borrowed
+     * @param amounts The amounts of each token that were borrowed
+     * @param feeAmounts The fees that need to be paid back for each token
+     * @param data The abi encoded data that was passed to the vault
+     */
     function receiveFlashLoan(
         IERC20[] calldata tokens,
         uint256[] calldata amounts,
@@ -141,6 +150,11 @@ contract TokenBroker is
         }
     }
 
+    /**
+     * @notice The entry point for the brokerage process
+     * @param startGas To be passed back to the initiator
+     * @param batches The batches to encode and eventually pass back to the initiator
+     */
     function makeFlashLoan(
         uint256 startGas,
         BrokerageTypes.BrokerageBatch[] calldata batches,
@@ -153,7 +167,12 @@ contract TokenBroker is
             /**
              * take out a flash loan
              */
-            vault.flashLoan(this, loans.tokens, loans.amounts, abi.encode(startGas, batches));
+            vault.flashLoan(
+                this,
+                loans.tokens,
+                loans.amounts,
+                abi.encode(startGas, batches)
+            );
         } else {
             /**
              * no need to take a flash loan out
@@ -165,7 +184,7 @@ contract TokenBroker is
 
     /**
      * @notice broker a trade by fulfilling orders on other exchanges
-     * @param externalFulfillments A specification of the external fulfillments to make
+     * @param externalFulfillments The specification of the external calls to make and nfts to transfer
      */
     function broker(
         BrokerageTypes.ExternalFulfillments memory externalFulfillments
@@ -176,19 +195,23 @@ contract TokenBroker is
         );
 
         uint256 numCalls = externalFulfillments.calls.length;
-        for (uint256 i; i < numCalls; ) {
-            _call(externalFulfillments.calls[i]);
-            unchecked {
-                ++i;
+        if (numCalls > 0) {
+            for (uint256 i; i < numCalls; ) {
+                _call(externalFulfillments.calls[i]);
+                unchecked {
+                    ++i;
+                }
             }
         }
 
-        /// Transfer the nfts to the intermediary
-        _transferMultipleNFTs(
-            address(this),
-            intermediary,
-            externalFulfillments.nftsToTransfer
-        );
+        if (externalFulfillments.nftsToTransfer.length > 0) {
+            /// Transfer the nfts to the intermediary
+            _transferMultipleNFTs(
+                address(this),
+                intermediary,
+                externalFulfillments.nftsToTransfer
+            );
+        }
     }
 
     function onERC721Received(
