@@ -143,6 +143,7 @@ contract InfinityExchange is
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
         require(batches.length > 0, "no batches");
+        // TODO who should pay for the gas used to make a flash loan?
         broker.makeFlashLoan(startGas, batches, loan);
     }
 
@@ -175,6 +176,7 @@ contract InfinityExchange is
             /**
              * broker trades on other exchanges
              */
+            // TODO who should pay for the gas used by this? 
             broker.broker(batches[batchIndex].externalFulfillments);
 
             /**
