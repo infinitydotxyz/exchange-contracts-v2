@@ -10,7 +10,6 @@ import {IERC721Receiver} from '@openzeppelin/contracts/token/ERC721/IERC721Recei
 
 import {IFlashLoanRecipient} from '../interfaces/IFlashLoanRecipient.sol';
 import {IBalancerVault} from '../interfaces/IBalancerVault.sol';
-import {IMatchExecutor} from '../interfaces/IMatchExecutor.sol';
 import {MatchExecutorTypes} from '../libs/MatchExecutorTypes.sol';
 import {OrderTypes} from '../libs/OrderTypes.sol';
 import {IInfinityExchange} from '../interfaces/IInfinityExchange.sol';
@@ -20,7 +19,7 @@ import {IInfinityExchange} from '../interfaces/IInfinityExchange.sol';
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, Ownable, Pausable {
+contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausable {
   /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
       //////////////////////////////////////////////////////////////*/
@@ -105,7 +104,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @param batches The batches of calls to make
    * @param loans The loans to take out
    */
-  function executeMatches(MatchExecutorTypes.BrokerageBatch[] calldata batches, MatchExecutorTypes.Loans calldata loans)
+  function executeMatches(MatchExecutorTypes.Batch[] calldata batches, MatchExecutorTypes.Loans calldata loans)
     external
     onlyOwner
     whenNotPaused
@@ -123,7 +122,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
       /**
        * flash loan is not required, proceed to execute matches
        */
-      _executeMatches(batches);
+      _executeMatchesCalldata(batches);
     }
   }
 
@@ -141,7 +140,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
     bytes calldata data
   ) external whenNotPaused {
     require(msg.sender == address(vault), 'only vault can call');
-    MatchExecutorTypes.BrokerageBatch[] memory batches = abi.decode(data, (MatchExecutorTypes.BrokerageBatch[]));
+    MatchExecutorTypes.Batch[] memory batches = abi.decode(data, (MatchExecutorTypes.Batch[]));
     /**
      * execute the matches
      */
@@ -157,12 +156,24 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
       token.transfer(address(vault), amount + feeAmount);
     }
   }
-
+  
   function _executeMatches(MatchExecutorTypes.Batch[] memory batches) internal {
     uint256 numBatches = batches.length;
     for (uint256 i; i < numBatches; ) {
-      this._broker(batches[i].externalFulfillments);
-      this._matchOrders(batches[i].matches);
+      _broker(batches[i].externalFulfillments);
+      _matchOrders(batches[i].matches);
+
+      unchecked {
+        ++i;
+      }
+    }
+  }
+
+  function _executeMatchesCalldata(MatchExecutorTypes.Batch[] calldata batches) internal {
+    uint256 numBatches = batches.length;
+    for (uint256 i; i < numBatches; ) {
+      _brokerCalldata(batches[i].externalFulfillments);
+      _matchOrdersCalldata(batches[i].matches);
 
       unchecked {
         ++i;
@@ -174,16 +185,47 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @notice Function called to execute a batch of matches by calling the exchange contract
    * @param matches The batch of matches to execute on the exchange
    */
-  function _matchOrders(MatchExecutorTypes.Match[] memory matches) internal {
+  function _matchOrders(MatchExecutorTypes.MatchOrders[] memory matches) internal {
     uint256 numMatches = matches.length;
     if (numMatches > 0) {
       for (uint256 i; i < numMatches; ) {
-        MatchExecutorTypes.MatchOrdersType = matches[i].matchType;
+        MatchExecutorTypes.MatchOrdersType matchType = matches[i].matchType;
         if (matchType == MatchExecutorTypes.MatchOrdersType.OneToOneSpecific) {
           exchange.matchOneToOneOrders(matches[i].buys, matches[i].sells);
         } else if (matchType == MatchExecutorTypes.MatchOrdersType.OneToOneUnspecific) {
           exchange.matchOrders(matches[i].buys, matches[i].sells, matches[i].constructs);
-        } else if (matchType == MatchExecutortypes.MatchOrdersType.OneToMany) {
+        } else if (matchType == MatchExecutorTypes.MatchOrdersType.OneToMany) {
+          if (matches[i].buys.length == 1) {
+            exchange.matchOneToManyOrders(matches[i].buys[0], matches[i].sells);
+          } else if (matches[i].sells.length == 1) {
+            exchange.matchOneToManyOrders(matches[i].sells[0], matches[i].buys);
+          } else {
+            revert('invalid one to many order');
+          }
+        } else {
+          revert('invalid match type');
+        }
+        unchecked {
+          ++i;
+        }
+      }
+    }
+  }
+
+  /**
+   * @notice Function called to execute a batch of matches by calling the exchange contract
+   * @param matches The batch of matches to execute on the exchange
+   */
+  function _matchOrdersCalldata(MatchExecutorTypes.MatchOrders[] calldata matches) internal {
+    uint256 numMatches = matches.length;
+    if (numMatches > 0) {
+      for (uint256 i; i < numMatches; ) {
+        MatchExecutorTypes.MatchOrdersType matchType = matches[i].matchType;
+        if (matchType == MatchExecutorTypes.MatchOrdersType.OneToOneSpecific) {
+          exchange.matchOneToOneOrders(matches[i].buys, matches[i].sells);
+        } else if (matchType == MatchExecutorTypes.MatchOrdersType.OneToOneUnspecific) {
+          exchange.matchOrders(matches[i].buys, matches[i].sells, matches[i].constructs);
+        } else if (matchType == MatchExecutorTypes.MatchOrdersType.OneToMany) {
           if (matches[i].buys.length == 1) {
             exchange.matchOneToManyOrders(matches[i].buys[0], matches[i].sells);
           } else if (matches[i].sells.length == 1) {
@@ -206,6 +248,27 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @param externalFulfillments The specification of the external calls to make and nfts to transfer
    */
   function _broker(MatchExecutorTypes.ExternalFulfillments memory externalFulfillments) internal {
+    uint256 numCalls = externalFulfillments.calls.length;
+    if (numCalls > 0) {
+      for (uint256 i; i < numCalls; ) {
+        _call(externalFulfillments.calls[i]);
+        unchecked {
+          ++i;
+        }
+      }
+    }
+
+    if (externalFulfillments.nftsToTransfer.length > 0) {
+      /// Transfer the nfts to the intermediary
+      _transferMultipleNFTs(address(this), intermediary, externalFulfillments.nftsToTransfer);
+    }
+  }
+
+  /**
+   * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
+   * @param externalFulfillments The specification of the external calls to make and nfts to transfer
+   */
+  function _brokerCalldata(MatchExecutorTypes.ExternalFulfillments calldata externalFulfillments) internal {
     uint256 numCalls = externalFulfillments.calls.length;
     if (numCalls > 0) {
       for (uint256 i; i < numCalls; ) {
