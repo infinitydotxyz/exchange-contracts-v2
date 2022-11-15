@@ -58,6 +58,15 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
     exchange = _exchange;
   }
 
+  function onERC721Received(
+    address,
+    address,
+    uint256,
+    bytes calldata
+  ) external pure returns (bytes4) {
+    return this.onERC721Received.selector;
+  }
+
   /**
    * @notice Set the specified contract to allow payable calls
    * @param _payableContract The address to allow or disallow
@@ -211,15 +220,6 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
       /// Transfer the nfts to the intermediary
       _transferMultipleNFTs(address(this), intermediary, externalFulfillments.nftsToTransfer);
     }
-  }
-
-  function onERC721Received(
-    address,
-    address,
-    uint256,
-    bytes calldata
-  ) external pure returns (bytes4) {
-    return this.onERC721Received.selector;
   }
 
   /**
