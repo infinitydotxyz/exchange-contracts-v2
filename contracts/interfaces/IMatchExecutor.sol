@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import {OrderTypes} from '../libs/OrderTypes.sol';
-import {BrokerageTypes} from '../libs/BrokerageTypes.sol';
+import {MatchExecutorTypes} from '../libs/MatchExecutorTypes.sol';
 
 /**
  * @title IMatchExecutor
@@ -10,11 +10,11 @@ import {BrokerageTypes} from '../libs/BrokerageTypes.sol';
  * @notice Match executor interface
  */
 interface IMatchExecutor {
-  function broker(BrokerageTypes.ExternalFulfillments memory externalFulfillments) external;
+  function broker(MatchExecutorTypes.ExternalFulfillments memory externalFulfillments) external;
 
   function makeFlashLoan(
     uint256 startGas,
-    BrokerageTypes.BrokerageBatch[] calldata batches,
-    BrokerageTypes.Loans calldata loans
+    MatchExecutorTypes.Batch[] calldata batches,
+    MatchExecutorTypes.Loans calldata loans
   ) external;
 }

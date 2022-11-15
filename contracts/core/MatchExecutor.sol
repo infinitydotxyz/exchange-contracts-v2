@@ -105,7 +105,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @param batches The batches of calls to make
    * @param loans The loans to take out
    */
-  function executeMatches(BrokerageTypes.BrokerageBatch[] calldata batches, BrokerageTypes.Loans calldata loans)
+  function executeMatches(MatchExecutorTypes.BrokerageBatch[] calldata batches, MatchExecutorTypes.Loans calldata loans)
     external
     onlyOwner
     whenNotPaused
@@ -141,7 +141,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
     bytes calldata data
   ) external whenNotPaused {
     require(msg.sender == address(vault), 'only vault can call');
-    BrokerageTypes.BrokerageBatch[] memory batches = abi.decode(data, (BrokerageTypes.BrokerageBatch[]));
+    MatchExecutorTypes.BrokerageBatch[] memory batches = abi.decode(data, (MatchExecutorTypes.BrokerageBatch[]));
     /**
      * execute the matches
      */
@@ -205,7 +205,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
    * @param externalFulfillments The specification of the external calls to make and nfts to transfer
    */
-  function _broker(BrokerageTypes.ExternalFulfillments memory externalFulfillments) internal {
+  function _broker(MatchExecutorTypes.ExternalFulfillments memory externalFulfillments) internal {
     uint256 numCalls = externalFulfillments.calls.length;
     if (numCalls > 0) {
       for (uint256 i; i < numCalls; ) {
@@ -226,7 +226,7 @@ contract MatchExecutor is IFlashLoanRecipient, IMatchExecutor, IERC721Receiver, 
    * @notice Execute a call to the specified contract
    * @param params The call to execute
    */
-  function _call(BrokerageTypes.Call memory params) internal returns (bytes memory) {
+  function _call(MatchExecutorTypes.Call memory params) internal returns (bytes memory) {
     if (params.isPayable) {
       require(payableContracts[params.to], 'contract is not payable');
       (bool _success, bytes memory _result) = params.to.call{value: params.value}(params.data);
