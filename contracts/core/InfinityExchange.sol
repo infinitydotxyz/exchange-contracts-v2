@@ -10,6 +10,7 @@ import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 // internal imports
+import {IInfinityExchange} from "../interfaces/IInfinityExchange.sol";
 import {OrderTypes} from '../libs/OrderTypes.sol';
 import {IComplication} from '../interfaces/IComplication.sol';
 
@@ -45,7 +46,7 @@ NFTNFT                                                 NFTNFT
 NFTNFTNFT...........................................NFTNFTNFT 
 
 */
-contract InfinityExchange is ReentrancyGuard, Ownable, Pausable {
+contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausable {
   /// @dev WETH address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
   address public immutable WETH;
   /// @dev This is the address that is used to send auto sniped orders for execution on chain
