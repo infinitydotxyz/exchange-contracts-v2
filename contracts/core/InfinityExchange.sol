@@ -124,7 +124,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
   function matchOneToOneOrders(
     OrderTypes.MakerOrder[] calldata makerOrders1,
     OrderTypes.MakerOrder[] calldata makerOrders2
-  ) external nonReentrant whenNotPaused {
+  ) external override nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
     uint256 numMakerOrders = makerOrders1.length;
     require(msg.sender == matchExecutor, 'only match executor');
@@ -164,7 +164,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
   function matchOneToManyOrders(
     OrderTypes.MakerOrder calldata makerOrder,
     OrderTypes.MakerOrder[] calldata manyMakerOrders
-  ) external nonReentrant whenNotPaused {
+  ) external override nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
     require(msg.sender == matchExecutor, 'only match executor');
 
@@ -249,7 +249,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
     OrderTypes.MakerOrder[] calldata sells,
     OrderTypes.MakerOrder[] calldata buys,
     OrderTypes.OrderItem[][] calldata constructs
-  ) external nonReentrant whenNotPaused {
+  ) external override nonReentrant whenNotPaused {
     uint256 startGas = gasleft();
     uint256 numSells = sells.length;
     require(msg.sender == matchExecutor, 'only match executor');
@@ -278,6 +278,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
   */
   function takeMultipleOneOrders(OrderTypes.MakerOrder[] calldata makerOrders)
     external
+    override 
     payable
     nonReentrant
     whenNotPaused
@@ -331,6 +332,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
   */
   function takeOrders(OrderTypes.MakerOrder[] calldata makerOrders, OrderTypes.OrderItem[][] calldata takerNfts)
     external
+    override 
     payable
     nonReentrant
     whenNotPaused
@@ -372,7 +374,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    @param to the receiver address
    @param items the specific NFTs to transfer
   */
-  function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external nonReentrant whenNotPaused {
+  function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external override nonReentrant whenNotPaused {
     require(to != address(0), 'invalid address');
     _transferMultipleNFTs(msg.sender, to, items);
   }
@@ -381,7 +383,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @notice Cancel all pending orders
    * @param minNonce minimum user nonce
    */
-  function cancelAllOrders(uint256 minNonce) external {
+  function cancelAllOrders(uint256 minNonce) external override {
     require(minNonce > userMinOrderNonce[msg.sender], 'nonce too low');
     require(minNonce < userMinOrderNonce[msg.sender] + 1e5, 'too many');
     userMinOrderNonce[msg.sender] = minNonce;
@@ -392,7 +394,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @notice Cancel multiple orders
    * @param orderNonces array of order nonces
    */
-  function cancelMultipleOrders(uint256[] calldata orderNonces) external {
+  function cancelMultipleOrders(uint256[] calldata orderNonces) external override {
     require(orderNonces.length != 0, 'cannot be empty');
     for (uint256 i; i < orderNonces.length; ) {
       require(orderNonces[i] >= userMinOrderNonce[msg.sender], 'nonce too low');
@@ -413,7 +415,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param nonce nonce of the order
    * @return whether nonce is valid
    */
-  function isNonceValid(address user, uint256 nonce) external view returns (bool) {
+  function isNonceValid(address user, uint256 nonce) external override view returns (bool) {
     return !isUserOrderNonceExecutedOrCancelled[user][nonce] && nonce >= userMinOrderNonce[user];
   }
 
