@@ -27,9 +27,10 @@ interface IInfinityExchange {
 
   function takeMultipleOneOrders(OrderTypes.MakerOrder[] calldata makerOrders) external payable;
 
-  function takeOrders(OrderTypes.MakerOrder[] calldata makerOrders, OrderTypes.OrderItem[][] calldata takerNfts)
-    external
-    payable;
+  function takeOrders(
+    OrderTypes.MakerOrder[] calldata makerOrders,
+    OrderTypes.OrderItem[][] calldata takerNfts
+  ) external payable;
 
   function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external;
 

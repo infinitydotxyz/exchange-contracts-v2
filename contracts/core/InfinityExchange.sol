@@ -10,7 +10,7 @@ import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 // internal imports
-import {IInfinityExchange} from "../interfaces/IInfinityExchange.sol";
+import {IInfinityExchange} from '../interfaces/IInfinityExchange.sol';
 import {OrderTypes} from '../libs/OrderTypes.sol';
 import {IComplication} from '../interfaces/IComplication.sol';
 
@@ -276,13 +276,9 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    @notice Batch buys or sells orders with specific `1` NFTs. Transaction initiated by an end user.
    @param makerOrders The orders to fulfill
   */
-  function takeMultipleOneOrders(OrderTypes.MakerOrder[] calldata makerOrders)
-    external
-    override 
-    payable
-    nonReentrant
-    whenNotPaused
-  {
+  function takeMultipleOneOrders(
+    OrderTypes.MakerOrder[] calldata makerOrders
+  ) external payable override nonReentrant whenNotPaused {
     uint256 totalPrice;
     address currency = makerOrders[0].execParams[1];
     if (currency != address(0)) {
@@ -330,13 +326,10 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    @param takerNfts The specific NFTs that the taker is willing to take that intersect with the higher level intent of the maker
    Example: If a makerOrder is 'buy any one of these 2 specific NFTs', then the takerNfts would be 'this one specific NFT'.
   */
-  function takeOrders(OrderTypes.MakerOrder[] calldata makerOrders, OrderTypes.OrderItem[][] calldata takerNfts)
-    external
-    override 
-    payable
-    nonReentrant
-    whenNotPaused
-  {
+  function takeOrders(
+    OrderTypes.MakerOrder[] calldata makerOrders,
+    OrderTypes.OrderItem[][] calldata takerNfts
+  ) external payable override nonReentrant whenNotPaused {
     require(makerOrders.length == takerNfts.length, 'mismatched lengths');
     uint256 totalPrice;
     address currency = makerOrders[0].execParams[1];
@@ -374,7 +367,10 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    @param to the receiver address
    @param items the specific NFTs to transfer
   */
-  function transferMultipleNFTs(address to, OrderTypes.OrderItem[] calldata items) external override nonReentrant whenNotPaused {
+  function transferMultipleNFTs(
+    address to,
+    OrderTypes.OrderItem[] calldata items
+  ) external override nonReentrant whenNotPaused {
     require(to != address(0), 'invalid address');
     _transferMultipleNFTs(msg.sender, to, items);
   }
@@ -415,7 +411,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param nonce nonce of the order
    * @return whether nonce is valid
    */
-  function isNonceValid(address user, uint256 nonce) external override view returns (bool) {
+  function isNonceValid(address user, uint256 nonce) external view override returns (bool) {
     return !isUserOrderNonceExecutedOrCancelled[user][nonce] && nonce >= userMinOrderNonce[user];
   }
 
@@ -966,11 +962,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param to the to address
    * @param nfts nfts to transfer
    */
-  function _transferMultipleNFTs(
-    address from,
-    address to,
-    OrderTypes.OrderItem[] calldata nfts
-  ) internal {
+  function _transferMultipleNFTs(address from, address to, OrderTypes.OrderItem[] calldata nfts) internal {
     for (uint256 i; i < nfts.length; ) {
       _transferNFTs(from, to, nfts[i]);
       unchecked {
@@ -986,11 +978,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param to address of the recipient
    * @param item item to transfer
    */
-  function _transferNFTs(
-    address from,
-    address to,
-    OrderTypes.OrderItem calldata item
-  ) internal {
+  function _transferNFTs(address from, address to, OrderTypes.OrderItem calldata item) internal {
     require(
       IERC165(item.collection).supportsInterface(0x80ac58cd) && !IERC165(item.collection).supportsInterface(0xd9b67a26),
       'only erc721'
@@ -1005,11 +993,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param to address of the recipient
    * @param item item to transfer
    */
-  function _transferERC721s(
-    address from,
-    address to,
-    OrderTypes.OrderItem calldata item
-  ) internal {
+  function _transferERC721s(address from, address to, OrderTypes.OrderItem calldata item) internal {
     for (uint256 i; i < item.tokens.length; ) {
       IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
       unchecked {
@@ -1027,12 +1011,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
    * @param currency currency of the transfer
    * @param amount amount to transfer
    */
-  function _transferFees(
-    address seller,
-    address buyer,
-    address currency,
-    uint256 amount
-  ) internal {
+  function _transferFees(address seller, address buyer, address currency, uint256 amount) internal {
     // protocol fee
     uint256 protocolFee = (protocolFeeBps * amount) / PRECISION;
     uint256 remainingAmount = amount - protocolFee;
@@ -1087,11 +1066,7 @@ contract InfinityExchange is IInfinityExchange, ReentrancyGuard, Ownable, Pausab
   }
 
   /// @dev Used for withdrawing exchange fees paid to the contract in ERC20 tokens
-  function withdrawTokens(
-    address destination,
-    address currency,
-    uint256 amount
-  ) external onlyOwner {
+  function withdrawTokens(address destination, address currency, uint256 amount) external onlyOwner {
     IERC20(currency).transfer(destination, amount);
     emit ERC20Withdrawn(destination, currency, amount);
   }

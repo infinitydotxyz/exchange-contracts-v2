@@ -7,6 +7,7 @@ import {IERC165} from '@openzeppelin/contracts/interfaces/IERC165.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import {IERC721Receiver} from '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {IFlashLoanRecipient} from '../interfaces/IFlashLoanRecipient.sol';
 import {IBalancerVault} from '../interfaces/IBalancerVault.sol';
@@ -20,6 +21,7 @@ import {IInfinityExchange} from '../interfaces/IInfinityExchange.sol';
 @notice The contract that is called to execute order matches
 */
 contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausable {
+  using EnumerableSet for EnumerableSet.AddressSet;
   /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
       //////////////////////////////////////////////////////////////*/
@@ -36,45 +38,44 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
       //////////////////////////////////////////////////////////////*/
 
   /// @notice Mapping to keep track of which exchanges are enabled
-  mapping(address => bool) public payableContracts;
+  EnumerableSet.AddressSet private _enabledExchanges;
 
   /*//////////////////////////////////////////////////////////////
                                 EVENTS
       //////////////////////////////////////////////////////////////*/
   event IntermediaryUpdated(address indexed intermediary);
-  event PayableContractUpdated(address indexed exchange, bool indexed isPayable);
+  event EnabledExchangeAdded(address indexed exchange);
+  event EnabledExchangeRemoved(address indexed exchange);
 
   /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-  constructor(
-    address _intermediary,
-    IBalancerVault _balancerVault,
-    IInfinityExchange _exchange
-  ) {
+  constructor(address _intermediary, IBalancerVault _balancerVault, IInfinityExchange _exchange) {
     _updateIntermediary(_intermediary);
     balancerVault = _balancerVault;
     exchange = _exchange;
   }
 
-  function onERC721Received(
-    address,
-    address,
-    uint256,
-    bytes calldata
-  ) external pure returns (bytes4) {
+  function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
     return this.onERC721Received.selector;
   }
 
   /**
-   * @notice Set the specified contract to allow payable calls
-   * @param _payableContract The address to allow or disallow
-   * @param _isPayable The state to update the address to
+   * @notice Enable an exchange
+   * @param _exchange The exchange to enable
    */
-  function updatePayableContract(address _payableContract, bool _isPayable) external onlyOwner {
-    require(payableContracts[_payableContract] != _isPayable, 'update must be meaningful');
-    payableContracts[_payableContract] = _isPayable;
-    emit PayableContractUpdated(_payableContract, _isPayable);
+  function addEnabledExchange(address _exchange) external onlyOwner {
+    _enabledExchanges.add(_exchange);
+    emit EnabledExchangeAdded(_exchange);
+  }
+
+  /**
+   * @notice Disable an exchange
+   * @param _exchange The exchange to disable
+   */
+  function removeEnabledExchange(address _exchange) external onlyOwner {
+    _enabledExchanges.remove(_exchange);
+    emit EnabledExchangeRemoved(_exchange);
   }
 
   /**
@@ -104,11 +105,10 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
    * @param batches The batches of calls to make
    * @param loans The loans to take out
    */
-  function executeMatches(MatchExecutorTypes.Batch[] calldata batches, MatchExecutorTypes.Loans calldata loans)
-    external
-    onlyOwner
-    whenNotPaused
-  {
+  function executeMatches(
+    MatchExecutorTypes.Batch[] calldata batches,
+    MatchExecutorTypes.Loans calldata loans
+  ) external onlyOwner whenNotPaused {
     require(loans.tokens.length == loans.amounts.length, 'length mismatch');
 
     if (loans.tokens.length > 0) {
@@ -156,7 +156,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
       token.transfer(address(balancerVault), amount + feeAmount);
     }
   }
-  
+
   function _executeMatches(MatchExecutorTypes.Batch[] memory batches) internal {
     uint256 numBatches = batches.length;
     for (uint256 i; i < numBatches; ) {
@@ -291,7 +291,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
    */
   function _call(MatchExecutorTypes.Call memory params) internal returns (bytes memory) {
     if (params.isPayable) {
-      require(payableContracts[params.to], 'contract is not payable');
+      require(_enabledExchanges.contains(params.to), 'contract is not payable');
       (bool _success, bytes memory _result) = params.to.call{value: params.value}(params.data);
       require(_success);
       return _result;
@@ -315,11 +315,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
    * @param to the to address
    * @param nfts nfts to transfer
    */
-  function _transferMultipleNFTs(
-    address from,
-    address to,
-    OrderTypes.OrderItem[] memory nfts
-  ) internal {
+  function _transferMultipleNFTs(address from, address to, OrderTypes.OrderItem[] memory nfts) internal {
     for (uint256 i; i < nfts.length; ) {
       _transferNFTs(from, to, nfts[i]);
       unchecked {
@@ -335,11 +331,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
    * @param to address of the recipient
    * @param item item to transfer
    */
-  function _transferNFTs(
-    address from,
-    address to,
-    OrderTypes.OrderItem memory item
-  ) internal {
+  function _transferNFTs(address from, address to, OrderTypes.OrderItem memory item) internal {
     require(
       IERC165(item.collection).supportsInterface(0x80ac58cd) && !IERC165(item.collection).supportsInterface(0xd9b67a26),
       'only erc721'
@@ -353,11 +345,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
    * @param to address of the recipient
    * @param item item to transfer
    */
-  function _transferERC721s(
-    address from,
-    address to,
-    OrderTypes.OrderItem memory item
-  ) internal {
+  function _transferERC721s(address from, address to, OrderTypes.OrderItem memory item) internal {
     for (uint256 i; i < item.tokens.length; ) {
       IERC721(item.collection).transferFrom(from, to, item.tokens[i].tokenId);
       unchecked {
