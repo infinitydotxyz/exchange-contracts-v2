@@ -29,7 +29,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
 
   IInfinityExchange public immutable exchange;
 
-  IBalancerVault public immutable vault;
+  IBalancerVault public immutable balancerVault;
 
   /*//////////////////////////////////////////////////////////////
                               EXCHANGE STATES
@@ -49,11 +49,11 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
     //////////////////////////////////////////////////////////////*/
   constructor(
     address _intermediary,
-    IBalancerVault _vault,
+    IBalancerVault _balancerVault,
     IInfinityExchange _exchange
   ) {
     _updateIntermediary(_intermediary);
-    vault = _vault;
+    balancerVault = _balancerVault;
     exchange = _exchange;
   }
 
@@ -117,7 +117,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
        *
        * executing matches is called within the receiveFlashLoan callback
        */
-      vault.flashLoan(this, loans.tokens, loans.amounts, abi.encode(batches));
+      balancerVault.flashLoan(this, loans.tokens, loans.amounts, abi.encode(batches));
     } else {
       /**
        * flash loan is not required, proceed to execute matches
@@ -138,8 +138,8 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
     uint256[] calldata amounts,
     uint256[] calldata feeAmounts,
     bytes calldata data
-  ) external whenNotPaused {
-    require(msg.sender == address(vault), 'only vault can call');
+  ) external override whenNotPaused {
+    require(msg.sender == address(balancerVault), 'only vault can call');
     MatchExecutorTypes.Batch[] memory batches = abi.decode(data, (MatchExecutorTypes.Batch[]));
     /**
      * execute the matches
@@ -153,7 +153,7 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
       IERC20 token = tokens[i];
       uint256 amount = amounts[i];
       uint256 feeAmount = feeAmounts[i];
-      token.transfer(address(vault), amount + feeAmount);
+      token.transfer(address(balancerVault), amount + feeAmount);
     }
   }
   
@@ -349,7 +349,6 @@ contract MatchExecutor is IFlashLoanRecipient, IERC721Receiver, Ownable, Pausabl
 
   /**
    * @notice Transfer ERC721s
-   * @dev requires approvals to be set
    * @param from address of the sender
    * @param to address of the recipient
    * @param item item to transfer
