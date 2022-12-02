@@ -3,9 +3,15 @@
   "version": "1.0.0",
   "description": "Gas optimized exchange contracts",
   "scripts": {
-    "test": "npx hardhat test",
-    "build": "rimraf artifacts && rimraf cache && npx hardhat compile --force",
-    "format": "npx prettier --write ."
+    "test": "hardhat test",
+    "build": "rimraf artifacts && rimraf cache && hardhat compile --force",
+    "prettier": "prettier --write **.sol",
+    "prettier:list": "prettier --list-different **.sol",
+    "prettier:check": "prettier --check **.sol",
+    "solhint": "solhint --config ./.solhint.json 'contracts/**/*.sol' --fix",
+    "solhint:check": "solhint --config ./.solhint.json 'contracts/**/*.sol'",
+    "lint": "npm run prettier && npm run solhint",
+    "lint:check": "npm run prettier:check && npm run solhint:check"
   },
   "repository": {
     "type": "git",
@@ -18,32 +24,26 @@
   },
   "homepage": "https://github.com/infinity-xyz/exchange-contracts-v2#readme",
   "dependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.5",
-    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@openzeppelin/contracts": "4.5.0",
-    "@types/chai": "^4.3.0",
-    "@types/mocha": "^9.1.0",
-    "@types/node": "^17.0.23",
-    "@uniswap/lib": "^4.0.1-alpha",
-    "dotenv": "^16.0.0",
-    "hardhat": "^2.9.2",
-    "hardhat-contract-sizer": "^2.5.1",
-    "hardhat-gas-reporter": "^1.0.8",
-    "rimraf": "^3.0.2"
+    "@uniswap/lib": "^4.0.1-alpha"
   },
   "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.1",
+    "@nomiclabs/hardhat-etherscan": "^3.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@types/chai": "^4.3.3",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.11.9",
     "chai": "^4.3.6",
+    "dotenv": "^16.0.3",
     "ethers": "^5.6.2",
+    "hardhat": "^2.12.1-ir.0",
+    "hardhat-contract-sizer": "^2.6.1",
+    "hardhat-gas-reporter": "^1.0.9",
     "prettier": "^2.6.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "prettier-plugin-solidity": "^1.0.0-rc.1",
+    "rimraf": "^3.0.2",
+    "solhint": "^3.3.7",
     "ts-node": "^10.7.0"
-  },
-  "prettier": {
-    "tabWidth": 2,
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "none",
-    "semi": true
   }
 }

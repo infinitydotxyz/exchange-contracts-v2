@@ -38,6 +38,12 @@ describe('Staker', function () {
   }
 
   before(async () => {
+    // reset state
+    await network.provider.request({
+      method: 'hardhat_reset',
+      params: []
+    });
+
     // signers
     signers = await ethers.getSigners();
     signer1 = signers[0];
@@ -104,7 +110,7 @@ describe('Staker', function () {
   describe('Setup', () => {
     it('Should init properly', async function () {
       expect(await token.name()).to.equal('Infinity');
-      expect(await token.symbol()).to.equal('NFT');
+      expect(await token.symbol()).to.equal('INFT');
       expect(await token.decimals()).to.equal(18);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
 
