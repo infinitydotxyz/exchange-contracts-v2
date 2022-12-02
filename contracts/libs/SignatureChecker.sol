@@ -16,12 +16,7 @@ library SignatureChecker {
    * @param s parameter
    * @param v parameter (27 or 28). This prevents malleability since the public key recovery equation has two possible solutions.
    */
-  function recover(
-    bytes32 hashed,
-    bytes32 r,
-    bytes32 s,
-    uint8 v
-  ) internal pure returns (address) {
+  function recover(bytes32 hashed, bytes32 r, bytes32 s, uint8 v) internal pure returns (address) {
     // https://ethereum.stackexchange.com/questions/83174/is-it-best-practice-to-check-signature-malleability-in-ecrecover
     // https://crypto.iacr.org/2019/affevents/wac/medias/Heninger-BiasedNonceSense.pdf
     require(

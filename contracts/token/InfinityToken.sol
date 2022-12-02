@@ -77,20 +77,12 @@ contract InfinityToken is ERC20('Infinity', 'INFT'), ERC20Permit('Infinity'), ER
 
   // =============================================== HOOKS =========================================================
 
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override(ERC20, ERC20Snapshot) {
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Snapshot) {
     ERC20Snapshot._beforeTokenTransfer(from, to, amount);
   }
 
   // =============================================== REQUIRED OVERRIDES =========================================================
-  function _afterTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override(ERC20, ERC20Votes) {
+  function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
     super._afterTokenTransfer(from, to, amount);
   }
 

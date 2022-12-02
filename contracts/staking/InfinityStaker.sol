@@ -97,11 +97,7 @@ contract InfinityStaker is Ownable, Pausable {
    * @param oldDuration Old duration of the stake
    * @param newDuration New duration of the stake
    */
-  function changeDuration(
-    uint256 amount,
-    Duration oldDuration,
-    Duration newDuration
-  ) external whenNotPaused {
+  function changeDuration(uint256 amount, Duration oldDuration, Duration newDuration) external whenNotPaused {
     require(amount != 0, 'amount cant be 0');
     require(userstakedAmounts[msg.sender][oldDuration].amount >= amount, 'insuf stake to change duration');
     require(newDuration > oldDuration, 'new duration must exceed old');

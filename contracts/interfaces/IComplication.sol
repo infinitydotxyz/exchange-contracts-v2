@@ -9,15 +9,10 @@ import {OrderTypes} from '../libs/OrderTypes.sol';
  * @notice Complication interface that must be implemented by all complications (execution strategies)
  */
 interface IComplication {
-  function canExecMatchOneToOne(OrderTypes.MakerOrder calldata makerOrder1, OrderTypes.MakerOrder calldata makerOrder2)
-    external
-    view
-    returns (
-      bool,
-      bytes32,
-      bytes32,
-      uint256
-    );
+  function canExecMatchOneToOne(
+    OrderTypes.MakerOrder calldata makerOrder1,
+    OrderTypes.MakerOrder calldata makerOrder2
+  ) external view returns (bool, bytes32, bytes32, uint256);
 
   function canExecMatchOneToMany(
     OrderTypes.MakerOrder calldata makerOrder,
@@ -28,22 +23,14 @@ interface IComplication {
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
     OrderTypes.OrderItem[] calldata constructedNfts
-  )
-    external
-    view
-    returns (
-      bool,
-      bytes32,
-      bytes32,
-      uint256
-    );
+  ) external view returns (bool, bytes32, bytes32, uint256);
 
   function canExecTakeOneOrder(OrderTypes.MakerOrder calldata makerOrder) external view returns (bool, bytes32);
 
-  function canExecTakeOrder(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
-    external
-    view
-    returns (bool, bytes32);
+  function canExecTakeOrder(
+    OrderTypes.MakerOrder calldata makerOrder,
+    OrderTypes.OrderItem[] calldata takerItems
+  ) external view returns (bool, bytes32);
 
   function verifyMatchOneToManyOrders(
     bool verifySellOrder,
