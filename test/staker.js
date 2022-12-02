@@ -38,6 +38,12 @@ describe('Staker', function () {
   }
 
   before(async () => {
+    // reset state
+    await network.provider.request({
+      method: 'hardhat_reset',
+      params: []
+    });
+
     // signers
     signers = await ethers.getSigners();
     signer1 = signers[0];
