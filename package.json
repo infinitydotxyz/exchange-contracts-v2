@@ -8,8 +8,8 @@
     "prettier": "prettier --write **.sol",
     "prettier:list": "prettier --list-different **.sol",
     "prettier:check": "prettier --check **.sol",
-    "solhint": "solhint --config ./.solhint.json 'src/**/*.sol' --fix",
-    "solhint:check": "solhint --config ./.solhint.json 'src/**/*.sol'",
+    "solhint": "solhint --config ./.solhint.json 'contracts/**/*.sol' --fix",
+    "solhint:check": "solhint --config ./.solhint.json 'contracts/**/*.sol'",
     "lint": "npm run prettier && npm run solhint",
     "lint:check": "npm run prettier:check && npm run solhint:check"
   },
@@ -45,12 +45,5 @@
     "rimraf": "^3.0.2",
     "solhint": "^3.3.7",
     "ts-node": "^10.7.0"
-  },
-  "prettier": {
-    "tabWidth": 2,
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "none",
-    "semi": true
   }
 }
