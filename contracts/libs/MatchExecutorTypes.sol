@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {OrderTypes} from './OrderTypes.sol';
+import { OrderTypes } from "./OrderTypes.sol";
 
 /**
  * @title MatchExecutorTyoes
@@ -11,38 +11,38 @@ import {OrderTypes} from './OrderTypes.sol';
  * @notice This library contains the match executor types
  */
 library MatchExecutorTypes {
-  struct Call {
-    bytes data;
-    uint256 value;
-    address payable to;
-    bool isPayable;
-  }
+    struct Call {
+        bytes data;
+        uint256 value;
+        address payable to;
+        bool isPayable;
+    }
 
-  struct Loans {
-    IERC20[] tokens;
-    uint256[] amounts;
-  }
+    struct Loans {
+        IERC20[] tokens;
+        uint256[] amounts;
+    }
 
-  struct ExternalFulfillments {
-    Call[] calls;
-    OrderTypes.OrderItem[] nftsToTransfer;
-  }
+    struct ExternalFulfillments {
+        Call[] calls;
+        OrderTypes.OrderItem[] nftsToTransfer;
+    }
 
-  enum MatchOrdersType {
-    OneToOneSpecific,
-    OneToOneUnspecific,
-    OneToMany
-  }
+    enum MatchOrdersType {
+        OneToOneSpecific,
+        OneToOneUnspecific,
+        OneToMany
+    }
 
-  struct MatchOrders {
-    OrderTypes.MakerOrder[] buys;
-    OrderTypes.MakerOrder[] sells;
-    OrderTypes.OrderItem[][] constructs;
-    MatchOrdersType matchType;
-  }
+    struct MatchOrders {
+        OrderTypes.MakerOrder[] buys;
+        OrderTypes.MakerOrder[] sells;
+        OrderTypes.OrderItem[][] constructs;
+        MatchOrdersType matchType;
+    }
 
-  struct Batch {
-    ExternalFulfillments externalFulfillments;
-    MatchOrders[] matches;
-  }
+    struct Batch {
+        ExternalFulfillments externalFulfillments;
+        MatchOrders[] matches;
+    }
 }
