@@ -68,17 +68,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
    * @param makerOrder2 second makerOrder
    * @return returns whether the order can be executed, orderHashes and the execution price
    */
-  function canExecMatchOneToOne(OrderTypes.MakerOrder calldata makerOrder1, OrderTypes.MakerOrder calldata makerOrder2)
-    external
-    view
-    override
-    returns (
-      bool,
-      bytes32,
-      bytes32,
-      uint256
-    )
-  {
+  function canExecMatchOneToOne(
+    OrderTypes.MakerOrder calldata makerOrder1,
+    OrderTypes.MakerOrder calldata makerOrder2
+  ) external view override returns (bool, bytes32, bytes32, uint256) {
     // check if the orders are valid
     bytes32 sellOrderHash = _hash(makerOrder1);
     bytes32 buyOrderHash = _hash(makerOrder2);
@@ -214,17 +207,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     OrderTypes.MakerOrder calldata sell,
     OrderTypes.MakerOrder calldata buy,
     OrderTypes.OrderItem[] calldata constructedNfts
-  )
-    external
-    view
-    override
-    returns (
-      bool,
-      bytes32,
-      bytes32,
-      uint256
-    )
-  {
+  ) external view override returns (bool, bytes32, bytes32, uint256) {
     // check if orders are valid
     bytes32 sellOrderHash = _hash(sell);
     bytes32 buyOrderHash = _hash(buy);
@@ -251,12 +234,9 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
    * @param makerOrder the makerOrder
    * @return returns whether the order can be executed and makerOrderHash
    */
-  function canExecTakeOneOrder(OrderTypes.MakerOrder calldata makerOrder)
-    external
-    view
-    override
-    returns (bool, bytes32)
-  {
+  function canExecTakeOneOrder(
+    OrderTypes.MakerOrder calldata makerOrder
+  ) external view override returns (bool, bytes32) {
     // check if makerOrder is valid
     bytes32 makerOrderHash = _hash(makerOrder);
     require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
@@ -278,12 +258,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
    * @param takerItems the taker items specified by the taker
    * @return returns whether order can be executed and the makerOrderHash
    */
-  function canExecTakeOrder(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
-    external
-    view
-    override
-    returns (bool, bytes32)
-  {
+  function canExecTakeOrder(
+    OrderTypes.MakerOrder calldata makerOrder,
+    OrderTypes.OrderItem[] calldata takerItems
+  ) external view override returns (bool, bytes32) {
     // check if makerOrder is valid
     bytes32 makerOrderHash = _hash(makerOrder);
     require(isOrderValid(makerOrder, makerOrderHash), 'invalid maker order');
@@ -405,11 +383,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /// @dev checks whether the orders are expired
-  function isTimeValid(OrderTypes.MakerOrder calldata sell, OrderTypes.MakerOrder calldata buy)
-    public
-    view
-    returns (bool)
-  {
+  function isTimeValid(
+    OrderTypes.MakerOrder calldata sell,
+    OrderTypes.MakerOrder calldata buy
+  ) public view returns (bool) {
     return
       sell.constraints[3] <= block.timestamp &&
       sell.constraints[4] >= block.timestamp &&
@@ -418,11 +395,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /// @dev checks whether the price is valid; a buy order should always have a higher price than a sell order
-  function isPriceValid(OrderTypes.MakerOrder calldata sell, OrderTypes.MakerOrder calldata buy)
-    public
-    view
-    returns (bool, uint256)
-  {
+  function isPriceValid(
+    OrderTypes.MakerOrder calldata sell,
+    OrderTypes.MakerOrder calldata buy
+  ) public view returns (bool, uint256) {
     (uint256 currentSellPrice, uint256 currentBuyPrice) = (_getCurrentPrice(sell), _getCurrentPrice(buy));
     return (currentBuyPrice >= currentSellPrice, currentSellPrice);
   }
@@ -444,11 +420,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
   }
 
   /// @dev sanity check to make sure that a taker is specifying the right number of items
-  function areNumTakerItemsValid(OrderTypes.MakerOrder calldata makerOrder, OrderTypes.OrderItem[] calldata takerItems)
-    public
-    pure
-    returns (bool)
-  {
+  function areNumTakerItemsValid(
+    OrderTypes.MakerOrder calldata makerOrder,
+    OrderTypes.OrderItem[] calldata takerItems
+  ) public pure returns (bool) {
     uint256 numTakerItems;
     for (uint256 i; i < takerItems.length; ) {
       unchecked {
@@ -466,11 +441,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
    * @param order2Nfts nfts in the second order
    * @return returns whether items intersect
    */
-  function doItemsIntersect(OrderTypes.OrderItem[] calldata order1Nfts, OrderTypes.OrderItem[] calldata order2Nfts)
-    public
-    pure
-    returns (bool)
-  {
+  function doItemsIntersect(
+    OrderTypes.OrderItem[] calldata order1Nfts,
+    OrderTypes.OrderItem[] calldata order2Nfts
+  ) public pure returns (bool) {
     uint256 order1NftsLength = order1Nfts.length;
     uint256 order2NftsLength = order2Nfts.length;
     // case where maker/taker didn't specify any items
@@ -507,11 +481,10 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
    * @param item2 second item
    * @return returns whether tokenIds intersect
    */
-  function doTokenIdsIntersect(OrderTypes.OrderItem calldata item1, OrderTypes.OrderItem calldata item2)
-    public
-    pure
-    returns (bool)
-  {
+  function doTokenIdsIntersect(
+    OrderTypes.OrderItem calldata item1,
+    OrderTypes.OrderItem calldata item2
+  ) public pure returns (bool) {
     uint256 item1TokensLength = item1.tokens.length;
     uint256 item2TokensLength = item2.tokens.length;
     // case where maker/taker didn't specify any tokenIds for this collection

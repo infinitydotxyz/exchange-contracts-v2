@@ -7,9 +7,7 @@ describe('Staker', function () {
   let signers,
     signer1,
     signer2,
-    signer3,
     token,
-    infinityExchange,
     mock721Contract1,
     mock721Contract2,
     mock721Contract3,
@@ -24,15 +22,8 @@ describe('Staker', function () {
   const MINUTE = 60;
   const HOUR = MINUTE * 60;
   const DAY = HOUR * 24;
-  const MONTH = DAY * 30;
   const UNIT = toBN(1e18);
-  const INFLATION = toBN(250_000_000).mul(UNIT);
-  const CLIFF = toBN(6);
-  const CLIFF_PERIOD = CLIFF.mul(MONTH);
-  const EPOCH_DURATION = CLIFF_PERIOD.toNumber();
-  const MAX_EPOCHS = 3;
-  const TIMELOCK = 30 * DAY;
-  const INITIAL_SUPPLY = toBN(250_000_000).mul(UNIT);
+  const INITIAL_SUPPLY = toBN(500_000_000).mul(UNIT);
 
   const totalNFTSupply = 100;
   const numNFTsToTransfer = 50;
@@ -47,21 +38,18 @@ describe('Staker', function () {
   }
 
   before(async () => {
+    // reset state
+    await network.provider.request({
+      method: 'hardhat_reset',
+      params: []
+    });
+
     // signers
     signers = await ethers.getSigners();
     signer1 = signers[0];
     signer2 = signers[1];
-    signer3 = signers[2];
     // token
-    const tokenArgs = [
-      signer1.address,
-      INFLATION.toString(),
-      EPOCH_DURATION.toString(),
-      CLIFF_PERIOD.toString(),
-      MAX_EPOCHS.toString(),
-      TIMELOCK.toString(),
-      INITIAL_SUPPLY.toString()
-    ];
+    const tokenArgs = [signer1.address, INITIAL_SUPPLY.toString()];
     token = await deployContract(
       'InfinityToken',
       await ethers.getContractFactory('InfinityToken'),
@@ -82,14 +70,6 @@ describe('Staker', function () {
       'Mock NFT 3',
       'MCKNFT3'
     ]);
-
-    // Exchange
-    infinityExchange = await deployContract(
-      'InfinityExchange',
-      await ethers.getContractFactory('InfinityExchange'),
-      signer1,
-      [token.address, signer3.address]
-    );
 
     // OB complication
     obComplication = await deployContract(
@@ -130,7 +110,7 @@ describe('Staker', function () {
   describe('Setup', () => {
     it('Should init properly', async function () {
       expect(await token.name()).to.equal('Infinity');
-      expect(await token.symbol()).to.equal('NFT');
+      expect(await token.symbol()).to.equal('INFT');
       expect(await token.decimals()).to.equal(18);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
 

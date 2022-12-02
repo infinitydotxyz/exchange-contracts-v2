@@ -6,73 +6,52 @@ import {ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-
 import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import {ERC20Snapshot} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol';
 import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
-import {TimelockConfig} from './TimelockConfig.sol';
 
 /**
  * @title InfinityTokens
  * @author nneverlander. Twitter @nneverlander
- * @notice The Infinity Token ($NFT). Implements timelock config to control token release schedule.
+ * @notice The Infinity Token ($NFT).
  */
-contract InfinityToken is
-  ERC20('Infinity', 'NFT'),
-  ERC20Permit('Infinity'),
-  ERC20Burnable,
-  ERC20Snapshot,
-  ERC20Votes,
-  TimelockConfig
-{
-  bytes32 public immutable EPOCH_INFLATION = keccak256('Inflation');
-  bytes32 public immutable EPOCH_DURATION = keccak256('EpochDuration');
-  bytes32 public immutable EPOCH_CLIFF = keccak256('Cliff');
-  bytes32 public immutable MAX_EPOCHS = keccak256('MaxEpochs');
-
-  /* storage */
+contract InfinityToken is ERC20('Infinity', 'INFT'), ERC20Permit('Infinity'), ERC20Burnable, ERC20Snapshot, ERC20Votes {
+  uint256 public constant EPOCH_INFLATION = 25e7 ether;
+  uint256 public constant EPOCH_DURATION = 180 days;
+  uint256 public constant EPOCH_CLIFF = 180 days;
+  uint256 public constant MAX_EPOCHS = 4;
   uint256 public immutable currentEpochTimestamp;
   uint256 public currentEpoch;
   uint256 public previousEpochTimestamp;
+  address public admin;
 
   event EpochAdvanced(uint256 currentEpoch, uint256 supplyMinted);
+  event AdminChanged(address oldAdmin, address newAdmin);
 
   /**
-    @param admin The address of the admin who will be sent the minted tokens
-    @param epochInflation Inflation per epoch
-    @param epochDuration Duration of an epoch in seconds
-    @param epochCliff The initial cliff for the first epoch
-    @param maxEpochs The maximum number of epochs
-    @param timelock The time needed before any config changes can go into effect
+    @param _admin The address of the admin who will be sent the minted tokens
     @param supply Initial supply of the token
    */
-  constructor(
-    address admin,
-    uint256 epochInflation,
-    uint256 epochDuration,
-    uint256 epochCliff,
-    uint256 maxEpochs,
-    uint256 timelock,
-    uint256 supply
-  ) TimelockConfig(admin, timelock) {
-    TimelockConfig._setRawConfig(EPOCH_INFLATION, epochInflation);
-    TimelockConfig._setRawConfig(EPOCH_DURATION, epochDuration);
-    TimelockConfig._setRawConfig(EPOCH_CLIFF, epochCliff);
-    TimelockConfig._setRawConfig(MAX_EPOCHS, maxEpochs);
-
+  constructor(address _admin, uint256 supply) {
     previousEpochTimestamp = block.timestamp;
     currentEpochTimestamp = block.timestamp;
+    admin = _admin;
 
     // mint initial supply
     _mint(admin, supply);
   }
 
+  modifier onlyAdmin() {
+    require(msg.sender == admin, 'only admin');
+    _;
+  }
+
   // =============================================== ADMIN FUNCTIONS =========================================================
 
   function advanceEpoch() external onlyAdmin {
-    uint256 maxEpochs = getMaxEpochs();
-    require(currentEpoch < maxEpochs, 'no epochs left');
-    require(block.timestamp >= currentEpochTimestamp + getCliff(), 'cliff not passed');
-    require(block.timestamp >= previousEpochTimestamp + getEpochDuration(), 'not ready to advance');
+    require(currentEpoch < MAX_EPOCHS, 'no epochs left');
+    require(block.timestamp >= currentEpochTimestamp + EPOCH_CLIFF, 'cliff not passed');
+    require(block.timestamp >= previousEpochTimestamp + EPOCH_DURATION, 'not ready to advance');
 
-    uint256 epochsPassedSinceLastAdvance = (block.timestamp - previousEpochTimestamp) / getEpochDuration();
-    uint256 epochsLeft = maxEpochs - currentEpoch;
+    uint256 epochsPassedSinceLastAdvance = (block.timestamp - previousEpochTimestamp) / EPOCH_DURATION;
+    uint256 epochsLeft = MAX_EPOCHS - currentEpoch;
     epochsPassedSinceLastAdvance = epochsPassedSinceLastAdvance > epochsLeft
       ? epochsLeft
       : epochsPassedSinceLastAdvance;
@@ -82,30 +61,28 @@ contract InfinityToken is
     previousEpochTimestamp = block.timestamp;
 
     // inflation amount
-    uint256 supplyToMint = getInflation() * epochsPassedSinceLastAdvance;
+    uint256 supplyToMint = EPOCH_INFLATION * epochsPassedSinceLastAdvance;
 
     // mint supply
-    _mint(getAdmin(), supplyToMint);
+    _mint(admin, supplyToMint);
 
     emit EpochAdvanced(currentEpoch, supplyToMint);
   }
 
+  function changeAdmin(address newAdmin) external onlyAdmin {
+    require(newAdmin != address(0), 'zero address');
+    admin = newAdmin;
+    emit AdminChanged(admin, newAdmin);
+  }
+
   // =============================================== HOOKS =========================================================
 
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override(ERC20, ERC20Snapshot) {
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Snapshot) {
     ERC20Snapshot._beforeTokenTransfer(from, to, amount);
   }
 
   // =============================================== REQUIRED OVERRIDES =========================================================
-  function _afterTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override(ERC20, ERC20Votes) {
+  function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
     super._afterTokenTransfer(from, to, amount);
   }
 
@@ -115,31 +92,5 @@ contract InfinityToken is
 
   function _burn(address account, uint256 amount) internal override(ERC20, ERC20Votes) {
     super._burn(account, amount);
-  }
-
-  // =============================================== VIEW FUNCTIONS =========================================================
-
-  function getAdmin() public view returns (address) {
-    return address(uint160(TimelockConfig.getConfig(TimelockConfig.ADMIN).value));
-  }
-
-  function getTimelock() public view returns (uint256) {
-    return TimelockConfig.getConfig(TimelockConfig.TIMELOCK).value;
-  }
-
-  function getInflation() public view returns (uint256) {
-    return TimelockConfig.getConfig(EPOCH_INFLATION).value;
-  }
-
-  function getCliff() public view returns (uint256) {
-    return TimelockConfig.getConfig(EPOCH_CLIFF).value;
-  }
-
-  function getMaxEpochs() public view returns (uint256) {
-    return TimelockConfig.getConfig(MAX_EPOCHS).value;
-  }
-
-  function getEpochDuration() public view returns (uint256) {
-    return TimelockConfig.getConfig(EPOCH_DURATION).value;
   }
 }
