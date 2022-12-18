@@ -1,6 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
+import "@typechain/hardhat";
 import 'hardhat-gas-reporter';
 import './tasks/utils';
 import './tasks/deploy';
@@ -13,7 +14,7 @@ require('hardhat-contract-sizer');
 export default {
   networks: {
     hardhat: {
-      allowUnlimitedContractSize: false,
+      allowUnlimitedContractSize: true,
       gas: 10000000
     },
     goerli: {
