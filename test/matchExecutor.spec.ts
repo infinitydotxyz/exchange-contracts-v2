@@ -7,12 +7,12 @@ import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import {
-  BrokerageBatch,
+  Batch,
   Call,
   ExternalFulfillments,
   Loans,
   MatchOrders,
-  MatchOrdersTypes,
+  MatchOrdersTypes
 } from "../utils/matchExecutorTypes";
 import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
 import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
@@ -56,7 +56,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
       startTime,
       endTime,
       execParams,
-      extraParams,
+      extraParams
     };
 
     const prepare = () => {
@@ -79,7 +79,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     nfts: OrderItem[],
     execParams: ExecParams = {
       complicationAddress: infinityExchange.obComplication.address,
-      currencyAddress: infinityExchange.WETH,
+      currencyAddress: infinityExchange.WETH
     },
     numItems = 1,
     startPrice: BigNumberish = ethers.utils.parseEther("1"),
@@ -105,7 +105,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
     nfts: OrderItem[],
     execParams: ExecParams = {
       complicationAddress: infinityExchange.obComplication.address,
-      currencyAddress: infinityExchange.WETH,
+      currencyAddress: infinityExchange.WETH
     },
     numItems = 1,
     startPrice: BigNumberish = ethers.utils.parseEther("1"),
@@ -129,7 +129,7 @@ const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExc
 
   return {
     createListing,
-    createOffer,
+    createOffer
   };
 };
 
@@ -143,14 +143,14 @@ describe("Match_Executor", () => {
   let emptyMatch = {} as MatchOrders;
   let emptyFulfillments = {} as ExternalFulfillments;
   let emptyLoans = {} as Loans;
-  let emptyBatch = {} as BrokerageBatch;
+  let emptyBatch = {} as Batch;
 
   let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getOrderClient>> = new Map();
 
   before(async () => {
     await network.provider.request({
       method: "hardhat_reset",
-      params: [],
+      params: []
     });
     const signers = await ethers.getSigners();
     mock20 = await setupMockERC20(ethers.getContractFactory, signers.pop() as SignerWithAddress);
@@ -162,22 +162,22 @@ describe("Match_Executor", () => {
       buys: [],
       sells: [],
       constructs: [],
-      matchType: MatchOrdersTypes.OneToOneSpecific,
+      matchType: MatchOrdersTypes.OneToOneSpecific
     };
 
     emptyFulfillments = {
       calls: [],
-      nftsToTransfer: [],
+      nftsToTransfer: []
     };
 
     emptyBatch = {
       matches: [emptyMatch],
-      externalFulfillments: emptyFulfillments,
+      externalFulfillments: emptyFulfillments
     };
 
     emptyLoans = {
       tokens: [],
-      amounts: [],
+      amounts: []
     };
 
     infinityExchange = await setupInfinityExchange(
@@ -205,7 +205,6 @@ describe("Match_Executor", () => {
 
   describe("broker", () => {
     it("is only callable by the owner", async () => {
-
       const invalidBrokerage = matchExecutor.contract
         .connect(matchExecutor.intermediary)
         .executeMatches([emptyBatch], emptyLoans);
@@ -226,19 +225,19 @@ describe("Match_Executor", () => {
       const isNonceValid = infinityExchange.contract.interface.getFunction("isNonceValid");
       const data = infinityExchange.contract.interface.encodeFunctionData(isNonceValid, [
         infinityExchange.matchExecutor.address,
-        0,
+        0
       ]);
 
       const call: Call = {
         data: data,
         value: 0,
         to: infinityExchange.contract.address,
-        isPayable: false,
+        isPayable: false
       };
 
       const brokerage: ExternalFulfillments = {
         calls: [call],
-        nftsToTransfer: [],
+        nftsToTransfer: []
       };
 
       //   const validBrokerage = matchExecutorEOAInitiator.contract
@@ -324,12 +323,12 @@ describe("Match_Executor", () => {
       const tokenId = "1";
       const nftToTransfer: OrderItem = {
         collection: mock721.contract.address,
-        tokens: [{ tokenId, numTokens: "1" }],
+        tokens: [{ tokenId, numTokens: "1" }]
       };
 
       const brokerage: ExternalFulfillments = {
         calls: [],
-        nftsToTransfer: [nftToTransfer],
+        nftsToTransfer: [nftToTransfer]
       };
 
       /**
@@ -373,8 +372,8 @@ describe("Match_Executor", () => {
       const orderItems: OrderItem[] = [
         {
           collection: mock721.contract.address,
-          tokens: [{ tokenId, numTokens: "1" }],
-        },
+          tokens: [{ tokenId, numTokens: "1" }]
+        }
       ];
 
       const initialOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
@@ -397,9 +396,7 @@ describe("Match_Executor", () => {
         trimLowerCase(mock20.contract.address)
       );
 
-      await mock20.contract
-        .connect(mock20.minter)
-        .transfer(matchExecutor.contract.address, price);
+      await mock20.contract.connect(mock20.minter).transfer(matchExecutor.contract.address, price);
 
       /**
        * generate the call data for the call that will:
@@ -409,7 +406,7 @@ describe("Match_Executor", () => {
       const approveWETH = mock20.contract.interface.getFunction("approve");
       const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
         infinityExchange.contract.address,
-        price,
+        price
       ]);
 
       /**
@@ -430,16 +427,16 @@ describe("Match_Executor", () => {
             data: approveWETHData,
             value: 0,
             to: mock20.contract.address,
-            isPayable: false,
+            isPayable: false
           },
           {
             data: takeOrdersData,
             value: 0,
             to: infinityExchange.contract.address,
-            isPayable: false,
-          },
+            isPayable: false
+          }
         ],
-        nftsToTransfer: orderItems,
+        nftsToTransfer: orderItems
       };
 
       //   try {
@@ -465,7 +462,7 @@ describe("Match_Executor", () => {
       const approveWETH = mock20.contract.interface.getFunction("approve");
       const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
         infinityExchange.contract.address,
-        ethers.constants.MaxUint256,
+        ethers.constants.MaxUint256
       ]);
 
       const brokerage: ExternalFulfillments = {
@@ -474,27 +471,27 @@ describe("Match_Executor", () => {
             data: approveWETHData,
             value: 0,
             to: mock20.contract.address,
-            isPayable: false,
-          },
+            isPayable: false
+          }
         ],
-        nftsToTransfer: [],
+        nftsToTransfer: []
       };
 
-      const brokerageBatches: BrokerageBatch[] = [
+      const brokerageBatches: Batch[] = [
         {
           externalFulfillments: brokerage,
           /**
            * by not having any matches in the batch, the match executor
            * is responsible for paying back the gas fees
            */
-          matches: [],
-        },
+          matches: []
+        }
       ];
 
       const loanAmount = parseEther("1").toString();
       const loan: Loans = {
         tokens: [mock20.contract.address],
-        amounts: [loanAmount],
+        amounts: [loanAmount]
       };
 
       /**

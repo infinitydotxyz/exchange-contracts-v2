@@ -21,7 +21,7 @@ export interface ExternalFulfillments {
 export enum MatchOrdersTypes {
   OneToOneSpecific,
   OneToOneUnspecific,
-  OneToMany,
+  OneToMany
 }
 
 export interface MatchOrders {
@@ -31,7 +31,7 @@ export interface MatchOrders {
   matchType: MatchOrdersTypes;
 }
 
-export interface BrokerageBatch {
+export interface Batch {
   externalFulfillments: ExternalFulfillments;
   matches: MatchOrders[];
 }
