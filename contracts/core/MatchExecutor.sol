@@ -371,6 +371,14 @@ contract MatchExecutor is
         }
     }
 
+    receive() external payable {
+        // this built-in function doesn't require any calldata,
+        // it will get called if the data field is empty and
+        // the value field is not empty.
+        // this allows the smart contract to receive ether just like a
+        // regular user account controlled by a private key would.
+    }
+
     /**
      * @notice Execute a call to the specified contract
      * @param params The call to execute
