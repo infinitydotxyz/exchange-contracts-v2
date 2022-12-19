@@ -1,11 +1,11 @@
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber, BigNumberish, Contract } from "ethers";
+import { BigNumberish, Contract } from "ethers";
+import { parseEther } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
-import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
 import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
-import { JsonRpcSigner } from "@ethersproject/providers";
 import {
   Batch,
   Call,
@@ -14,11 +14,11 @@ import {
   MatchOrders,
   MatchOrdersTypes
 } from "../utils/matchExecutorTypes";
+import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
+import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
 import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
 import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
 import { MockVaultConfig, setupMockVault } from "../utils/setupMockVault";
-import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
-import { parseEther } from "ethers/lib/utils";
 
 const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExchangeConfig) => {
   const userAddress = signer.address;
