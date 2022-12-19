@@ -1,34 +1,292 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
-import { BigNumber, BigNumberish, Contract } from "ethers";
 import { AddressZero, HashZero } from "@ethersproject/constants";
+import { JsonRpcSigner } from "@ethersproject/providers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Types } from "@reservoir0x/sdk/dist/seaport";
+import { bn, getCurrentTimestamp } from "@reservoir0x/sdk/dist/utils";
+import { expect } from "chai";
+import { BigNumber, BigNumberish as ethersBigNumberish, Contract, utils, Wallet } from "ethers";
+import { getAddress, keccak256, recoverAddress, toUtf8Bytes } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
-import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
-import { SeaportExchangeConfig, setupSeaportExchange } from "../utils/setupSeaportExchange";
 import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
-import { JsonRpcSigner } from "@ethersproject/providers";
 import {
-  Batch,
-  Call,
-  ExternalFulfillments,
+  Batch, ExternalFulfillments,
   Loans,
   MatchOrders,
   MatchOrdersTypes
 } from "../utils/matchExecutorTypes";
+import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
+import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
 import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
 import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
 import { MockVaultConfig, setupMockVault } from "../utils/setupMockVault";
-import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
-import { Interface, parseEther, verifyTypedData, _TypedDataEncoder } from "ethers/lib/utils";
-import { SingleTokenBuilder } from "@reservoir0x/sdk/dist/seaport/builders/single-token";
-import { BaseBuildParams } from "@reservoir0x/sdk/dist/seaport/builders/base";
-import { ORDER_EIP712_TYPES } from "@reservoir0x/sdk/dist/seaport/order";
+import { SeaportExchangeConfig, setupSeaportExchange } from "../utils/setupSeaportExchange";
 
-interface BuildParams extends BaseBuildParams {
-  tokenId: BigNumberish;
-  amount?: BigNumberish;
-}
+import { randomBytes as nodeRandomBytes } from "crypto";
+
+export type BigNumberish = string | BigNumber | number | boolean;
+
+export type AdditionalRecipient = {
+  amount: BigNumber;
+  recipient: string;
+};
+
+export type FulfillmentComponent = {
+  orderIndex: number;
+  itemIndex: number;
+};
+
+export type CriteriaResolver = {
+  orderIndex: number;
+  side: 0 | 1;
+  index: number;
+  identifier: BigNumber;
+  criteriaProof: string[];
+};
+
+export type BasicOrderParameters = {
+  considerationToken: string;
+  considerationIdentifier: BigNumber;
+  considerationAmount: BigNumber;
+  offerer: string;
+  zone: string;
+  offerToken: string;
+  offerIdentifier: BigNumber;
+  offerAmount: BigNumber;
+  basicOrderType: number;
+  startTime: string | BigNumber | number;
+  endTime: string | BigNumber | number;
+  zoneHash: string;
+  salt: string;
+  offererConduitKey: string;
+  fulfillerConduitKey: string;
+  totalOriginalAdditionalRecipients: BigNumber;
+  additionalRecipients: AdditionalRecipient[];
+  signature: string;
+};
+
+export type OfferItem = {
+  itemType: number;
+  token: string;
+  identifierOrCriteria: BigNumber;
+  startAmount: BigNumber;
+  endAmount: BigNumber;
+};
+export type ConsiderationItem = {
+  itemType: number;
+  token: string;
+  identifierOrCriteria: BigNumber;
+  startAmount: BigNumber;
+  endAmount: BigNumber;
+  recipient: string;
+};
+
+export type OrderParameters = {
+  offerer: string;
+  zone: string;
+  offer: OfferItem[];
+  consideration: ConsiderationItem[];
+  orderType: number;
+  startTime: string | BigNumber | number;
+  endTime: string | BigNumber | number;
+  zoneHash: string;
+  salt: string;
+  conduitKey: string;
+  totalOriginalConsiderationItems: string | BigNumber | number;
+};
+
+export type OrderComponents = Omit<OrderParameters, "totalOriginalConsiderationItems"> & {
+  counter: BigNumber;
+};
+
+export type Order = {
+  parameters: OrderParameters;
+  signature: string;
+};
+
+export type AdvancedOrder = {
+  parameters: OrderParameters;
+  numerator: string | BigNumber | number;
+  denominator: string | BigNumber | number;
+  signature: string;
+  extraData: string;
+};
+
+export const convertSignatureToEIP2098 = (signature: string) => {
+  if (signature.length === 130) {
+    return signature;
+  }
+
+  if (signature.length !== 132) {
+    throw Error("invalid signature length (must be 64 or 65 bytes)");
+  }
+
+  return utils.splitSignature(signature).compact;
+};
+
+export const calculateOrderHash = (orderComponents: OrderComponents) => {
+  const offerItemTypeString =
+    "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
+  const considerationItemTypeString =
+    "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
+  const orderComponentsPartialTypeString =
+    "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)";
+  const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
+
+  const offerItemTypeHash = keccak256(toUtf8Bytes(offerItemTypeString));
+  const considerationItemTypeHash = keccak256(toUtf8Bytes(considerationItemTypeString));
+  const orderTypeHash = keccak256(toUtf8Bytes(orderTypeString));
+
+  const offerHash = keccak256(
+    "0x" +
+      orderComponents.offer
+        .map((offerItem) => {
+          return keccak256(
+            "0x" +
+              [
+                offerItemTypeHash.slice(2),
+                offerItem.itemType.toString().padStart(64, "0"),
+                offerItem.token.slice(2).padStart(64, "0"),
+                bn(offerItem.identifierOrCriteria).toHexString().slice(2).padStart(64, "0"),
+                bn(offerItem.startAmount).toHexString().slice(2).padStart(64, "0"),
+                bn(offerItem.endAmount).toHexString().slice(2).padStart(64, "0")
+              ].join("")
+          ).slice(2);
+        })
+        .join("")
+  );
+
+  const considerationHash = keccak256(
+    "0x" +
+      orderComponents.consideration
+        .map((considerationItem) => {
+          return keccak256(
+            "0x" +
+              [
+                considerationItemTypeHash.slice(2),
+                considerationItem.itemType.toString().padStart(64, "0"),
+                considerationItem.token.slice(2).padStart(64, "0"),
+                bn(considerationItem.identifierOrCriteria).toHexString().slice(2).padStart(64, "0"),
+                bn(considerationItem.startAmount).toHexString().slice(2).padStart(64, "0"),
+                bn(considerationItem.endAmount).toHexString().slice(2).padStart(64, "0"),
+                considerationItem.recipient.slice(2).padStart(64, "0")
+              ].join("")
+          ).slice(2);
+        })
+        .join("")
+  );
+
+  const derivedOrderHash = keccak256(
+    "0x" +
+      [
+        orderTypeHash.slice(2),
+        orderComponents.offerer.slice(2).padStart(64, "0"),
+        orderComponents.zone.slice(2).padStart(64, "0"),
+        offerHash.slice(2),
+        considerationHash.slice(2),
+        orderComponents.orderType.toString().padStart(64, "0"),
+        bn(orderComponents.startTime).toHexString().slice(2).padStart(64, "0"),
+        bn(orderComponents.endTime).toHexString().slice(2).padStart(64, "0"),
+        orderComponents.zoneHash.slice(2),
+        orderComponents.salt.slice(2).padStart(64, "0"),
+        orderComponents.conduitKey.slice(2).padStart(64, "0"),
+        bn(orderComponents.counter).toHexString().slice(2).padStart(64, "0")
+      ].join("")
+  );
+
+  return derivedOrderHash;
+};
+
+const orderType = {
+  OrderComponents: [
+    { name: "offerer", type: "address" },
+    { name: "zone", type: "address" },
+    { name: "offer", type: "OfferItem[]" },
+    { name: "consideration", type: "ConsiderationItem[]" },
+    { name: "orderType", type: "uint8" },
+    { name: "startTime", type: "uint256" },
+    { name: "endTime", type: "uint256" },
+    { name: "zoneHash", type: "bytes32" },
+    { name: "salt", type: "uint256" },
+    { name: "conduitKey", type: "bytes32" },
+    { name: "counter", type: "uint256" }
+  ],
+  OfferItem: [
+    { name: "itemType", type: "uint8" },
+    { name: "token", type: "address" },
+    { name: "identifierOrCriteria", type: "uint256" },
+    { name: "startAmount", type: "uint256" },
+    { name: "endAmount", type: "uint256" }
+  ],
+  ConsiderationItem: [
+    { name: "itemType", type: "uint8" },
+    { name: "token", type: "address" },
+    { name: "identifierOrCriteria", type: "uint256" },
+    { name: "startAmount", type: "uint256" },
+    { name: "endAmount", type: "uint256" },
+    { name: "recipient", type: "address" }
+  ]
+};
+
+const GAS_REPORT_MODE = process.env.REPORT_GAS;
+
+const randomBytes = (n: number) => nodeRandomBytes(n).toString("hex");
+
+export const randomHex = (bytes = 32) => `0x${randomBytes(bytes)}`;
+
+export const random128 = () => toBN(randomHex(16));
+
+const hexRegex = /[A-Fa-fx]/g;
+
+export const toHex = (n: BigNumberish, numBytes: number = 0) => {
+  const asHexString = BigNumber.isBigNumber(n)
+    ? n.toHexString().slice(2)
+    : typeof n === "string"
+    ? hexRegex.test(n)
+      ? n.replace(/0x/, "")
+      : (+n).toString(16)
+    : (+n).toString(16);
+  return `0x${asHexString.padStart(numBytes * 2, "0")}`;
+};
+
+export const randomBN = (bytes: number = 16) => toBN(randomHex(bytes));
+
+export const toBN = (n: BigNumberish) => BigNumber.from(toHex(n));
+
+export const toAddress = (n: BigNumberish) => getAddress(toHex(n, 20));
+
+export const toKey = (n: BigNumberish) => toHex(n, 32);
+
+export const getBasicOrderParameters = (
+  basicOrderRouteType: number,
+  order: Order,
+  fulfillerConduitKey = false,
+  tips = []
+): BasicOrderParameters => ({
+  offerer: order.parameters.offerer,
+  zone: order.parameters.zone,
+  basicOrderType: order.parameters.orderType + 4 * basicOrderRouteType,
+  offerToken: order.parameters.offer[0].token,
+  offerIdentifier: order.parameters.offer[0].identifierOrCriteria,
+  offerAmount: order.parameters.offer[0].endAmount,
+  considerationToken: order.parameters.consideration[0].token,
+  considerationIdentifier: order.parameters.consideration[0].identifierOrCriteria,
+  considerationAmount: order.parameters.consideration[0].endAmount,
+  startTime: order.parameters.startTime,
+  endTime: order.parameters.endTime,
+  zoneHash: order.parameters.zoneHash,
+  salt: order.parameters.salt,
+  totalOriginalAdditionalRecipients: BigNumber.from(order.parameters.consideration.length - 1),
+  signature: order.signature,
+  offererConduitKey: order.parameters.conduitKey,
+  fulfillerConduitKey: toKey(fulfillerConduitKey),
+  additionalRecipients: [
+    ...order.parameters.consideration
+      .slice(1)
+      .map(({ endAmount, recipient }) => ({ amount: endAmount, recipient })),
+    ...tips
+  ]
+});
 
 const getInfinityOrderClient = (
   signer: SignerWithAddress,
@@ -43,10 +301,10 @@ const getInfinityOrderClient = (
     nfts: OrderItem[],
     numItems = 1,
     execParams: ExecParams,
-    startPrice: BigNumberish = ethers.utils.parseEther("1"),
-    endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = -1,
-    endTime: BigNumberish = nowSeconds().add(10 * 60),
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
     if (startTime === -1) {
@@ -79,7 +337,8 @@ const getInfinityOrderClient = (
         signer as any as JsonRpcSigner,
         order,
         infinityExchange.contract,
-        infinityExchange.obComplication
+        infinityExchange.obComplication,
+        true
       );
     };
 
@@ -95,10 +354,10 @@ const getInfinityOrderClient = (
       currencyAddress: infinityExchange.WETH
     },
     numItems = 1,
-    startPrice: BigNumberish = ethers.utils.parseEther("1"),
-    endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = -1,
-    endTime: BigNumberish = nowSeconds().add(10 * 60),
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
     return await _createOrder(
@@ -121,10 +380,10 @@ const getInfinityOrderClient = (
       currencyAddress: infinityExchange.WETH
     },
     numItems = 1,
-    startPrice: BigNumberish = ethers.utils.parseEther("1"),
-    endPrice: BigNumberish = startPrice,
-    startTime: BigNumberish = -1,
-    endTime: BigNumberish = nowSeconds().add(10 * 60),
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
     extraParams: ExtraParams = {}
   ) => {
     return _createOrder(
@@ -145,11 +404,6 @@ const getInfinityOrderClient = (
     createOffer
   };
 };
-
-import { Provider } from "@ethersproject/abstract-provider";
-import { bn, getCurrentTimestamp, s } from "@reservoir0x/sdk/dist/utils";
-import { Seaport } from "@reservoir0x/sdk";
-import { Types } from "@reservoir0x/sdk/dist/seaport";
 
 describe("Match_Executor2", () => {
   let mock20: MockERC20Config;
@@ -224,6 +478,8 @@ describe("Match_Executor2", () => {
       .updateMatchExecutor(matchExecutor.contract.address);
 
     seaportExchange = await setupSeaportExchange(ethers.getContractFactory, owner);
+
+    await matchExecutor.contract.addEnabledExchange(seaportExchange.contract.address);
 
     orderClientBySigner.set(mock20.minter, getInfinityOrderClient(mock20.minter, infinityExchange));
     orderClientBySigner.set(
@@ -329,106 +585,185 @@ describe("Match_Executor2", () => {
     //   expect(nftOwner).to.equal(trimLowerCase(mock20.minter.address));
     // });
 
-    it("snipe a seaport listing", async () => {
+    it("ERC721 <=> ETH (basic, minimal and listed off-chain)", async () => {
       const tokenId = "2";
+      const price = "1000000000000000000";
       const orderItems: OrderItem[] = [
         {
           collection: mock721.contract.address,
           tokens: [{ tokenId, numTokens: "1" }]
         }
       ];
-      /**
-       * generate the seaport listing
-       */
-      const seaportSingleTokenBuilder = new SingleTokenBuilder(31337);
-      const buildParams: BuildParams = {
-        offerer: mock721.minter.address,
-        price: ethers.utils.parseEther("1"),
-        paymentToken: AddressZero,
-        tokenKind: "erc721",
-        tokenId,
-        contract: mock721.contract.address,
-        side: "sell",
-        counter: 1
-      };
-      const seaportListing = seaportSingleTokenBuilder.build(buildParams);
-      console.log(mock721.minter.address, mock721.minter._isSigner);
-
-      const EIP712_DOMAIN = (chainId: number) => ({
-        name: "Seaport",
-        version: "1.1",
-        chainId,
-        verifyingContract: seaportExchange.contract.address
-      });
-      const signature = await mock721.minter._signTypedData(
-        EIP712_DOMAIN(seaportListing.chainId),
-        ORDER_EIP712_TYPES,
-        seaportListing.params
-      );
-      console.log("signature", signature);
-
-      seaportListing.params = {
-        ...seaportListing.params,
-        signature
-      };
-
-      const checkSignature = async (provider?: Provider) => {
-        const EIP712_DOMAIN = (chainId: number) => ({
-          name: "Seaport",
-          version: "1.1",
-          chainId,
-          verifyingContract: seaportExchange.contract.address
-        });
-        try {
-          const signer = verifyTypedData(
-            EIP712_DOMAIN(31337),
-            ORDER_EIP712_TYPES,
-            seaportListing.params,
-            seaportListing.params.signature!
-          );
-
-          if (trimLowerCase(seaportListing.params.offerer) !== trimLowerCase(signer)) {
-            throw new Error("Invalid signature");
-          }
-        } catch {
-          if (!provider) {
-            throw new Error("Invalid signature");
-          }
-
-          const eip712Hash = _TypedDataEncoder.hash(
-            EIP712_DOMAIN(seaportListing.chainId),
-            ORDER_EIP712_TYPES,
-            seaportListing.params
-          );
-
-          const iface = new Interface([
-            "function isValidSignature(bytes32 digest, bytes signature) view returns (bytes4)"
-          ]);
-
-          const result = await new Contract(
-            seaportListing.params.offerer,
-            iface,
-            provider
-          ).isValidSignature(eip712Hash, seaportListing.params.signature!);
-          if (result !== iface.getSighash("isValidSignature")) {
-            throw new Error("Invalid signature");
-          }
-        }
-      };
-
-      await checkSignature();
-
-      const initialOwner = trimLowerCase(await mock721.contract.ownerOf(buildParams.tokenId));
-      expect(initialOwner).to.equal(trimLowerCase(mock721.minter.address));
 
       await mock721.contract
         .connect(mock721.minter)
         .setApprovalForAll(seaportExchange.contract.address, true);
-      const isApproved = await mock721.contract.isApprovedForAll(
-        mock721.minter.address,
-        seaportExchange.contract.address
+
+      const offer = [
+        {
+          itemType: Types.ItemType.ERC721,
+          token: mock721.contract.address,
+          identifierOrCriteria: bn(tokenId),
+          startAmount: bn("1"),
+          endAmount: bn("1")
+        }
+      ];
+
+      const consideration = [
+        {
+          itemType: Types.ItemType.NATIVE,
+          token: AddressZero,
+          identifierOrCriteria: bn("0"),
+          startAmount: bn(price),
+          endAmount: bn(price),
+          recipient: mock721.minter.address
+        }
+      ];
+
+      const domainData = {
+        name: "Seaport",
+        version: "1.1",
+        chainId: (await ethers.provider.getNetwork()).chainId,
+        verifyingContract: seaportExchange.contract.address
+      };
+
+      const getAndVerifyOrderHash = async (orderComponents: OrderComponents) => {
+        const orderHash = await seaportExchange.contract.getOrderHash(orderComponents as any);
+        const derivedOrderHash = calculateOrderHash(orderComponents);
+        expect(orderHash).to.equal(derivedOrderHash);
+        return orderHash;
+      };
+
+      // Returns signature
+      const signOrder = async (
+        orderComponents: OrderComponents,
+        signer: Wallet | SignerWithAddress
+      ) => {
+        const signature = await signer._signTypedData(domainData, orderType, orderComponents);
+
+        const orderHash = await getAndVerifyOrderHash(orderComponents);
+
+        const { domainSeparator } = await seaportExchange.contract.information();
+        const digest = keccak256(`0x1901${domainSeparator.slice(2)}${orderHash.slice(2)}`);
+        const recoveredAddress = recoverAddress(digest, signature);
+
+        expect(recoveredAddress).to.equal(signer.address);
+
+        return signature;
+      };
+
+      const createOrder = async (
+        offerer: Wallet | SignerWithAddress,
+        zone: Wallet | undefined | string = undefined,
+        offer: OfferItem[],
+        consideration: ConsiderationItem[],
+        orderType: number,
+        criteriaResolvers?: CriteriaResolver[],
+        timeFlag?: string | null,
+        signer?: Wallet | SignerWithAddress,
+        zoneHash = HashZero,
+        conduitKey = HashZero,
+        extraCheap = false
+      ) => {
+        const counter = await seaportExchange.contract.getCounter(offerer.address);
+
+        // const salt = !extraCheap ? randomHex() : constants.HashZero;
+        const salt = HashZero;
+        const startTime = getCurrentTimestamp(-5 * 60);
+        const endTime = getCurrentTimestamp(5 * 60);
+
+        const orderParameters = {
+          offerer: offerer.address,
+          zone: !extraCheap ? (zone as Wallet).address || (zone as string) : AddressZero,
+          offer,
+          consideration,
+          totalOriginalConsiderationItems: consideration.length,
+          orderType,
+          zoneHash,
+          salt,
+          conduitKey,
+          startTime,
+          endTime
+        };
+
+        const orderComponents = {
+          ...orderParameters,
+          counter
+        };
+
+        const orderHash = await getAndVerifyOrderHash(orderComponents);
+
+        const { isValidated, isCancelled, totalFilled, totalSize } =
+          await seaportExchange.contract.getOrderStatus(orderHash);
+
+        expect(isCancelled).to.equal(false);
+
+        const orderStatus = {
+          isValidated,
+          isCancelled,
+          totalFilled,
+          totalSize
+        };
+
+        const flatSig = await signOrder(orderComponents, signer || offerer);
+        const order = {
+          parameters: orderParameters,
+          signature: !extraCheap ? flatSig : convertSignatureToEIP2098(flatSig),
+          numerator: 1, // only used for advanced orders
+          denominator: 1, // only used for advanced orders
+          extraData: "0x" // only used for advanced orders
+        };
+
+        // How much ether (at most) needs to be supplied when fulfilling the order
+        const value = offer
+          .map((x) =>
+            x.itemType === 0 ? (x.endAmount.gt(x.startAmount) ? x.endAmount : x.startAmount) : bn(0)
+          )
+          .reduce((a, b) => a.add(b), bn(0))
+          .add(
+            consideration
+              .map((x) =>
+                x.itemType === 0
+                  ? x.endAmount.gt(x.startAmount)
+                    ? x.endAmount
+                    : x.startAmount
+                  : bn(0)
+              )
+              .reduce((a, b) => a.add(b), bn(0))
+          );
+
+        return {
+          order,
+          orderHash,
+          value,
+          orderStatus,
+          orderComponents
+        };
+      };
+
+      const { order, orderHash, value } = await createOrder(
+        mock721.minter,
+        AddressZero,
+        offer,
+        consideration,
+        0, // FULL_OPEN
+        [],
+        null,
+        mock721.minter,
+        HashZero,
+        HashZero,
+        true // extraCheap
       );
-      expect(isApproved).to.be.true;
+
+      const basicOrderParameters = getBasicOrderParameters(
+        0, // EthForERC721
+        order
+      );
+
+      // console.log("basicOrderParameters", JSON.stringify(basicOrderParameters, null, 2));
+
+      const initialOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
+      expect(initialOwner).to.equal(trimLowerCase(mock721.minter.address));
 
       /**
        * generate the intermediary infinity listing
@@ -437,11 +772,6 @@ describe("Match_Executor2", () => {
       await mock721.contract
         .connect(intermediary)
         .setApprovalForAll(infinityExchange.contract.address, true);
-      const isApprovedIntermediary = await mock721.contract.isApprovedForAll(
-        intermediary.address,
-        infinityExchange.contract.address
-      );
-      expect(isApprovedIntermediary).to.be.true;
 
       const intermediaryListing = await orderClientBySigner
         .get(intermediary)!
@@ -455,13 +785,16 @@ describe("Match_Executor2", () => {
        *
        * set approval for the infinity exchange to transfer the mock erc20
        */
-      const approveWETH = mock20.contract.interface.getFunction("approve");
-      const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
-        infinityExchange.contract.address,
-        ethers.constants.MaxUint256
-      ]);
-      const offer = await orderClientBySigner.get(mock20.minter)!.createOffer(orderItems);
-      const signedOffer = await offer.prepare();
+      // const approveWETH = mock20.contract.interface.getFunction("approve");
+      // const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
+      //   infinityExchange.contract.address,
+      //   ethers.constants.MaxUint256
+      // ]);
+      await mock20.contract
+        .connect(mock20.minter)
+        .approve(infinityExchange.contract.address, ethers.constants.MaxUint256);
+      const infinityOffer = await orderClientBySigner.get(mock20.minter)!.createOffer(orderItems);
+      const signedInfinityOffer = await infinityOffer.prepare();
 
       /**
        * generate the calldata for the function call that will:
@@ -469,94 +802,15 @@ describe("Match_Executor2", () => {
        * purchase the nft from external MP
        */
 
-      //const info = seaportListing.getInfo()!;
+      // await seaportExchange.contract
+      //   .connect(intermediary)
+      //   .fulfillBasicOrder(basicOrderParameters, { value });
 
-      const side = "sell";
-      const isDynamic = false;
-      let taker = AddressZero;
-      const offerItem = seaportListing.params.offer[0];
-      // The offer item is the sold token
-      const tokenKind = offerItem.itemType === Types.ItemType.ERC721 ? "erc721" : "erc1155";
-      const contract = offerItem.token;
-      const amount = offerItem.startAmount;
-
-      // Ensure all consideration items match (with the exception of the
-      // last one which can match the offer item if the listing is meant
-      // to be fillable only by a specific taker - eg. private)
-      const fees: {
-        recipient: string;
-        amount: BigNumberish;
-        endAmount?: BigNumberish;
-      }[] = [];
-
-      const c = seaportListing.params.consideration;
-
-      const paymentToken = c[0].token;
-      const price = bn(c[0].startAmount);
-      const endPrice = bn(c[0].endAmount);
-      for (let i = 1; i < c.length; i++) {
-        // Seaport private listings have the last consideration item match the offer item
-        if (
-          i === c.length - 1 &&
-          c[i].token === offerItem.token &&
-          c[i].identifierOrCriteria === offerItem.identifierOrCriteria
-        ) {
-          taker = c[i].recipient;
-        } else if (c[i].token !== paymentToken) {
-          throw new Error("Invalid consideration");
-        } else {
-          fees.push({
-            recipient: c[i].recipient,
-            amount: c[i].startAmount,
-            endAmount: c[i].endAmount
-          });
-        }
-      }
-
-      const info = {
-        tokenKind,
-        side,
-        contract,
-        tokenId,
-        amount,
-        paymentToken,
-        price: s(price),
-        endPrice: s(endPrice),
-        fees,
-        isDynamic,
-        taker
-      };
-
-      const txData = {
-        considerationToken: info.paymentToken,
-        considerationIdentifier: "0",
-        considerationAmount: info.price,
-        offerer: seaportListing.params.offerer,
-        zone: seaportListing.params.zone,
-        offerToken: info.contract,
-        offerIdentifier: info.tokenId,
-        offerAmount: info.amount,
-        basicOrderType:
-          Types.BasicOrderType.ETH_TO_ERC721_FULL_OPEN + seaportListing.params.orderType,
-        startTime: seaportListing.params.startTime,
-        endTime: seaportListing.params.endTime,
-        zoneHash: seaportListing.params.zoneHash,
-        salt: seaportListing.params.salt,
-        offererConduitKey: seaportListing.params.conduitKey,
-        fulfillerConduitKey: HashZero,
-        totalOriginalAdditionalRecipients: seaportListing.params.consideration.length - 1,
-        additionalRecipients: [
-          ...seaportListing.params.consideration.slice(1).map(({ startAmount, recipient }) => ({
-            amount: startAmount,
-            recipient
-          })),
-          []
-        ],
-        signature: seaportListing.params.signature!
-      };
+      // const newNftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
+      // expect(newNftOwner).to.equal(trimLowerCase(intermediary.address));
 
       const functionCall = seaportExchange.contract.interface.getFunction("fulfillBasicOrder");
-      const functionArgs = [txData];
+      const functionArgs = [basicOrderParameters];
       console.log("Encoding function data");
       const functionData = seaportExchange.contract.interface.encodeFunctionData(
         functionCall,
@@ -566,17 +820,17 @@ describe("Match_Executor2", () => {
       console.log("Encoding external fulfillments");
       const fulfillments: ExternalFulfillments = {
         calls: [
-          {
-            data: approveWETHData,
-            value: 0,
-            to: mock20.contract.address,
-            isPayable: false
-          },
+          // {
+          //   data: approveWETHData,
+          //   value: 0,
+          //   to: mock20.contract.address,
+          //   isPayable: false
+          // },
           {
             data: functionData,
-            value: 0,
+            value,
             to: seaportExchange.contract.address,
-            isPayable: false
+            isPayable: true
           }
         ],
         nftsToTransfer: orderItems
@@ -587,7 +841,7 @@ describe("Match_Executor2", () => {
        */
 
       const matchOrders: MatchOrders = {
-        buys: [signedOffer!],
+        buys: [signedInfinityOffer!],
         sells: [signedIntermediaryListing!],
         constructs: [],
         matchType: MatchOrdersTypes.OneToOneSpecific
@@ -598,10 +852,15 @@ describe("Match_Executor2", () => {
         externalFulfillments: fulfillments
       };
 
-      console.log("executing matches");
+      console.log("Executing matches");
+      // console.log("Batch", JSON.stringify(batch, null, 2));
 
       try {
-        await matchExecutor.contract.executeMatches([batch], emptyLoans);
+        const transactionHash = await owner.sendTransaction({
+          to: matchExecutor.contract.address,
+          value
+        });
+        await matchExecutor.contract.connect(owner).executeMatches([batch], emptyLoans);
       } catch (err) {
         console.error(err);
       }

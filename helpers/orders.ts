@@ -151,8 +151,9 @@ export async function prepareOBOrder(
   order: OBOrder,
   infinityExchange: Contract,
   obComplication: Contract,
+  skipOnChainOwnershipCheck: boolean = false
 ): Promise<SignedOBOrder | undefined> {
-  const validOrder = await isOrderValid(user, order, infinityExchange, signer);
+  const validOrder = await isOrderValid(user, order, infinityExchange, signer, skipOnChainOwnershipCheck);
   if (!validOrder) {
     return undefined;
   }
@@ -172,7 +173,8 @@ export async function isOrderValid(
   user: User,
   order: OBOrder,
   infinityExchange: Contract,
-  signer: JsonRpcSigner
+  signer: JsonRpcSigner,
+  skipOnChainOwnershipCheck: boolean = false
 ): Promise<boolean> {
   // check timestamps
   const startTime = BigNumber.from(order.startTime);
@@ -192,7 +194,7 @@ export async function isOrderValid(
   }
 
   // check on chain ownership
-  if (order.isSellOrder) {
+  if (order.isSellOrder && !skipOnChainOwnershipCheck) {
     const isCurrentOwner = await checkOnChainOwnership(user, order, signer);
     if (!isCurrentOwner) {
       return false;
