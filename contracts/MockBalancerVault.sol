@@ -15,6 +15,8 @@ contract MockBalancerVault is IBalancerVault, ReentrancyGuard {
         uint256 feeAmount
     );
 
+    receive() external payable {}
+
     function flashLoan(
         IFlashLoanRecipient recipient,
         IERC20[] memory tokens,

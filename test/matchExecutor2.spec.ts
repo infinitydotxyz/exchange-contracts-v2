@@ -330,7 +330,7 @@ const createSeaportListing = async (tokenId: string, price: BigNumber) => {
   return { basicOrderParameters, orderHash, value };
 };
 
-describe("Match_Executor2", () => {
+describe("Match_Executor", () => {
   before(async () => {
     await network.provider.request({
       method: "hardhat_reset",
@@ -435,12 +435,6 @@ describe("Match_Executor2", () => {
        * purchase the nft from external MP
        */
 
-      // await seaportExchange.contract
-      //   .connect(intermediary)
-      //   .fulfillBasicOrder(basicOrderParameters, { value });
-      // const newNftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
-      // expect(newNftOwner).to.equal(trimLowerCase(intermediary.address));
-
       const functionCall = seaportExchange.contract.interface.getFunction("fulfillBasicOrder");
       const functionArgs = [basicOrderParameters];
       console.log("Encoding function data");
@@ -466,6 +460,19 @@ describe("Match_Executor2", () => {
        * complete the call by calling the infinity exchange
        */
 
+      // const loans: Loans = {
+      //   tokens: [AddressZero],
+      //   amounts: [value]
+      // };
+
+      // /**
+      //  * transfer some ETH to the vault so it has balance to lend out
+      //  */
+      // await owner.sendTransaction({
+      //   to: matchExecutor.vault.contract.address,
+      //   value
+      // });
+
       const matchOrders: MatchOrders = {
         buys: [signedInfinityOffer!],
         sells: [signedIntermediaryListing!],
@@ -481,7 +488,7 @@ describe("Match_Executor2", () => {
       console.log("Executing matches");
       // console.log("Batch", JSON.stringify(batch, null, 2));
       try {
-        const transactionHash = await owner.sendTransaction({
+        await owner.sendTransaction({
           to: matchExecutor.contract.address,
           value
         });

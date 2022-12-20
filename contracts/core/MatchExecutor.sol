@@ -65,6 +65,8 @@ contract MatchExecutor is
         exchange = _exchange;
     }
 
+    receive() external payable {}
+
     function onERC721Received(
         address,
         address,
@@ -369,14 +371,6 @@ contract MatchExecutor is
                 externalFulfillments.nftsToTransfer
             );
         }
-    }
-
-    receive() external payable {
-        // this built-in function doesn't require any calldata,
-        // it will get called if the data field is empty and
-        // the value field is not empty.
-        // this allows the smart contract to receive ether just like a
-        // regular user account controlled by a private key would.
     }
 
     /**
