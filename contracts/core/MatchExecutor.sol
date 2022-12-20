@@ -65,7 +65,8 @@ contract MatchExecutor is
         exchange = _exchange;
     }
 
-    receive() external payable {}
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {} // todo: remove
 
     function onERC721Received(
         address,

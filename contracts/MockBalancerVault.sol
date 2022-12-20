@@ -15,7 +15,8 @@ contract MockBalancerVault is IBalancerVault, ReentrancyGuard {
         uint256 feeAmount
     );
 
-    receive() external payable {}
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {} // todo: remove
 
     function flashLoan(
         IFlashLoanRecipient recipient,
