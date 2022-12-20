@@ -1,540 +1,504 @@
-// import { JsonRpcSigner } from "@ethersproject/providers";
-// import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-// import { expect } from "chai";
-// import { BigNumberish, Contract } from "ethers";
-// import { parseEther } from "ethers/lib/utils";
-// import { ethers, network } from "hardhat";
-// import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
-// import { nowSeconds, trimLowerCase } from "../tasks/utils";
-// import {
-//   Batch,
-//   Call,
-//   ExternalFulfillments,
-//   Loans,
-//   MatchOrders,
-//   MatchOrdersTypes
-// } from "../utils/matchExecutorTypes";
-// import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
-// import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
-// import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
-// import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
-// import { MockVaultConfig, setupMockVault } from "../utils/setupMockVault";
+import { AddressZero, HashZero } from "@ethersproject/constants";
+import { JsonRpcSigner } from "@ethersproject/providers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Types } from "@reservoir0x/sdk/dist/seaport";
+import { bn, getCurrentTimestamp } from "@reservoir0x/sdk/dist/utils";
+import { expect } from "chai";
+import { BigNumber, BigNumberish as ethersBigNumberish, Contract, Wallet } from "ethers";
+import { keccak256, recoverAddress } from "ethers/lib/utils";
+import { ethers, network } from "hardhat";
+import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
+import { nowSeconds, trimLowerCase } from "../tasks/utils";
+import { ConsiderationItem, CriteriaResolver, OfferItem, OrderComponents } from "../types/seaport";
+import {
+  Batch,
+  ExternalFulfillments,
+  Loans,
+  MatchOrders,
+  MatchOrdersTypes
+} from "../utils/matchExecutorTypes";
+import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
+import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
+import { MockERC20Config, setupMockERC20 } from "../utils/setupMockERC20";
+import { MockERC721Config, setupMockERC721 } from "../utils/setupMockERC721";
+import { MockVaultConfig, setupMockVault } from "../utils/setupMockVault";
+import { SeaportExchangeConfig, setupSeaportExchange } from "../utils/setupSeaportExchange";
+import {
+  calculateOrderHash,
+  convertSignatureToEIP2098,
+  getBasicOrderParameters,
+  orderType
+} from "../utils/seaport";
 
-// const getOrderClient = (signer: SignerWithAddress, infinityExchange: InfinityExchangeConfig) => {
-//   const userAddress = signer.address;
-//   let orderNonce = 1;
-//   const chainId = network.config.chainId ?? 31337;
+let mock20: MockERC20Config;
+let mock721: MockERC721Config;
+let mockVault: MockVaultConfig;
+let matchExecutor: MatchExecutorConfig<Contract>;
+let infinityExchange: InfinityExchangeConfig;
+let seaportExchange: SeaportExchangeConfig;
+let owner = {} as SignerWithAddress;
+let intermediary = {} as SignerWithAddress;
+let emptyMatch = {} as MatchOrders;
+let emptyFulfillments = {} as ExternalFulfillments;
+let emptyLoans = {} as Loans;
+let emptyBatch = {} as Batch;
 
-//   const _createOrder = async (
-//     isSellOrder: boolean,
-//     nfts: OrderItem[],
-//     numItems = 1,
-//     execParams: ExecParams,
-//     startPrice: BigNumberish = ethers.utils.parseEther("1"),
-//     endPrice: BigNumberish = startPrice,
-//     startTime: BigNumberish = -1,
-//     endTime: BigNumberish = nowSeconds().add(10 * 60),
-//     extraParams: ExtraParams = {}
-//   ) => {
-//     if (startTime === -1) {
-//       startTime = (await infinityExchange.contract.provider.getBlock("latest")).timestamp - 15;
-//     }
-//     const orderId = ethers.utils.solidityKeccak256(
-//       ["address", "uint256", "uint256"],
-//       [userAddress, orderNonce, chainId]
-//     );
-//     const order: OBOrder = {
-//       id: orderId,
-//       chainId,
-//       isSellOrder,
-//       signerAddress: userAddress,
-//       nonce: `${orderNonce}`,
-//       numItems: numItems,
-//       nfts,
-//       startPrice,
-//       endPrice,
-//       startTime,
-//       endTime,
-//       execParams,
-//       extraParams
-//     };
+let orderClientBySigner: Map<
+  SignerWithAddress,
+  ReturnType<typeof getInfinityOrderClient>
+> = new Map();
 
-//     const prepare = () => {
-//       return prepareOBOrder(
-//         { address: order.signerAddress },
-//         chainId,
-//         signer as any as JsonRpcSigner,
-//         order,
-//         infinityExchange.contract,
-//         infinityExchange.obComplication
-//       );
-//     };
+const getInfinityOrderClient = (
+  signer: SignerWithAddress,
+  infinityExchange: InfinityExchangeConfig
+) => {
+  const userAddress = signer.address;
+  let orderNonce = 1;
+  const chainId = network.config.chainId ?? 31337;
 
-//     orderNonce += 1;
+  const _createOrder = async (
+    isSellOrder: boolean,
+    nfts: OrderItem[],
+    numItems = 1,
+    execParams: ExecParams,
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
+    extraParams: ExtraParams = {}
+  ) => {
+    if (startTime === -1) {
+      startTime = (await infinityExchange.contract.provider.getBlock("latest")).timestamp - 15;
+    }
+    const orderId = ethers.utils.solidityKeccak256(
+      ["address", "uint256", "uint256"],
+      [userAddress, orderNonce, chainId]
+    );
+    const order: OBOrder = {
+      id: orderId,
+      chainId,
+      isSellOrder,
+      signerAddress: userAddress,
+      nonce: `${orderNonce}`,
+      numItems: numItems,
+      nfts,
+      startPrice,
+      endPrice,
+      startTime,
+      endTime,
+      execParams,
+      extraParams
+    };
 
-//     return { order, prepare };
-//   };
+    const prepare = () => {
+      return prepareOBOrder(
+        { address: order.signerAddress },
+        chainId,
+        signer as any as JsonRpcSigner,
+        order,
+        infinityExchange.contract,
+        infinityExchange.obComplication,
+        true
+      );
+    };
 
-//   const createListing = async (
-//     nfts: OrderItem[],
-//     execParams: ExecParams = {
-//       complicationAddress: infinityExchange.obComplication.address,
-//       currencyAddress: infinityExchange.WETH
-//     },
-//     numItems = 1,
-//     startPrice: BigNumberish = ethers.utils.parseEther("1"),
-//     endPrice: BigNumberish = startPrice,
-//     startTime: BigNumberish = -1,
-//     endTime: BigNumberish = nowSeconds().add(10 * 60),
-//     extraParams: ExtraParams = {}
-//   ) => {
-//     return await _createOrder(
-//       true,
-//       nfts,
-//       numItems,
-//       execParams,
-//       startPrice,
-//       endPrice,
-//       startTime,
-//       endTime,
-//       extraParams
-//     );
-//   };
+    orderNonce += 1;
 
-//   const createOffer = async (
-//     nfts: OrderItem[],
-//     execParams: ExecParams = {
-//       complicationAddress: infinityExchange.obComplication.address,
-//       currencyAddress: infinityExchange.WETH
-//     },
-//     numItems = 1,
-//     startPrice: BigNumberish = ethers.utils.parseEther("1"),
-//     endPrice: BigNumberish = startPrice,
-//     startTime: BigNumberish = -1,
-//     endTime: BigNumberish = nowSeconds().add(10 * 60),
-//     extraParams: ExtraParams = {}
-//   ) => {
-//     return _createOrder(
-//       false,
-//       nfts,
-//       numItems,
-//       execParams,
-//       startPrice,
-//       endPrice,
-//       startTime,
-//       endTime,
-//       extraParams
-//     );
-//   };
+    return { order, prepare };
+  };
 
-//   return {
-//     createListing,
-//     createOffer
-//   };
-// };
+  const createListing = async (
+    nfts: OrderItem[],
+    execParams: ExecParams = {
+      complicationAddress: infinityExchange.obComplication.address,
+      currencyAddress: infinityExchange.WETH
+    },
+    numItems = 1,
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
+    extraParams: ExtraParams = {}
+  ) => {
+    return await _createOrder(
+      true,
+      nfts,
+      numItems,
+      execParams,
+      startPrice,
+      endPrice,
+      startTime,
+      endTime,
+      extraParams
+    );
+  };
 
-// describe("Match_Executor", () => {
-//   let mock20: MockERC20Config;
-//   let mock721: MockERC721Config;
-//   let mockVault: MockVaultConfig;
-//   let matchExecutor: MatchExecutorConfig<Contract>;
-//   let infinityExchange: InfinityExchangeConfig;
-//   let owner = {} as SignerWithAddress;
-//   let emptyMatch = {} as MatchOrders;
-//   let emptyFulfillments = {} as ExternalFulfillments;
-//   let emptyLoans = {} as Loans;
-//   let emptyBatch = {} as Batch;
+  const createOffer = async (
+    nfts: OrderItem[],
+    execParams: ExecParams = {
+      complicationAddress: infinityExchange.obComplication.address,
+      currencyAddress: infinityExchange.WETH
+    },
+    numItems = 1,
+    startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
+    endPrice: ethersBigNumberish = startPrice,
+    startTime: ethersBigNumberish = -1,
+    endTime: ethersBigNumberish = nowSeconds().add(10 * 60),
+    extraParams: ExtraParams = {}
+  ) => {
+    return _createOrder(
+      false,
+      nfts,
+      numItems,
+      execParams,
+      startPrice,
+      endPrice,
+      startTime,
+      endTime,
+      extraParams
+    );
+  };
 
-//   let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getOrderClient>> = new Map();
+  return {
+    createListing,
+    createOffer
+  };
+};
 
-//   before(async () => {
-//     await network.provider.request({
-//       method: "hardhat_reset",
-//       params: []
-//     });
-//     const signers = await ethers.getSigners();
-//     mock20 = await setupMockERC20(ethers.getContractFactory, signers.pop() as SignerWithAddress);
-//     mock721 = await setupMockERC721(ethers.getContractFactory, signers.pop() as SignerWithAddress);
-//     mockVault = await setupMockVault(ethers.getContractFactory, signers.pop() as SignerWithAddress);
-//     owner = signers.pop() as SignerWithAddress;
+const createSeaportListing = async (tokenId: string, price: BigNumber) => {
+  await mock721.contract
+    .connect(mock721.minter)
+    .setApprovalForAll(seaportExchange.contract.address, true);
 
-//     emptyMatch = {
-//       buys: [],
-//       sells: [],
-//       constructs: [],
-//       matchType: MatchOrdersTypes.OneToOneSpecific
-//     };
+  const offer = [
+    {
+      itemType: Types.ItemType.ERC721,
+      token: mock721.contract.address,
+      identifierOrCriteria: bn(tokenId),
+      startAmount: bn("1"),
+      endAmount: bn("1")
+    }
+  ];
 
-//     emptyFulfillments = {
-//       calls: [],
-//       nftsToTransfer: []
-//     };
+  const consideration = [
+    {
+      itemType: Types.ItemType.NATIVE,
+      token: AddressZero,
+      identifierOrCriteria: bn("0"),
+      startAmount: bn(price),
+      endAmount: bn(price),
+      recipient: mock721.minter.address
+    }
+  ];
 
-//     emptyBatch = {
-//       matches: [emptyMatch],
-//       externalFulfillments: emptyFulfillments
-//     };
+  const createOrder = async (
+    offerer: Wallet | SignerWithAddress,
+    zone: Wallet | undefined | string = undefined,
+    offer: OfferItem[],
+    consideration: ConsiderationItem[],
+    orderType: number,
+    criteriaResolvers?: CriteriaResolver[],
+    timeFlag?: string | null,
+    signer?: Wallet | SignerWithAddress,
+    zoneHash = HashZero,
+    conduitKey = HashZero,
+    extraCheap = false
+  ) => {
+    const counter = await seaportExchange.contract.getCounter(offerer.address);
 
-//     emptyLoans = {
-//       tokens: [],
-//       amounts: []
-//     };
+    // const salt = !extraCheap ? randomHex() : constants.HashZero;
+    const salt = HashZero;
+    const startTime = getCurrentTimestamp(-5 * 60);
+    const endTime = getCurrentTimestamp(5 * 60);
 
-//     infinityExchange = await setupInfinityExchange(
-//       ethers.getContractFactory,
-//       owner,
-//       mock20.contract.address,
-//       signers.pop() as SignerWithAddress
-//     );
+    const orderParameters = {
+      offerer: offerer.address,
+      zone: !extraCheap ? (zone as Wallet).address || (zone as string) : AddressZero,
+      offer,
+      consideration,
+      totalOriginalConsiderationItems: consideration.length,
+      orderType,
+      zoneHash,
+      salt,
+      conduitKey,
+      startTime,
+      endTime
+    };
 
-//     matchExecutor = await setupMatchExecutor(
-//       ethers.getContractFactory,
-//       owner,
-//       signers.pop() as SignerWithAddress,
-//       infinityExchange.contract,
-//       mockVault
-//     );
+    const orderComponents = {
+      ...orderParameters,
+      counter
+    };
 
-//     await infinityExchange.contract
-//       .connect(owner)
-//       .updateMatchExecutor(matchExecutor.contract.address);
+    const orderHash = await getAndVerifyOrderHash(orderComponents);
 
-//     orderClientBySigner.set(mock20.minter, getOrderClient(mock20.minter, infinityExchange));
-//     orderClientBySigner.set(mock721.minter, getOrderClient(mock721.minter, infinityExchange));
-//   });
+    const { isValidated, isCancelled, totalFilled, totalSize } =
+      await seaportExchange.contract.getOrderStatus(orderHash);
 
-//   describe("broker", () => {
-//     it("is only callable by the owner", async () => {
-//       const invalidBrokerage = matchExecutor.contract
-//         .connect(matchExecutor.intermediary)
-//         .executeMatches([emptyBatch], emptyLoans);
-//       await expect(invalidBrokerage).to.be.revertedWith("Ownable: caller is not the owner");
+    expect(isCancelled).to.equal(false);
 
-//       // const validBrokerage = matchExecutor.contract
-//       //   .connect(owner)
-//       //   .executeMatches([emptyBatch], emptyLoans);
-//       // try {
-//       //   await validBrokerage;
-//       // } catch (err) {
-//       //   console.error(err);
-//       //   expect(true).to.be.false;
-//       // }
-//     });
+    const orderStatus = {
+      isValidated,
+      isCancelled,
+      totalFilled,
+      totalSize
+    };
 
-//     it("can call another contract", async () => {
-//       const isNonceValid = infinityExchange.contract.interface.getFunction("isNonceValid");
-//       const data = infinityExchange.contract.interface.encodeFunctionData(isNonceValid, [
-//         infinityExchange.matchExecutor.address,
-//         0
-//       ]);
+    const flatSig = await signOrder(orderComponents, signer || offerer);
+    const order = {
+      parameters: orderParameters,
+      signature: !extraCheap ? flatSig : convertSignatureToEIP2098(flatSig),
+      numerator: 1, // only used for advanced orders
+      denominator: 1, // only used for advanced orders
+      extraData: "0x" // only used for advanced orders
+    };
 
-//       const call: Call = {
-//         data: data,
-//         value: 0,
-//         to: infinityExchange.contract.address,
-//         isPayable: false
-//       };
+    // How much ether (at most) needs to be supplied when fulfilling the order
+    const value = offer
+      .map((x) =>
+        x.itemType === 0 ? (x.endAmount.gt(x.startAmount) ? x.endAmount : x.startAmount) : bn(0)
+      )
+      .reduce((a, b) => a.add(b), bn(0))
+      .add(
+        consideration
+          .map((x) =>
+            x.itemType === 0 ? (x.endAmount.gt(x.startAmount) ? x.endAmount : x.startAmount) : bn(0)
+          )
+          .reduce((a, b) => a.add(b), bn(0))
+      );
 
-//       const brokerage: ExternalFulfillments = {
-//         calls: [call],
-//         nftsToTransfer: []
-//       };
+    return {
+      order,
+      orderHash,
+      value,
+      orderStatus,
+      orderComponents
+    };
+  };
 
-//       //   const validBrokerage = matchExecutorEOAInitiator.contract
-//       //     .connect(matchExecutorEOAInitiator.initiator)
-//       //     .broker(brokerage);
+  const domainData = {
+    name: "Seaport",
+    version: "1.1",
+    chainId: (await ethers.provider.getNetwork()).chainId,
+    verifyingContract: seaportExchange.contract.address
+  };
 
-//       //   try {
-//       //     await validBrokerage;
-//       //     expect(true).to.be.true;
-//       //   } catch (err) {
-//       //     expect(true).to.be.false;
-//       //   }
-//     });
+  const getAndVerifyOrderHash = async (orderComponents: OrderComponents) => {
+    const orderHash = await seaportExchange.contract.getOrderHash(orderComponents as any);
+    const derivedOrderHash = calculateOrderHash(orderComponents);
+    expect(orderHash).to.equal(derivedOrderHash);
+    return orderHash;
+  };
 
-//     // it("cannot call contract that is not payable with value", async () => {
-//     //   const isNonceValid = infinityExchange.contract.interface.getFunction("isNonceValid");
-//     //   const data = infinityExchange.contract.interface.encodeFunctionData(isNonceValid, [
-//     //     infinityExchange.matchExecutor.address,
-//     //     0,
-//     //   ]);
-//     //   const contract = infinityExchange.contract.address;
+  // Returns signature
+  const signOrder = async (
+    orderComponents: OrderComponents,
+    signer: Wallet | SignerWithAddress
+  ) => {
+    const signature = await signer._signTypedData(domainData, orderType, orderComponents);
 
-//     //   /**
-//     //    * ensure the contract is not payable
-//     //    */
-//     //   const isPayable = await matchExecutor.contract.payableContracts(contract);
-//     //   expect(isPayable).to.be.false;
+    const orderHash = await getAndVerifyOrderHash(orderComponents);
 
-//     //   const call: Call = {
-//     //     data: data,
-//     //     value: 1,
-//     //     to: contract,
-//     //     isPayable: true,
-//     //   };
+    const { domainSeparator } = await seaportExchange.contract.information();
+    const digest = keccak256(`0x1901${domainSeparator.slice(2)}${orderHash.slice(2)}`);
+    const recoveredAddress = recoverAddress(digest, signature);
 
-//     //   const brokerage: ExternalFulfillments = {
-//     //     calls: [call],
-//     //     nftsToTransfer: [],
-//     //   };
-//     //   const loans: Loans = {
-//     //     tokens: [],
-//     //     amounts: [],
-//     //   };
+    expect(recoveredAddress).to.equal(signer.address);
 
-//     //   /**
-//     //    * attempt to broker a call to the non-payable contract with value
-//     //    */
-//     //     const invalidBrokerage = matchExecutor.contract
-//     //       .connect(owner)
-//     //       .executeMatches([emptyBatch], emptyLoans);
-//     //     await expect(invalidBrokerage).to.be.revertedWith("contract is not payable");
-//     // });
+    return signature;
+  };
 
-//     // it("cannot have a mismatch between isPayable and value", async () => {
-//     //   const isNonceValid = infinityExchange.contract.interface.getFunction("isNonceValid");
-//     //   const data = infinityExchange.contract.interface.encodeFunctionData(isNonceValid, [
-//     //     infinityExchange.matchExecutor.address,
-//     //     0,
-//     //   ]);
+  const { order, orderHash, value } = await createOrder(
+    mock721.minter,
+    AddressZero,
+    offer,
+    consideration,
+    0, // FULL_OPEN
+    [],
+    null,
+    mock721.minter,
+    HashZero,
+    HashZero,
+    true // extraCheap
+  );
 
-//     //   /**
-//     //    * note that the value is `1` but `isPayable` is `false`
-//     //    */
-//     //   const call: Call = {
-//     //     data: data,
-//     //     value: 1,
-//     //     to: infinityExchange.contract.address,
-//     //     isPayable: false,
-//     //   };
+  const basicOrderParameters = getBasicOrderParameters(
+    0, // EthForERC721
+    order
+  );
 
-//     //   const brokerage: ExternalFulfillments = {
-//     //     calls: [call],
-//     //     nftsToTransfer: [],
-//     //   };
+  return { basicOrderParameters, orderHash, value };
+};
 
-//     //     const invalidBrokerage = matchExecutor.contract
-//     //       .connect(owner)
-//     //       .executeMatches([emptyBatch], emptyLoans);
-//     //     await expect(invalidBrokerage).to.be.revertedWith("value must be zero in a non-payable call");
-//     // });
+describe("Match_Executor", () => {
+  before(async () => {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: []
+    });
+    const signers = await ethers.getSigners();
+    mock20 = await setupMockERC20(ethers.getContractFactory, signers.pop() as SignerWithAddress);
+    mock721 = await setupMockERC721(ethers.getContractFactory, signers.pop() as SignerWithAddress);
+    mockVault = await setupMockVault(ethers.getContractFactory, signers.pop() as SignerWithAddress);
+    owner = signers.pop() as SignerWithAddress;
+    intermediary = signers.pop() as SignerWithAddress;
 
-//     it("can transfer an erc721", async () => {
-//       const tokenId = "1";
-//       const nftToTransfer: OrderItem = {
-//         collection: mock721.contract.address,
-//         tokens: [{ tokenId, numTokens: "1" }]
-//       };
+    emptyMatch = {
+      buys: [],
+      sells: [],
+      constructs: [],
+      matchType: MatchOrdersTypes.OneToOneUnspecific
+    };
 
-//       const brokerage: ExternalFulfillments = {
-//         calls: [],
-//         nftsToTransfer: [nftToTransfer]
-//       };
+    emptyFulfillments = {
+      calls: [],
+      nftsToTransfer: []
+    };
 
-//       /**
-//        * attempting to transfer before the match executor is the owner of the token
-//        * should fail
-//        */
-//       //   const invalidBrokerage = matchExecutorEOAInitiator.contract
-//       //     .connect(matchExecutorEOAInitiator.initiator)
-//       //     .broker(brokerage);
-//       //   await expect(invalidBrokerage).to.be.revertedWith(
-//       //     "ERC721: transfer caller is not owner nor approved"
-//       //   );
+    emptyBatch = {
+      matches: [emptyMatch],
+      externalFulfillments: emptyFulfillments
+    };
 
-//       /**
-//        * transfer the nft to the match executor
-//        */
-//       await mock721.contract
-//         .connect(mock721.minter)
-//         .transferFrom(mock721.minter.address, matchExecutor.contract.address, tokenId);
-//       const nftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
-//       const intermediary = trimLowerCase(matchExecutor.intermediary.address);
-//       const matchExecutorAddress = trimLowerCase(matchExecutor.contract.address);
-//       expect(nftOwner).to.equal(matchExecutorAddress);
-//       expect(nftOwner).not.to.equal(intermediary);
+    emptyLoans = {
+      tokens: [],
+      amounts: []
+    };
 
-//       /**
-//        * transfer the nft to the intermediary via broker
-//        */
-//       //   await matchExecutorEOAInitiator.contract
-//       //     .connect(matchExecutorEOAInitiator.initiator)
-//       //     .broker(brokerage);
-//       // const newNftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
-//       // expect(newNftOwner).to.equal(intermediary);
-//     });
+    infinityExchange = await setupInfinityExchange(
+      ethers.getContractFactory,
+      owner,
+      mock20.contract.address,
+      signers.pop() as SignerWithAddress
+    );
 
-//     it("can broker a listing on the infinity exchange", async () => {
-//       /**
-//        * generate the listing
-//        */
-//       const tokenId = "2";
-//       const orderItems: OrderItem[] = [
-//         {
-//           collection: mock721.contract.address,
-//           tokens: [{ tokenId, numTokens: "1" }]
-//         }
-//       ];
+    matchExecutor = await setupMatchExecutor(
+      ethers.getContractFactory,
+      owner,
+      intermediary,
+      infinityExchange.contract,
+      mockVault
+    );
 
-//       const initialOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
-//       expect(initialOwner).to.equal(trimLowerCase(mock721.minter.address));
+    await infinityExchange.contract
+      .connect(owner)
+      .updateMatchExecutor(matchExecutor.contract.address);
 
-//       await mock721.contract
-//         .connect(mock721.minter)
-//         .setApprovalForAll(infinityExchange.contract.address, true);
-//       const isApproved = await mock721.contract.isApprovedForAll(
-//         mock721.minter.address,
-//         infinityExchange.contract.address
-//       );
-//       expect(isApproved).to.be.true;
+    seaportExchange = await setupSeaportExchange(ethers.getContractFactory, owner);
 
-//       const listing = await orderClientBySigner.get(mock721.minter)!.createListing(orderItems);
-//       const signedListing = await listing.prepare();
+    await matchExecutor.contract.addEnabledExchange(seaportExchange.contract.address);
 
-//       const price = listing.order.startPrice;
-//       expect(trimLowerCase(listing.order.execParams.currencyAddress)).to.equal(
-//         trimLowerCase(mock20.contract.address)
-//       );
+    orderClientBySigner.set(mock20.minter, getInfinityOrderClient(mock20.minter, infinityExchange));
+    orderClientBySigner.set(
+      mock721.minter,
+      getInfinityOrderClient(mock721.minter, infinityExchange)
+    );
+    orderClientBySigner.set(intermediary, getInfinityOrderClient(intermediary, infinityExchange));
+  });
 
-//       await mock20.contract.connect(mock20.minter).transfer(matchExecutor.contract.address, price);
+  describe("matchExecutor", () => {
+    it("snipes a seaport basic listing ERC721 <=> ETH", async () => {
+      // listing data
+      const tokenId = "2";
+      const price = ethers.utils.parseEther("1");
+      const orderItems: OrderItem[] = [
+        {
+          collection: mock721.contract.address,
+          tokens: [{ tokenId, numTokens: "1" }]
+        }
+      ];
 
-//       /**
-//        * generate the call data for the call that will:
-//        *
-//        * set approval for the infinity exchange to transfer the mock erc20
-//        */
-//       const approveWETH = mock20.contract.interface.getFunction("approve");
-//       const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
-//         infinityExchange.contract.address,
-//         price
-//       ]);
+      // create seaport listing
+      const { basicOrderParameters, value } = await createSeaportListing(tokenId, price);
+      const initialOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
+      expect(initialOwner).to.equal(trimLowerCase(mock721.minter.address));
 
-//       /**
-//        * generate the calldata for the takeOrders call that will:
-//        *
-//        * purchase the nft
-//        */
-//       const takeOrdersArgs = [[signedListing], [orderItems]];
-//       const takeOrders = infinityExchange.contract.interface.getFunction("takeOrders");
-//       const takeOrdersData = infinityExchange.contract.interface.encodeFunctionData(
-//         takeOrders,
-//         takeOrdersArgs
-//       );
+      // create infinity listing
+      const intermediaryListing = await orderClientBySigner
+        .get(intermediary)!
+        .createListing(orderItems);
+      const signedIntermediaryListing = await intermediaryListing.prepare();
+      await mock721.contract
+        .connect(intermediary)
+        .setApprovalForAll(infinityExchange.contract.address, true);
 
-//       const brokerage: ExternalFulfillments = {
-//         calls: [
-//           {
-//             data: approveWETHData,
-//             value: 0,
-//             to: mock20.contract.address,
-//             isPayable: false
-//           },
-//           {
-//             data: takeOrdersData,
-//             value: 0,
-//             to: infinityExchange.contract.address,
-//             isPayable: false
-//           }
-//         ],
-//         nftsToTransfer: orderItems
-//       };
+      // create infinity offer
+      await mock20.contract
+        .connect(mock20.minter)
+        .approve(infinityExchange.contract.address, ethers.constants.MaxUint256);
+      const infinityOffer = await orderClientBySigner.get(mock20.minter)!.createOffer(orderItems);
+      const signedInfinityOffer = await infinityOffer.prepare();
 
-//       //   try {
-//       //     await matchExecutorEOAInitiator.contract
-//       //       .connect(matchExecutorEOAInitiator.initiator)
-//       //       .broker(brokerage);
-//       //   } catch (err) {
-//       //     console.error(err);
-//       //   }
+      /**
+       * generate the calldata for the function call that will:
+       *
+       * purchase the nft from external MP
+       */
 
-//       // const nftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
-//       // expect(nftOwner).to.equal(trimLowerCase(matchExecutor.intermediary.address));
-//     });
+      const functionCall = seaportExchange.contract.interface.getFunction("fulfillBasicOrder");
+      const functionArgs = [basicOrderParameters];
+      console.log("Encoding function data");
+      const functionData = seaportExchange.contract.interface.encodeFunctionData(
+        functionCall,
+        functionArgs
+      );
 
-//     it("can execute a flash loan", async () => {
-//       const gasFees = parseEther("0.01").toString();
-//       await mock20.contract
-//         .connect(mock20.minter)
-//         .transfer(matchExecutor.contract.address, gasFees);
-//       /**
-//        * add some allowance to payback the gas fee
-//        */
-//       const approveWETH = mock20.contract.interface.getFunction("approve");
-//       const approveWETHData = mock20.contract.interface.encodeFunctionData(approveWETH, [
-//         infinityExchange.contract.address,
-//         ethers.constants.MaxUint256
-//       ]);
+      console.log("Encoding external fulfillments");
+      const fulfillments: ExternalFulfillments = {
+        calls: [
+          {
+            data: functionData,
+            value,
+            to: seaportExchange.contract.address,
+            isPayable: true
+          }
+        ],
+        nftsToTransfer: orderItems
+      };
 
-//       const brokerage: ExternalFulfillments = {
-//         calls: [
-//           {
-//             data: approveWETHData,
-//             value: 0,
-//             to: mock20.contract.address,
-//             isPayable: false
-//           }
-//         ],
-//         nftsToTransfer: []
-//       };
+      /**
+       * complete the call by calling the infinity exchange
+       */
 
-//       const brokerageBatches: Batch[] = [
-//         {
-//           externalFulfillments: brokerage,
-//           /**
-//            * by not having any matches in the batch, the match executor
-//            * is responsible for paying back the gas fees
-//            */
-//           matches: []
-//         }
-//       ];
+      // const loans: Loans = {
+      //   tokens: [AddressZero],
+      //   amounts: [value]
+      // };
 
-//       const loanAmount = parseEther("1").toString();
-//       const loan: Loans = {
-//         tokens: [mock20.contract.address],
-//         amounts: [loanAmount]
-//       };
+      // /**
+      //  * transfer some ETH to the vault so it has balance to lend out
+      //  */
+      // await owner.sendTransaction({
+      //   to: matchExecutor.vault.contract.address,
+      //   value
+      // });
 
-//       /**
-//        * transfer some tokens to the vault so it has balance to lend out
-//        */
-//       await mock20.contract
-//         .connect(mock20.minter)
-//         .transfer(matchExecutor.vault.contract.address, loanAmount);
+      const matchOrders: MatchOrders = {
+        buys: [signedInfinityOffer!],
+        sells: [signedIntermediaryListing!],
+        constructs: [],
+        matchType: MatchOrdersTypes.OneToOneSpecific
+      };
 
-//       /**
-//        * execute the flash loan
-//        */
-//       // const txn = await infinityExchange.contract
-//       //   .connect(infinityExchange.matchExecutor)
-//       //   .initiateBrokerage(brokerageBatches, loan);
-//       // const receipt = await matchExecutor.contract.provider.getTransactionReceipt(txn.hash);
-//       // const logs = receipt.logs;
+      const batch: Batch = {
+        matches: [matchOrders],
+        externalFulfillments: fulfillments
+      };
 
-//       // /**
-//       //  * verify the tokens were loaned out
-//       //  */
-//       // const transferToLog = mock20.contract.interface.parseLog(logs[0]);
-//       // expect(trimLowerCase(transferToLog.args[0])).to.equal(
-//       //   trimLowerCase(matchExecutor.vault.contract.address)
-//       // );
-//       // expect(trimLowerCase(transferToLog.args[1])).to.equal(
-//       //   trimLowerCase(matchExecutor.contract.address)
-//       // );
-//       // expect(BigNumber.from(transferToLog.args[2]).toString()).to.equal(loanAmount);
+      console.log("Executing matches");
+      // console.log("Batch", JSON.stringify(batch, null, 2));
+      try {
+        await owner.sendTransaction({
+          to: matchExecutor.contract.address,
+          value
+        });
+        await matchExecutor.contract.connect(owner).executeMatches([batch], emptyLoans);
+      } catch (err) {
+        console.error(err);
+      }
 
-//       // /**
-//       //  * verify the tokens were payed back
-//       //  *
-//       //  * second to last log, the last line is the flash loan completed event
-//       //  */
-//       // const transferBackLog = mock20.contract.interface.parseLog(logs[logs.length - 2]);
-//       // expect(trimLowerCase(transferBackLog.args[0])).to.equal(
-//       //   trimLowerCase(matchExecutor.contract.address)
-//       // );
-//       // expect(trimLowerCase(transferBackLog.args[1])).to.equal(
-//       //   trimLowerCase(matchExecutor.vault.contract.address)
-//       // );
-//       // expect(BigNumber.from(transferBackLog.args[2]).toString()).to.equal(loanAmount);
-//     });
-//   });
-// });
+      const nftOwner = trimLowerCase(await mock721.contract.ownerOf(tokenId));
+      expect(nftOwner).to.equal(trimLowerCase(mock20.minter.address));
+    });
+  });
+});
