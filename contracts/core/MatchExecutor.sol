@@ -6,10 +6,12 @@ import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { MatchExecutorTypes } from "../libs/MatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
+import { SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
 
 /**
@@ -17,15 +19,12 @@ import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
+contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice The address of the EOA that acts as an intermediary in the brokerage process
-    address public intermediary;
 
     IInfinityExchange public immutable exchange;
 
@@ -39,32 +38,53 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
       //////////////////////////////////////////////////////////////*/
-    event IntermediaryUpdated(address indexed intermediary);
     event EnabledExchangeAdded(address indexed exchange);
     event EnabledExchangeRemoved(address indexed exchange);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(address _intermediary, IInfinityExchange _exchange) {
-        _updateIntermediary(_intermediary);
+    constructor(IInfinityExchange _exchange) {
         exchange = _exchange;
     }
 
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
+    ///////////////////////////////////////////////// OVERRIDES ///////////////////////////////////////////////////////
+
+    // returns the magic value if the message is signed by the owner of this contract, invalid value otherwise
+    function isValidSignature(
+        bytes32 message,
+        bytes calldata signature
+    ) external view override returns (bytes4) {
+        (bytes32 r, bytes32 s, bytes32 vBytes) = _decodePackedSig(
+            signature,
+            32,
+            32,
+            1
+        );
+        uint8 v = uint8(uint256(vBytes));
+        if (SignatureChecker.recover(message, r, s, v) == owner()) {
+            return 0x1626ba7e; // EIP-1271 magic value
+        } else {
+            return 0xffffffff;
+        }
+    }
+
     function onERC721Received(
         address,
         address,
         uint256,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }
 
+    ///////////////////////////////////////////////// EXTERNAL FUNCTIONS ///////////////////////////////////////////////////////
+
     /**
-     * @notice The entry point for executing matches
+     * @notice The entry point for executing matches. Callable only by owner
      * @param batches The batches of calls to make
      */
     function executeMatches(
@@ -81,6 +101,45 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
     }
 
     //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
+
+    /**
+     * @notice Decodes abi encodePacked signature. There is no abi.decodePacked so we have to do it manually
+     * @param _data The abi encodePacked data
+     * @param _la The length of the first parameter i.e r
+     * @param _lb The length of the second parameter i.e s
+     * @param _lc The length of the third parameter i.e v
+     */
+    function _decodePackedSig(
+        bytes memory _data,
+        uint256 _la,
+        uint256 _lb,
+        uint256 _lc
+    ) internal pure returns (bytes32 _a, bytes32 _b, bytes32 _c) {
+        uint256 o;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            let s := add(_data, 32)
+            _a := mload(s)
+            let l := sub(32, _la)
+            if l {
+                _a := div(_a, exp(2, mul(l, 8)))
+            }
+            o := add(s, _la)
+            _b := mload(o)
+            l := sub(32, _lb)
+            if l {
+                _b := div(_b, exp(2, mul(l, 8)))
+            }
+            o := add(o, _lb)
+            _c := mload(o)
+            l := sub(32, _lc)
+            if l {
+                _c := div(_c, exp(2, mul(l, 8)))
+            }
+            o := sub(o, s)
+        }
+        require(_data.length >= o, "out of bounds");
+    }
 
     /**
      * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
@@ -100,12 +159,20 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
         }
 
         if (externalFulfillments.nftsToTransfer.length > 0) {
-            /// Transfer the nfts to the intermediary
-            _transferMultipleNFTs(
-                address(this),
-                intermediary,
-                externalFulfillments.nftsToTransfer
-            );
+            for (uint256 i; i < externalFulfillments.nftsToTransfer.length; ) {
+                bool isApproved = IERC721(
+                    externalFulfillments.nftsToTransfer[i].collection
+                ).isApprovedForAll(address(this), address(exchange));
+
+                if (!isApproved) {
+                    IERC721(externalFulfillments.nftsToTransfer[i].collection)
+                        .setApprovalForAll(address(exchange), true);
+                }
+
+                unchecked {
+                    ++i;
+                }
+            }
         }
     }
 
@@ -131,68 +198,6 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
             (bool _success, bytes memory _result) = params.to.call(params.data);
             require(_success, "external MP call failed");
             return _result;
-        }
-    }
-
-    /**
-     * @notice Transfers multiple NFTs
-     * @param from the from address
-     * @param to the to address
-     * @param nfts nfts to transfer
-     */
-    function _transferMultipleNFTs(
-        address from,
-        address to,
-        OrderTypes.OrderItem[] memory nfts
-    ) internal {
-        for (uint256 i; i < nfts.length; ) {
-            _transferNFTs(from, to, nfts[i]);
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /**
-     * @notice Transfer NFTs
-     * @dev Only supports ERC721, no ERC1155 or NFTs that conform to both ERC721 and ERC1155
-     * @param from address of the sender
-     * @param to address of the recipient
-     * @param item item to transfer
-     */
-    function _transferNFTs(
-        address from,
-        address to,
-        OrderTypes.OrderItem memory item
-    ) internal {
-        require(
-            IERC165(item.collection).supportsInterface(0x80ac58cd) &&
-                !IERC165(item.collection).supportsInterface(0xd9b67a26),
-            "only erc721"
-        );
-        _transferERC721s(from, to, item);
-    }
-
-    /**
-     * @notice Transfer ERC721s
-     * @param from address of the sender
-     * @param to address of the recipient
-     * @param item item to transfer
-     */
-    function _transferERC721s(
-        address from,
-        address to,
-        OrderTypes.OrderItem memory item
-    ) internal {
-        for (uint256 i; i < item.tokens.length; ) {
-            IERC721(item.collection).transferFrom(
-                from,
-                to,
-                item.tokens[i].tokenId
-            );
-            unchecked {
-                ++i;
-            }
         }
     }
 
@@ -251,12 +256,6 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
         }
     }
 
-    function _updateIntermediary(address _intermediary) internal {
-        require(_intermediary != address(0), "intermdiary cannot be 0");
-        intermediary = _intermediary;
-        emit IntermediaryUpdated(_intermediary);
-    }
-
     //////////////////////////////////////////////////// ADMIN FUNCTIONS ///////////////////////////////////////////////////////
 
     /**
@@ -275,14 +274,6 @@ contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
     function removeEnabledExchange(address _exchange) external onlyOwner {
         _enabledExchanges.remove(_exchange);
         emit EnabledExchangeRemoved(_exchange);
-    }
-
-    /**
-     * @notice Update the intermediary to a different EOA
-     * @param _intermediary The new intermediary to use
-     */
-    function updateIntermediary(address _intermediary) external onlyOwner {
-        _updateIntermediary(_intermediary);
     }
 
     /**

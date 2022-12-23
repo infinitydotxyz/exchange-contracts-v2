@@ -28,10 +28,11 @@ let orderClientBySigner: Map<
 
 const getInfinityOrderClient = (
   signer: SignerWithAddress,
-  infinityExchange: InfinityExchangeConfig
+  infinityExchange: InfinityExchangeConfig,
+  signingFor?: string
 ) => {
   const chainId = getChainId();
-  const userAddress = signer.address;
+  const userAddress = signingFor ?? signer.address;
   let orderNonce = 1;
 
   const _createOrder = async (
@@ -150,7 +151,6 @@ describe("Match_Executor", () => {
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
   let owner: SignerWithAddress;
-  let intermediary: SignerWithAddress;
 
   let erc20: Contract;
   let erc721: Contract;
@@ -168,7 +168,12 @@ describe("Match_Executor", () => {
       ]
     });
 
-    [deployer, alice, bob, owner, intermediary] = await ethers.getSigners();
+    [deployer, alice, bob, owner] = await ethers.getSigners();
+
+    console.log("Deployer Address: ", deployer.address);
+    console.log("Alice Address: ", alice.address);
+    console.log("Bob Address: ", bob.address);
+    console.log("Owner Address: ", owner.address);
 
     ({ erc20 } = await setupTokens(deployer));
     ({ erc721 } = await setupNFTs(deployer));
@@ -183,9 +188,10 @@ describe("Match_Executor", () => {
     matchExecutor = await setupMatchExecutor(
       ethers.getContractFactory,
       owner,
-      intermediary,
       infinityExchange.contract
     );
+
+    console.log("Match Executor Address: ", matchExecutor.contract.address);
 
     await infinityExchange.contract
       .connect(owner)
@@ -193,9 +199,8 @@ describe("Match_Executor", () => {
 
     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
 
-    orderClientBySigner.set(intermediary, getInfinityOrderClient(intermediary, infinityExchange));
+    orderClientBySigner.set(owner, getInfinityOrderClient(owner, infinityExchange, matchExecutor.contract.address));
     orderClientBySigner.set(alice, getInfinityOrderClient(alice, infinityExchange));
-    orderClientBySigner.set(bob, getInfinityOrderClient(bob, infinityExchange));
   });
 
   it("snipes a ETH <=> ERC721 single token seaport listing", async () => {
@@ -229,13 +234,7 @@ describe("Match_Executor", () => {
     await seaportSellOrder.sign(seller);
     await seaportSellOrder.checkFillability(ethers.provider);
 
-    // Create matching params
-    const matchParams = seaportSellOrder.buildMatching();
-
-    const buyerEthBalanceBefore = await ethers.provider.getBalance(buyer.address);
-    const sellerEthBalanceBefore = await ethers.provider.getBalance(seller.address);
     const ownerBefore = await nft.getOwner(tokenId);
-
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
@@ -246,10 +245,9 @@ describe("Match_Executor", () => {
       }
     ];
     const intermediaryListing = await orderClientBySigner
-      .get(intermediary)!
+      .get(owner)!
       .createListing(infinityOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
-    await erc721.connect(intermediary).setApprovalForAll(infinityExchange.contract.address, true);
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
@@ -260,6 +258,7 @@ describe("Match_Executor", () => {
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
+    const matchParams = seaportSellOrder.buildMatching();
     const txData = seaportExchange.fillOrderTx(
       matchExecutor.contract.address,
       seaportSellOrder,
