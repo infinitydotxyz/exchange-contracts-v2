@@ -15,13 +15,7 @@ import {
   MatchOrders,
   MatchOrdersTypes
 } from "../utils/matchExecutorTypes";
-import {
-  getChainId,
-  getCurrentTimestamp,
-  reset,
-  setupNFTs,
-  setupTokens
-} from "../utils/reservoirUtils";
+import { getChainId, getCurrentTimestamp, setupNFTs, setupTokens } from "../utils/reservoirUtils";
 import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
 import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
 
@@ -307,7 +301,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeMatches([batch], txData.value);
+      await matchExecutor.contract.connect(owner).executeMatches([batch]);
     } catch (err) {
       console.error(err);
     }

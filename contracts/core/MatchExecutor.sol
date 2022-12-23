@@ -8,27 +8,16 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
-import { IFlashLoanRecipient } from "../interfaces/IFlashLoanRecipient.sol";
 import { MatchExecutorTypes } from "../libs/MatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
-
-interface IEulerDToken {
-    function flashLoan(uint256 amount, bytes calldata data) external;
-}
 
 /**
 @title MatchExecutor
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract MatchExecutor is
-    IFlashLoanRecipient,
-    IERC721Receiver,
-    Ownable,
-    Pausable
-{
+contract MatchExecutor is IERC721Receiver, Ownable, Pausable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /*//////////////////////////////////////////////////////////////
@@ -37,15 +26,6 @@ contract MatchExecutor is
 
     /// @notice The address of the EOA that acts as an intermediary in the brokerage process
     address public intermediary;
-    address public constant EULER_MARKET =
-        0x27182842E098f60e3D576794A5bFFb0777E025d3;
-    address public constant WETH_ADDRESS =
-        0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public constant WETH_DTOKEN_ADDRESS =
-        0x62e28f054efc24b26A794F5C1249B6349454352C;
-
-    IEulerDToken public constant WETH_DTOKEN =
-        IEulerDToken(WETH_DTOKEN_ADDRESS);
 
     IInfinityExchange public immutable exchange;
 
@@ -86,108 +66,27 @@ contract MatchExecutor is
     /**
      * @notice The entry point for executing matches
      * @param batches The batches of calls to make
-     * @param loanAmount The amount of the WETH flash loan to take out
      */
     function executeMatches(
-        MatchExecutorTypes.Batch[] calldata batches,
-        uint256 loanAmount
+        MatchExecutorTypes.Batch[] calldata batches
     ) external onlyOwner whenNotPaused {
-        if (loanAmount > 0) {
-            /**
-             * take out a flash loan
-             *
-             * executing matches is called within the onFlashLoan callback
-             */
-            WETH_DTOKEN.flashLoan(loanAmount, abi.encode(loanAmount, batches));
-        } else {
-            /**
-             * flash loan is not required, proceed to execute matches
-             */
-            _executeMatchesCalldata(batches);
-        }
-    }
-
-    /**
-     * @notice Function called by the vault after a flash loan has been taken out
-     * @param data The abi encoded data that was passed to the vault
-     */
-    function onFlashLoan(bytes memory data) external override whenNotPaused {
-        require(msg.sender == EULER_MARKET, "only vault can call");
-        (uint256 loanAmount, MatchExecutorTypes.Batch[] memory batches) = abi
-            .decode(data, (uint256, MatchExecutorTypes.Batch[]));
-        /**
-         * execute the matches
-         */
-        _executeMatches(batches);
-
-        /**
-         * payback the loan
-         */
-        IERC20(WETH_ADDRESS).transfer(EULER_MARKET, loanAmount);
-    }
-
-    //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
-
-    function _executeMatches(
-        MatchExecutorTypes.Batch[] memory batches
-    ) internal {
         uint256 numBatches = batches.length;
         for (uint256 i; i < numBatches; ) {
             _broker(batches[i].externalFulfillments);
             _matchOrders(batches[i].matches);
-
             unchecked {
                 ++i;
             }
         }
     }
 
-    function _executeMatchesCalldata(
-        MatchExecutorTypes.Batch[] calldata batches
-    ) internal {
-        uint256 numBatches = batches.length;
-        for (uint256 i; i < numBatches; ) {
-            _brokerCalldata(batches[i].externalFulfillments);
-            _matchOrdersCalldata(batches[i].matches);
-
-            unchecked {
-                ++i;
-            }
-        }
-    }
+    //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
 
     /**
      * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
      * @param externalFulfillments The specification of the external calls to make and nfts to transfer
      */
     function _broker(
-        MatchExecutorTypes.ExternalFulfillments memory externalFulfillments
-    ) internal {
-        uint256 numCalls = externalFulfillments.calls.length;
-        if (numCalls > 0) {
-            for (uint256 i; i < numCalls; ) {
-                _call(externalFulfillments.calls[i]);
-                unchecked {
-                    ++i;
-                }
-            }
-        }
-
-        if (externalFulfillments.nftsToTransfer.length > 0) {
-            /// Transfer the nfts to the intermediary
-            _transferMultipleNFTs(
-                address(this),
-                intermediary,
-                externalFulfillments.nftsToTransfer
-            );
-        }
-    }
-
-    /**
-     * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
-     * @param externalFulfillments The specification of the external calls to make and nfts to transfer
-     */
-    function _brokerCalldata(
         MatchExecutorTypes.ExternalFulfillments calldata externalFulfillments
     ) internal {
         uint256 numCalls = externalFulfillments.calls.length;
@@ -302,61 +201,6 @@ contract MatchExecutor is
      * @param matches The batch of matches to execute on the exchange
      */
     function _matchOrders(
-        MatchExecutorTypes.MatchOrders[] memory matches
-    ) internal {
-        uint256 numMatches = matches.length;
-        if (numMatches > 0) {
-            for (uint256 i; i < numMatches; ) {
-                MatchExecutorTypes.MatchOrdersType matchType = matches[i]
-                    .matchType;
-                if (
-                    matchType ==
-                    MatchExecutorTypes.MatchOrdersType.OneToOneSpecific
-                ) {
-                    exchange.matchOneToOneOrders(
-                        matches[i].buys,
-                        matches[i].sells
-                    );
-                } else if (
-                    matchType ==
-                    MatchExecutorTypes.MatchOrdersType.OneToOneUnspecific
-                ) {
-                    exchange.matchOrders(
-                        matches[i].buys,
-                        matches[i].sells,
-                        matches[i].constructs
-                    );
-                } else if (
-                    matchType == MatchExecutorTypes.MatchOrdersType.OneToMany
-                ) {
-                    if (matches[i].buys.length == 1) {
-                        exchange.matchOneToManyOrders(
-                            matches[i].buys[0],
-                            matches[i].sells
-                        );
-                    } else if (matches[i].sells.length == 1) {
-                        exchange.matchOneToManyOrders(
-                            matches[i].sells[0],
-                            matches[i].buys
-                        );
-                    } else {
-                        revert("invalid one to many order");
-                    }
-                } else {
-                    revert("invalid match type");
-                }
-                unchecked {
-                    ++i;
-                }
-            }
-        }
-    }
-
-    /**
-     * @notice Function called to execute a batch of matches by calling the exchange contract
-     * @param matches The batch of matches to execute on the exchange
-     */
-    function _matchOrdersCalldata(
         MatchExecutorTypes.MatchOrders[] calldata matches
     ) internal {
         uint256 numMatches = matches.length;
