@@ -198,7 +198,7 @@ describe("Match_Executor", () => {
     orderClientBySigner.set(bob, getInfinityOrderClient(bob, infinityExchange));
   });
 
-  it("Build and fill sell order", async () => {
+  it("snipes a ETH <=> ERC721 single token seaport listing", async () => {
     const buyer = alice;
     const seller = bob;
     const price = parseEther("1");
