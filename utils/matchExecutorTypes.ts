@@ -8,11 +8,6 @@ export interface Call {
   isPayable: boolean;
 }
 
-export interface Loans {
-  tokens: string[];
-  amounts: BigNumberish[];
-}
-
 export interface ExternalFulfillments {
   calls: Call[];
   nftsToTransfer: OrderItem[];

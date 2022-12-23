@@ -18,11 +18,6 @@ library MatchExecutorTypes {
         bool isPayable;
     }
 
-    struct Loans {
-        IERC20[] tokens;
-        uint256[] amounts;
-    }
-
     struct ExternalFulfillments {
         Call[] calls;
         OrderTypes.OrderItem[] nftsToTransfer;
