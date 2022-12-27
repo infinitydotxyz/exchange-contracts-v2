@@ -2,6 +2,7 @@ import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { parseEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import { Infinity } from "@reservoir0x/sdk";
 import * as Common from "@reservoir0x/sdk/dist/common";
 import * as Seaport from "@reservoir0x/sdk/dist/seaport";
 import { expect } from "chai";
@@ -199,8 +200,69 @@ describe("Match_Executor", () => {
 
     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
 
-    orderClientBySigner.set(owner, getInfinityOrderClient(owner, infinityExchange, matchExecutor.contract.address));
+    orderClientBySigner.set(bob, getInfinityOrderClient(bob, infinityExchange));
+    orderClientBySigner.set(
+      owner,
+      getInfinityOrderClient(owner, infinityExchange, matchExecutor.contract.address)
+    );
     orderClientBySigner.set(alice, getInfinityOrderClient(alice, infinityExchange));
+  });
+
+  it("snipes a ETH <=> ERC721 single token native listing", async () => {
+    const buyer = alice;
+    const seller = bob;
+    const price = parseEther("1");
+    const tokenId = 1;
+
+    // Mint erc721 to seller
+    await erc721.connect(seller).mint(tokenId);
+    const nft = new Common.Helpers.Erc721(ethers.provider, erc721.address);
+    // Approve the infinity exchange
+    await nft.approve(seller, Infinity.Addresses.Exchange[chainId]);
+
+    const ownerBefore = await nft.getOwner(tokenId);
+    expect(ownerBefore).to.eq(seller.address);
+
+    // create infinity listing
+    const infinityOrderItems: OrderItem[] = [
+      {
+        collection: erc721.address,
+        tokens: [{ tokenId, numTokens: "1" }]
+      }
+    ];
+    const infinityListing = await orderClientBySigner
+      .get(seller)!
+      .createListing(infinityOrderItems);
+    const signedInfinityListing = await infinityListing.prepare();
+
+    // create infinity offer
+    const weth = new Common.Helpers.Weth(ethers.provider, chainId);
+    // Mint weth to buyer and approve infinity exchange
+    await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
+    await weth.approve(buyer, infinityExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    const signedInfinityOffer = await infinityOffer.prepare();
+
+    /**
+     * complete the call by calling the infinity exchange
+     */
+
+    const matchOrders: MatchOrders = {
+      buys: [signedInfinityOffer!],
+      sells: [signedInfinityListing!],
+      constructs: [],
+      matchType: MatchOrdersTypes.OneToOneSpecific
+    };
+
+    console.log("Executing native matches");
+    try {
+      await matchExecutor.contract.connect(owner).executeNativeMatches([matchOrders]);
+    } catch (err) {
+      console.error(err);
+    }
+
+    const ownerAfter = await nft.getOwner(tokenId);
+    expect(ownerAfter).to.eq(buyer.address);
   });
 
   it("snipes a ETH <=> ERC721 single token seaport listing", async () => {
@@ -300,7 +362,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeMatches([batch]);
+      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }

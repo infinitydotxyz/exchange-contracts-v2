@@ -84,10 +84,10 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     ///////////////////////////////////////////////// EXTERNAL FUNCTIONS ///////////////////////////////////////////////////////
 
     /**
-     * @notice The entry point for executing matches. Callable only by owner
+     * @notice The entry point for executing brokerage matches. Callable only by owner
      * @param batches The batches of calls to make
      */
-    function executeMatches(
+    function executeBrokerMatches(
         MatchExecutorTypes.Batch[] calldata batches
     ) external onlyOwner whenNotPaused {
         uint256 numBatches = batches.length;
@@ -98,6 +98,16 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                 ++i;
             }
         }
+    }
+
+    /**
+     * @notice The entry point for executing native matches. Callable only by owner
+     * @param matches The matches to make
+     */
+    function executeNativeMatches(
+        MatchExecutorTypes.MatchOrders[] calldata matches
+    ) external onlyOwner whenNotPaused {
+        _matchOrders(matches);
     }
 
     //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
