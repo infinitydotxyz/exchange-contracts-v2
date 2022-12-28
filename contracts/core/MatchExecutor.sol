@@ -196,7 +196,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         if (params.isPayable) {
             require(
                 _enabledExchanges.contains(params.to),
-                "contract is not payable"
+                "contract is not enabled"
             );
             (bool _success, bytes memory _result) = params.to.call{
                 value: params.value
