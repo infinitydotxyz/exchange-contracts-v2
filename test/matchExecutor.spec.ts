@@ -2,7 +2,7 @@ import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { parseEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { Infinity } from "@reservoir0x/sdk";
+import { Blur, Infinity, LooksRare, X2Y2 } from "@reservoir0x/sdk";
 import * as Common from "@reservoir0x/sdk/dist/common";
 import * as Seaport from "@reservoir0x/sdk/dist/seaport";
 import { expect } from "chai";
@@ -171,11 +171,6 @@ describe("Match_Executor", () => {
 
     [deployer, alice, bob, owner] = await ethers.getSigners();
 
-    console.log("Deployer Address: ", deployer.address);
-    console.log("Alice Address: ", alice.address);
-    console.log("Bob Address: ", bob.address);
-    console.log("Owner Address: ", owner.address);
-
     ({ erc20 } = await setupTokens(deployer));
     ({ erc721 } = await setupNFTs(deployer));
 
@@ -198,7 +193,11 @@ describe("Match_Executor", () => {
       .connect(owner)
       .updateMatchExecutor(matchExecutor.contract.address);
 
+    // add enabled exchanges
     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
+    await matchExecutor.contract.addEnabledExchange(Blur.Addresses.Exchange[chainId]);
+    await matchExecutor.contract.addEnabledExchange(LooksRare.Addresses.Exchange[chainId]);
+    await matchExecutor.contract.addEnabledExchange(X2Y2.Addresses.Exchange[chainId]);
 
     orderClientBySigner.set(bob, getInfinityOrderClient(bob, infinityExchange));
     orderClientBySigner.set(
@@ -284,7 +283,7 @@ describe("Match_Executor", () => {
       tokenKind: "erc721",
       offerer: seller.address,
       contract: erc721.address,
-      tokenId: tokenId,
+      tokenId,
       paymentToken: Common.Addresses.Eth[chainId],
       price,
       counter: 0,
@@ -324,6 +323,116 @@ describe("Match_Executor", () => {
     const txData = seaportExchange.fillOrderTx(
       matchExecutor.contract.address,
       seaportSellOrder,
+      matchParams
+    );
+    const fulfillments: ExternalFulfillments = {
+      calls: [
+        {
+          data: txData.data,
+          value: txData.value ?? 0,
+          to: txData.to,
+          isPayable: true
+        }
+      ],
+      nftsToTransfer: infinityOrderItems
+    };
+
+    /**
+     * complete the call by calling the infinity exchange
+     */
+
+    const matchOrders: MatchOrders = {
+      buys: [signedInfinityOffer!],
+      sells: [signedIntermediaryListing!],
+      constructs: [],
+      matchType: MatchOrdersTypes.OneToOneSpecific
+    };
+
+    const batch: Batch = {
+      matches: [matchOrders],
+      externalFulfillments: fulfillments
+    };
+
+    console.log("Executing matches");
+    // console.log("Batch", JSON.stringify(batch, null, 2));
+    try {
+      // send some ETH to matchExecutor so it has balance to buy from external MP
+      await owner.sendTransaction({
+        to: matchExecutor.contract.address,
+        value: txData.value ?? 0
+      });
+      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+    } catch (err) {
+      console.error(err);
+    }
+
+    const ownerAfter = await nft.getOwner(tokenId);
+    expect(ownerAfter).to.eq(buyer.address);
+  });
+
+  it("snipes a ETH <=> ERC721 single token blur listing", async () => {
+    const buyer = alice;
+    const seller = bob;
+    const price = parseEther("1");
+    const tokenId = 1;
+
+    // Mint erc721 to seller
+    await erc721.connect(seller).mint(tokenId);
+    const nft = new Common.Helpers.Erc721(ethers.provider, erc721.address);
+    // Approve the blur exchange
+    await erc721.connect(seller).setApprovalForAll(Blur.Addresses.ExecutionDelegate[chainId], true);
+
+    const blurExchange = new Blur.Exchange(chainId);
+    const builder = new Blur.Builders.SingleToken(chainId);
+    const blurSellOrder = builder.build({
+      side: "sell",
+      trader: seller.address,
+      collection: erc721.address,
+      tokenId,
+      amount: 1,
+      paymentToken: Common.Addresses.Eth[chainId],
+      price,
+      listingTime: await getCurrentTimestamp(ethers.provider),
+      matchingPolicy: Blur.Addresses.StandardPolicyERC721[chainId],
+      nonce: 0,
+      expirationTime: (await getCurrentTimestamp(ethers.provider)) + 86400,
+      fees: [],
+      salt: 0,
+      extraParams: "0x"
+    });
+
+    // Sign the order
+    await blurSellOrder.sign(seller);
+    await blurSellOrder.checkFillability(ethers.provider);
+
+    const ownerBefore = await nft.getOwner(tokenId);
+    expect(ownerBefore).to.eq(seller.address);
+
+    // create infinity listing
+    const infinityOrderItems: OrderItem[] = [
+      {
+        collection: erc721.address,
+        tokens: [{ tokenId, numTokens: "1" }]
+      }
+    ];
+    const intermediaryListing = await orderClientBySigner
+      .get(owner)!
+      .createListing(infinityOrderItems);
+    const signedIntermediaryListing = await intermediaryListing.prepare();
+
+    // create infinity offer
+    const weth = new Common.Helpers.Weth(ethers.provider, chainId);
+    // Mint weth to buyer and approve infinity exchange
+    await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
+    await weth.approve(buyer, infinityExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    const signedInfinityOffer = await infinityOffer.prepare();
+
+    console.log("Encoding external fulfillments");
+    const matchParams = blurSellOrder.buildMatching({ trader: matchExecutor.contract.address });
+    const txData = blurExchange.fillOrderTx(
+      matchExecutor.contract.address,
+      blurSellOrder,
       matchParams
     );
     const fulfillments: ExternalFulfillments = {
