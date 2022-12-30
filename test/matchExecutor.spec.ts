@@ -19,6 +19,7 @@ import {
 } from "@reservoir0x/sdk";
 import * as Common from "@reservoir0x/sdk/dist/common";
 import * as Seaport from "@reservoir0x/sdk/dist/seaport";
+import axios from "axios";
 import { expect } from "chai";
 import { BigNumberish as ethersBigNumberish } from "ethers";
 import { ethers, network } from "hardhat";
@@ -34,6 +35,7 @@ import {
   bn,
   getChainId,
   getCurrentTimestamp,
+  lc,
   setupNFTs,
   setupTokens
 } from "../utils/reservoirUtils";
@@ -2405,6 +2407,114 @@ describe("Match_Executor", () => {
     const ownerAfter = await nft.getOwner(tokenId);
     expect(ownerAfter).to.eq(buyer.address);
   });
+
+  // it("snipes a ETH <=> ERC721 single token x2y2 listing", async () => {
+  //   const buyer = alice;
+  //   const seller = bob;
+  //   const price = parseEther("1");
+  //   const tokenId = 1;
+  //   console.log("x2y2 key", process.env.X2Y2_API_KEY);
+  //   const orders = await axios.get("https://api.x2y2.org/v1/orders?limit=10&status=open", {
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "X-Api-Key": String(process.env.X2Y2_API_KEY)
+  //     }
+  //   });
+  //   const orderData = orders.data.data[1];
+  //   console.log("x2y2 order data", JSON.stringify(orderData, null, 2));
+  //   const x2y2Order = new X2Y2.Order(chainId, {
+  //     kind: "single-token",
+  //     id: orderData.id,
+  //     type: orderData.type,
+  //     currency: orderData.currency,
+  //     price: orderData.price,
+  //     maker: orderData.maker,
+  //     taker: orderData.taker,
+  //     deadline: orderData.end_at,
+  //     itemHash: orderData.item_hash,
+  //     royalty_fee: orderData.royalty_fee,
+  //     nft: {
+  //       token: orderData.token.contract,
+  //       tokenId: orderData.token.token_id
+  //     }
+  //   });
+  //   console.log("x2y2 order", x2y2Order);
+
+  //   const nft = new Common.Helpers.Erc721(ethers.provider, x2y2Order.params.nft.token);
+  //   const ownerBefore = await nft.getOwner(x2y2Order.params.nft.tokenId!);
+
+  //   //`expect(lc(ownerBefore)).to.eq(lc(x2y2Order.params.maker));
+  //   const x2y2Exchange = new X2Y2.Exchange(chainId, String(process.env.X2Y2_API_KEY));
+
+  //   // create infinity listing
+  //   const infinityOrderItems: OrderItem[] = [
+  //     {
+  //       collection: erc721.address,
+  //       tokens: [{ tokenId, numTokens: "1" }]
+  //     }
+  //   ];
+  //   const intermediaryListing = await orderClientBySigner
+  //     .get(owner)!
+  //     .createListing(infinityOrderItems);
+  //   const signedIntermediaryListing = await intermediaryListing.prepare();
+
+  //   // create infinity offer
+  //   const weth = new Common.Helpers.Weth(ethers.provider, chainId);
+  //   // Mint weth to buyer and approve infinity exchange
+  //   await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
+  //   await weth.approve(buyer, infinityExchange.contract.address);
+  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+  //   const signedInfinityOffer = await infinityOffer.prepare();
+
+  //   console.log("Encoding external fulfillments");
+  //   const txData = await x2y2Exchange.fillOrderTx(
+  //     matchExecutor.contract.address,
+  //     x2y2Order
+  //   );
+  //   const fulfillments: ExternalFulfillments = {
+  //     calls: [
+  //       {
+  //         data: txData.data,
+  //         value: txData.value ?? 0,
+  //         to: txData.to,
+  //         isPayable: true
+  //       }
+  //     ],
+  //     nftsToTransfer: infinityOrderItems
+  //   };
+
+  //   /**
+  //    * complete the call by calling the infinity exchange
+  //    */
+
+  //   const matchOrders: MatchOrders = {
+  //     buys: [signedInfinityOffer!],
+  //     sells: [signedIntermediaryListing!],
+  //     constructs: [],
+  //     matchType: MatchOrdersTypes.OneToOneSpecific
+  //   };
+
+  //   const batch: Batch = {
+  //     matches: [matchOrders],
+  //     externalFulfillments: fulfillments
+  //   };
+
+  //   console.log("Executing matches");
+  //   // console.log("Batch", JSON.stringify(batch, null, 2));
+  //   try {
+  //     // send some ETH to matchExecutor so it has balance to buy from external MP
+  //     await owner.sendTransaction({
+  //       to: matchExecutor.contract.address,
+  //       value: txData.value ?? 0
+  //     });
+  //     await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+
+  //   const ownerAfter = await nft.getOwner(tokenId);
+  //   expect(ownerAfter).to.eq(buyer.address);
+  // });
 
   // it("snipes a wrapped punk listing from cryptopunks market", async () => {
   //   const buyer = alice;
