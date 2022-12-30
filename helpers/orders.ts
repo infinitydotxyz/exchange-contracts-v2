@@ -133,10 +133,41 @@ export async function prepareOBOrder(
   }
 
   // sign order
-  // const signedOBOrders = await bulkSignOBOrders(chainId, obComplication.address, [order], signer);
-  // return signedOBOrders?.[0];
   const signedOBOrder = await signOBOrder(chainId, obComplication.address, order, signer);
   return signedOBOrder;
+}
+
+export async function batchPrepareOBOrders(
+  user: User,
+  chainId: BigNumberish,
+  signer: JsonRpcSigner,
+  orders: OBOrder[],
+  infinityExchange: Contract,
+  obComplication: Contract,
+  skipOnChainOwnershipCheck: boolean = false
+): Promise<SignedOBOrder[] | undefined> {
+  for (const order of orders) {
+    const validOrder = await isOrderValid(
+      user,
+      order,
+      infinityExchange,
+      signer,
+      skipOnChainOwnershipCheck
+    );
+    if (!validOrder) {
+      return undefined;
+    }
+
+    // grant approvals
+    const approvals = await grantApprovals(user, order, signer, infinityExchange.address);
+    if (!approvals) {
+      return undefined;
+    }
+  }
+
+  // sign orders
+  const signedOBOrders = await bulkSignOBOrders(chainId, obComplication.address, orders, signer);
+  return signedOBOrders;
 }
 
 export async function isOrderValid(
@@ -387,7 +418,7 @@ export async function bulkSignOBOrders(
     order.sig = defaultAbiCoder.encode(
       ["bytes32", "bytes32", "uint8", "bytes32[]"],
       [splitSig.r, splitSig.s, splitSig.v, merkleProof]
-    );;
+    );
   }
 
   return signedObOrders;
