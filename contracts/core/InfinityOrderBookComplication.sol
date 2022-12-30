@@ -7,8 +7,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // internal imports
-import { SignatureChecker } from "../libs/SignatureChecker.sol";
-import { OrderTypes } from "../libs/OrderTypes.sol";
+import { OrderTypes, SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IComplication } from "../interfaces/IComplication.sol";
 
 /**
@@ -426,18 +425,13 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         bytes32 orderHash
     ) public view returns (bool) {
         // Verify the validity of the signature
-        (bytes32 r, bytes32 s, uint8 v) = abi.decode(
-            order.sig,
-            (bytes32, bytes32, uint8)
-        );
         bool sigValid = SignatureChecker.verify(
             orderHash,
             order.signer,
-            r,
-            s,
-            v,
+            order.sig,
             DOMAIN_SEPARATOR
         );
+
         return (sigValid &&
             order.execParams[0] == address(this) &&
             _currencies.contains(order.execParams[1]));

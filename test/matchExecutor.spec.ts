@@ -23,7 +23,8 @@ import axios from "axios";
 import { expect } from "chai";
 import { BigNumberish as ethersBigNumberish } from "ethers";
 import { ethers, network } from "hardhat";
-import { ExecParams, ExtraParams, OBOrder, OrderItem, prepareOBOrder } from "../helpers/orders";
+import { prepareOBOrder } from "../helpers/orders";
+import { ExecParams, ExtraParams, OBOrder, OrderItem } from "../helpers/orderTypes";
 import { nowSeconds } from "../tasks/utils";
 import {
   Batch,
@@ -210,8 +211,6 @@ describe("Match_Executor", () => {
       owner,
       infinityExchange.contract
     );
-
-    console.log("Match Executor Address: ", matchExecutor.contract.address);
 
     await infinityExchange.contract
       .connect(owner)
