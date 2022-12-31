@@ -28,12 +28,11 @@ export function orderHash(order: SignedOBOrder): string {
   const execParams = order.execParams;
   const extraParams = order.extraParams;
 
-  const constraintsHash = keccak256(
-    defaultAbiCoder.encode(
-      ["uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256"],
-      constraints
-    )
-  );
+  const typesArr = [];
+  for (let i = 0; i < constraints.length; i++) {
+    typesArr.push("uint256");
+  }
+  const constraintsHash = keccak256(defaultAbiCoder.encode(typesArr, constraints));
 
   const orderItemsHash = nftsHash(order.nfts);
   const execParamsHash = keccak256(defaultAbiCoder.encode(["address", "address"], execParams));

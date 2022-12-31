@@ -336,6 +336,10 @@ export async function signOBOrder(
     order.nonce,
     100e9
   ];
+  if (order.isTrustedExec) {
+    constraints.push(1);
+  }
+
   const execParams = [order.execParams.complicationAddress, order.execParams.currencyAddress];
   const extraParams = defaultAbiCoder.encode(
     ["address"],
@@ -388,6 +392,9 @@ export async function bulkSignOBOrders(
       order.nonce,
       100e9
     ];
+    if (order.isTrustedExec) {
+      constraints.push(1);
+    }
     const execParams = [order.execParams.complicationAddress, order.execParams.currencyAddress];
     const extraParams = defaultAbiCoder.encode(
       ["address"],

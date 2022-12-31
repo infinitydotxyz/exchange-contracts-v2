@@ -38,6 +38,7 @@ export interface OBOrder {
   nfts: OrderItem[];
   execParams: ExecParams;
   extraParams: ExtraParams;
+  isTrustedExec?: boolean;
 }
 
 export interface SignedOBOrder {
