@@ -41,6 +41,14 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     event EnabledExchangeAdded(address indexed exchange);
     event EnabledExchangeRemoved(address indexed exchange);
 
+    ///@notice admin events
+    event ETHWithdrawn(address indexed destination, uint256 amount);
+    event ERC20Withdrawn(
+        address indexed destination,
+        address indexed currency,
+        uint256 amount
+    );
+
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -267,6 +275,23 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     }
 
     //////////////////////////////////////////////////// ADMIN FUNCTIONS ///////////////////////////////////////////////////////
+
+    function withdrawETH(address destination) external onlyOwner {
+        uint256 amount = address(this).balance;
+        (bool sent, ) = destination.call{ value: amount }("");
+        require(sent, "failed");
+        emit ETHWithdrawn(destination, amount);
+    }
+
+    /// @dev Used for withdrawing exchange fees paid to the contract in ERC20 tokens
+    function withdrawTokens(
+        address destination,
+        address currency,
+        uint256 amount
+    ) external onlyOwner {
+        IERC20(currency).transfer(destination, amount);
+        emit ERC20Withdrawn(destination, currency, amount);
+    }
 
     /**
      * @notice Enable an exchange
