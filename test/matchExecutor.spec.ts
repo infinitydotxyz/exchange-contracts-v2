@@ -19,7 +19,6 @@ import {
 } from "@reservoir0x/sdk";
 import * as Common from "@reservoir0x/sdk/dist/common";
 import * as Seaport from "@reservoir0x/sdk/dist/seaport";
-import axios from "axios";
 import { expect } from "chai";
 import { BigNumberish as ethersBigNumberish } from "ethers";
 import { ethers, network } from "hardhat";
@@ -36,7 +35,6 @@ import {
   bn,
   getChainId,
   getCurrentTimestamp,
-  lc,
   setupNFTs,
   setupTokens
 } from "../utils/reservoirUtils";
@@ -904,15 +902,17 @@ describe("Match_Executor", () => {
     await lrSellOrder.checkFillability(ethers.provider);
 
     // native bulk signed listings
-    const infinityNativeBulkSellOrders = await orderClientBySigner.get(seller)!.batchCreateListings([
-      {
-        collection: erc721.address,
-        tokens: [
-          { tokenId: tokenId5, numTokens: "1" },
-          { tokenId: tokenId6, numTokens: "1" }
-        ]
-      }
-    ]);
+    const infinityNativeBulkSellOrders = await orderClientBySigner
+      .get(seller)!
+      .batchCreateListings([
+        {
+          collection: erc721.address,
+          tokens: [
+            { tokenId: tokenId5, numTokens: "1" },
+            { tokenId: tokenId6, numTokens: "1" }
+          ]
+        }
+      ]);
     const signedInfinityNativeBulkSellOrders = await infinityNativeBulkSellOrders.batchPrepare();
 
     // create infinity listings
@@ -959,8 +959,9 @@ describe("Match_Executor", () => {
       }
     ];
 
-
-    const signedIntermediaryListings1234 = signedIntermediaryListings123!.concat(signedIntermediaryListing4!);
+    const signedIntermediaryListings1234 = signedIntermediaryListings123!.concat(
+      signedIntermediaryListing4!
+    );
 
     // create infinity offers
     const allInfinityOrderItems = infinityOrderItems123.concat(
@@ -3193,6 +3194,106 @@ describe("Match_Executor", () => {
     expect(ownerAfter).to.eq(buyer.address);
   });
 
+  it("snipes a wrapped punk listing from cryptopunks market", async () => {
+    const buyer = alice;
+    const seller = bob;
+    const price = parseEther("1");
+    const tokenId = 7326;
+    const punksExchange = new CryptoPunks.Exchange(chainId);
+
+    const wrappedPunksAddress = "0xb7f7f6c52f2e2fdb1963eab30438024864c313f6";
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [wrappedPunksAddress]
+    });
+    await network.provider.request({
+      method: "hardhat_setBalance",
+      params: [wrappedPunksAddress, "0x1000000000000000000"]
+    });
+
+    // mint punk to seller
+    const wrappedPunks = await ethers.getSigner(wrappedPunksAddress);
+    await punksExchange.contract.connect(wrappedPunks).transferPunk(seller.address, tokenId);
+
+    const punksSellOrder = new CryptoPunks.Order(chainId, {
+      maker: seller.address,
+      side: "sell",
+      tokenId,
+      price
+    });
+    await punksExchange.createListing(seller, punksSellOrder);
+
+    // create infinity listing
+    const infinityOrderItems: OrderItem[] = [
+      {
+        collection: wrappedPunksAddress,
+        tokens: [{ tokenId, numTokens: "1" }]
+      }
+    ];
+    const intermediaryListing = await orderClientBySigner
+      .get(owner)!
+      .createListing(infinityOrderItems);
+    const signedIntermediaryListing = await intermediaryListing.prepare();
+
+    // create infinity offer
+    const weth = new Common.Helpers.Weth(ethers.provider, chainId);
+    // Mint weth to buyer and approve infinity exchange
+    await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
+    await weth.approve(buyer, infinityExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    const signedInfinityOffer = await infinityOffer.prepare();
+
+    console.log("Encoding external fulfillments");
+    const txData = punksExchange.fillListingTx(matchExecutor.contract.address, punksSellOrder);
+    const fulfillments: ExternalFulfillments = {
+      calls: [
+        {
+          data: txData.data,
+          value: txData.value ?? 0,
+          to: txData.to,
+          isPayable: true
+        }
+      ],
+      nftsToTransfer: infinityOrderItems
+    };
+
+    /**
+     * complete the call by calling the infinity exchange
+     */
+
+    const matchOrders: MatchOrders = {
+      buys: [signedInfinityOffer!],
+      sells: [signedIntermediaryListing!],
+      constructs: [],
+      matchType: MatchOrdersTypes.OneToOneSpecific
+    };
+
+    const batch: Batch = {
+      matches: [matchOrders],
+      externalFulfillments: fulfillments
+    };
+
+    console.log("Executing matches");
+    // console.log("Batch", JSON.stringify(batch, null, 2));
+    try {
+      // send some ETH to matchExecutor so it has balance to buy from external MP
+      await owner.sendTransaction({
+        to: matchExecutor.contract.address,
+        value: txData.value ?? 0
+      });
+      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+    } catch (err) {
+      console.error(err);
+    }
+
+    expect(await punksExchange.contract.connect(ethers.provider).punkIndexToAddress(tokenId)).to.eq(
+      buyer.address
+    );
+    expect(
+      await punksExchange.contract.connect(ethers.provider).pendingWithdrawals(seller.address)
+    ).to.eq(price);
+  });
+
   // it("snipes a ETH <=> ERC721 single token x2y2 listing", async () => {
   //   const buyer = alice;
   //   const seller = bob;
@@ -3299,105 +3400,5 @@ describe("Match_Executor", () => {
 
   //   const ownerAfter = await nft.getOwner(tokenId);
   //   expect(ownerAfter).to.eq(buyer.address);
-  // });
-
-  // it("snipes a wrapped punk listing from cryptopunks market", async () => {
-  //   const buyer = alice;
-  //   const seller = bob;
-  //   const price = parseEther("1");
-  //   const tokenId = 7326;
-  //   const punksExchange = new CryptoPunks.Exchange(chainId);
-
-  //   const wrappedPunksAddress = "0xb7f7f6c52f2e2fdb1963eab30438024864c313f6";
-  //   await network.provider.request({
-  //     method: "hardhat_impersonateAccount",
-  //     params: [wrappedPunksAddress]
-  //   });
-  //   await network.provider.request({
-  //     method: "hardhat_setBalance",
-  //     params: [wrappedPunksAddress, "0x1000000000000000000"]
-  //   });
-
-  //   // mint punk to seller
-  //   const wrappedPunks = await ethers.getSigner(wrappedPunksAddress);
-  //   await punksExchange.contract.connect(wrappedPunks).transferPunk(seller.address, tokenId);
-
-  //   const punksSellOrder = new CryptoPunks.Order(chainId, {
-  //     maker: seller.address,
-  //     side: "sell",
-  //     tokenId,
-  //     price
-  //   });
-  //   await punksExchange.createListing(seller, punksSellOrder);
-
-  //   // create infinity listing
-  //   const infinityOrderItems: OrderItem[] = [
-  //     {
-  //       collection: wrappedPunksAddress,
-  //       tokens: [{ tokenId, numTokens: "1" }]
-  //     }
-  //   ];
-  //   const intermediaryListing = await orderClientBySigner
-  //     .get(owner)!
-  //     .createListing(infinityOrderItems);
-  //   const signedIntermediaryListing = await intermediaryListing.prepare();
-
-  //   // create infinity offer
-  //   const weth = new Common.Helpers.Weth(ethers.provider, chainId);
-  //   // Mint weth to buyer and approve infinity exchange
-  //   await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-  //   await weth.approve(buyer, infinityExchange.contract.address);
-  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
-  //   const signedInfinityOffer = await infinityOffer.prepare();
-
-  //   console.log("Encoding external fulfillments");
-  //   const txData = punksExchange.fillListingTx(matchExecutor.contract.address, punksSellOrder);
-  //   const fulfillments: ExternalFulfillments = {
-  //     calls: [
-  //       {
-  //         data: txData.data,
-  //         value: txData.value ?? 0,
-  //         to: txData.to,
-  //         isPayable: true
-  //       }
-  //     ],
-  //     nftsToTransfer: infinityOrderItems
-  //   };
-
-  //   /**
-  //    * complete the call by calling the infinity exchange
-  //    */
-
-  //   const matchOrders: MatchOrders = {
-  //     buys: [signedInfinityOffer!],
-  //     sells: [signedIntermediaryListing!],
-  //     constructs: [],
-  //     matchType: MatchOrdersTypes.OneToOneSpecific
-  //   };
-
-  //   const batch: Batch = {
-  //     matches: [matchOrders],
-  //     externalFulfillments: fulfillments
-  //   };
-
-  //   console.log("Executing matches");
-  //   // console.log("Batch", JSON.stringify(batch, null, 2));
-  //   try {
-  //     // send some ETH to matchExecutor so it has balance to buy from external MP
-  //     await owner.sendTransaction({
-  //       to: matchExecutor.contract.address,
-  //       value: txData.value ?? 0
-  //     });
-  //     await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-
-  //   expect(await punksExchange.contract.connect(ethers.provider).punkIndexToAddress(tokenId)).to.eq(
-  //     buyer.address
-  //   );
-  //   expect(
-  //     await punksExchange.contract.connect(ethers.provider).pendingWithdrawals(seller.address)
-  //   ).to.eq(price);
   // });
 });
