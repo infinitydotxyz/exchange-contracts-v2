@@ -42,8 +42,11 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     /// @dev Storage variable that keeps track of valid currencies used for payment (tokens)
     EnumerableSet.AddressSet private _currencies;
 
+    bool public trustedExecEnabled = false;
+
     event CurrencyAdded(address currency);
     event CurrencyRemoved(address currency);
+    event TrustedExecutionChanged(bool oldVal, bool newVal);
 
     /**
     @param _weth address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
@@ -100,12 +103,26 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         bytes32 sellOrderHash = _hash(makerOrder1);
         bytes32 buyOrderHash = _hash(makerOrder2);
 
-        bool trustedExec = makerOrder2.constraints.length == 8 &&
-            makerOrder2.constraints[7] == 1 &&
-            makerOrder1.constraints.length == 8 &&
-            makerOrder1.constraints[7] == 1;
-        if (trustedExec) {
-            return (true, sellOrderHash, buyOrderHash, execPrice);
+        if (trustedExecEnabled) {
+            bool trustedExec = makerOrder2.constraints.length == 8 &&
+                makerOrder2.constraints[7] == 1 &&
+                makerOrder1.constraints.length == 8 &&
+                makerOrder1.constraints[7] == 1;
+            if (trustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    sellOrderHash,
+                    makerOrder1.signer,
+                    makerOrder1.sig,
+                    DOMAIN_SEPARATOR
+                ) &&
+                    SignatureChecker.verify(
+                        buyOrderHash,
+                        makerOrder2.signer,
+                        makerOrder2.sig,
+                        DOMAIN_SEPARATOR
+                    );
+                return (sigValid, sellOrderHash, buyOrderHash, execPrice);
+            }
         }
 
         require(
@@ -217,23 +234,31 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     ) external view override returns (bool, bytes32) {
         bytes32 makerOrderHash = _hash(makerOrder);
 
-        bool isTrustedExec = makerOrder.constraints.length == 8 &&
-            makerOrder.constraints[7] == 1;
-        for (uint256 i; i < manyMakerOrders.length; ) {
-            isTrustedExec =
-                isTrustedExec &&
-                manyMakerOrders[i].constraints.length == 8 &&
-                manyMakerOrders[i].constraints[7] == 1;
-            if (!isTrustedExec) {
-                break; // short circuit
+        if (trustedExecEnabled) {
+            bool isTrustedExec = makerOrder.constraints.length == 8 &&
+                makerOrder.constraints[7] == 1;
+            for (uint256 i; i < manyMakerOrders.length; ) {
+                isTrustedExec =
+                    isTrustedExec &&
+                    manyMakerOrders[i].constraints.length == 8 &&
+                    manyMakerOrders[i].constraints[7] == 1;
+                if (!isTrustedExec) {
+                    break; // short circuit
+                }
+                unchecked {
+                    ++i;
+                }
             }
-            unchecked {
-                ++i;
-            }
-        }
 
-        if (isTrustedExec) {
-            return (true, makerOrderHash);
+            if (isTrustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    makerOrderHash,
+                    makerOrder.signer,
+                    makerOrder.sig,
+                    DOMAIN_SEPARATOR
+                );
+                return (sigValid, makerOrderHash);
+            }
         }
 
         require(
@@ -424,12 +449,26 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         bytes32 sellOrderHash = _hash(sell);
         bytes32 buyOrderHash = _hash(buy);
 
-        bool trustedExec = sell.constraints.length == 8 &&
-            sell.constraints[7] == 1 &&
-            buy.constraints.length == 8 &&
-            buy.constraints[7] == 1;
-        if (trustedExec) {
-            return (true, sellOrderHash, buyOrderHash, execPrice);
+        if (trustedExecEnabled) {
+            bool trustedExec = sell.constraints.length == 8 &&
+                sell.constraints[7] == 1 &&
+                buy.constraints.length == 8 &&
+                buy.constraints[7] == 1;
+            if (trustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    sellOrderHash,
+                    sell.signer,
+                    sell.sig,
+                    DOMAIN_SEPARATOR
+                ) &&
+                    SignatureChecker.verify(
+                        buyOrderHash,
+                        buy.signer,
+                        buy.sig,
+                        DOMAIN_SEPARATOR
+                    );
+                return (sigValid, sellOrderHash, buyOrderHash, execPrice);
+            }
         }
 
         require(
@@ -915,6 +954,14 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     function removeCurrency(address _currency) external onlyOwner {
         _currencies.remove(_currency);
         emit CurrencyRemoved(_currency);
+    }
+
+    /// @dev enables/diables trusted execution
+    function setTrustedExecStatus(bool newVal) external onlyOwner {
+        bool oldVal = trustedExecEnabled;
+        require(oldVal != newVal, "no value change");
+        trustedExecEnabled = newVal;
+        emit TrustedExecutionChanged(oldVal, newVal);
     }
 
     // ======================================================= VIEW FUNCTIONS ============================================================
