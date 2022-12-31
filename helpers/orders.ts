@@ -113,7 +113,8 @@ export async function prepareOBOrder(
   order: OBOrder,
   infinityExchange: Contract,
   obComplication: Contract,
-  skipOnChainOwnershipCheck: boolean = false
+  skipOnChainOwnershipCheck: boolean = false,
+  skipSignature = false
 ): Promise<SignedOBOrder | undefined> {
   const validOrder = await isOrderValid(
     user,
@@ -133,7 +134,14 @@ export async function prepareOBOrder(
   }
 
   // sign order
-  const signedOBOrder = await signOBOrder(chainId, obComplication.address, order, signer);
+
+  const signedOBOrder = await signOBOrder(
+    chainId,
+    obComplication.address,
+    order,
+    signer,
+    skipSignature
+  );
   return signedOBOrder;
 }
 
@@ -318,7 +326,8 @@ export async function signOBOrder(
   chainId: BigNumberish,
   verifyingContractAddress: string,
   order: OBOrder,
-  signer: JsonRpcSigner
+  signer: JsonRpcSigner,
+  skipSignature = false
 ): Promise<SignedOBOrder | undefined> {
   const domain = {
     name: "InfinityComplication",
@@ -355,19 +364,22 @@ export async function signOBOrder(
     extraParams
   };
 
-  // sign order
-  try {
-    const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
-    const splitSig = splitSignature(sig ?? "");
-    const encodedSig = defaultAbiCoder.encode(
-      ["bytes32", "bytes32", "uint8"],
-      [splitSig.r, splitSig.s, splitSig.v]
-    );
-    const signedOrder: SignedOBOrder = { ...orderToSign, sig: encodedSig };
-    return signedOrder;
-  } catch (e) {
-    console.error("Error signing order", e);
+  let encodedSig = constants.HashZero;
+  if (!skipSignature) {
+    try {
+      const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
+      const splitSig = splitSignature(sig ?? "");
+      encodedSig = defaultAbiCoder.encode(
+        ["bytes32", "bytes32", "uint8"],
+        [splitSig.r, splitSig.s, splitSig.v]
+      );
+    } catch (err) {
+      console.error("Error signing order", err);
+    }
   }
+
+  const signedOrder: SignedOBOrder = { ...orderToSign, sig: encodedSig };
+  return signedOrder;
 }
 
 export async function bulkSignOBOrders(
