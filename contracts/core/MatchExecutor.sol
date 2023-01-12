@@ -244,8 +244,8 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                     MatchExecutorTypes.MatchOrdersType.OneToOneUnspecific
                 ) {
                     exchange.matchOrders(
-                        matches[i].buys,
                         matches[i].sells,
+                        matches[i].buys,
                         matches[i].constructs
                     );
                 } else if (
