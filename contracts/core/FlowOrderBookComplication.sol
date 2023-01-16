@@ -942,6 +942,23 @@ contract FlowOrderBookComplication is IFlowComplication, Ownable {
         }
     }
 
+    // ======================================================= VIEW FUNCTIONS ============================================================
+
+    /// @notice returns the number of currencies supported by the exchange
+    function numCurrencies() external view returns (uint256) {
+        return _currencies.length();
+    }
+
+    /// @notice returns the currency at the given index
+    function getCurrencyAt(uint256 index) external view returns (address) {
+        return _currencies.at(index);
+    }
+
+    /// @notice returns whether a given currency is valid
+    function isValidCurrency(address currency) external view returns (bool) {
+        return _currencies.contains(currency);
+    }
+
     // ======================================================= OWNER FUNCTIONS ============================================================
 
     /// @dev adds a new transaction currency to the exchange
@@ -962,22 +979,5 @@ contract FlowOrderBookComplication is IFlowComplication, Ownable {
         require(oldVal != newVal, "no value change");
         trustedExecEnabled = newVal;
         emit TrustedExecutionChanged(oldVal, newVal);
-    }
-
-    // ======================================================= VIEW FUNCTIONS ============================================================
-
-    /// @notice returns the number of currencies supported by the exchange
-    function numCurrencies() external view returns (uint256) {
-        return _currencies.length();
-    }
-
-    /// @notice returns the currency at the given index
-    function getCurrencyAt(uint256 index) external view returns (address) {
-        return _currencies.at(index);
-    }
-
-    /// @notice returns whether a given currency is valid
-    function isValidCurrency(address currency) external view returns (bool) {
-        return _currencies.contains(currency);
     }
 }
