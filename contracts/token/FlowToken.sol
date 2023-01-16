@@ -20,16 +20,8 @@ contract FlowToken is
     ERC20Snapshot,
     ERC20Votes
 {
-    uint256 public constant EPOCH_INFLATION = 25e7 ether;
-    uint256 public constant EPOCH_DURATION = 180 days;
-    uint256 public constant EPOCH_CLIFF = 180 days;
-    uint256 public constant MAX_EPOCHS = 4;
-    uint256 public immutable currentEpochTimestamp;
-    uint256 public currentEpoch;
-    uint256 public previousEpochTimestamp;
     address public admin;
 
-    event EpochAdvanced(uint256 currentEpoch, uint256 supplyMinted);
     event AdminChanged(address oldAdmin, address newAdmin);
 
     /**
@@ -37,10 +29,7 @@ contract FlowToken is
     @param supply Initial supply of the token
    */
     constructor(address _admin, uint256 supply) {
-        previousEpochTimestamp = block.timestamp;
-        currentEpochTimestamp = block.timestamp;
         admin = _admin;
-
         // mint initial supply
         _mint(admin, supply);
     }
@@ -51,37 +40,6 @@ contract FlowToken is
     }
 
     // =============================================== ADMIN FUNCTIONS =========================================================
-
-    function advanceEpoch() external onlyAdmin {
-        require(currentEpoch < MAX_EPOCHS, "no epochs left");
-        require(
-            block.timestamp >= currentEpochTimestamp + EPOCH_CLIFF,
-            "cliff not passed"
-        );
-        require(
-            block.timestamp >= previousEpochTimestamp + EPOCH_DURATION,
-            "not ready to advance"
-        );
-
-        uint256 epochsPassedSinceLastAdvance = (block.timestamp -
-            previousEpochTimestamp) / EPOCH_DURATION;
-        uint256 epochsLeft = MAX_EPOCHS - currentEpoch;
-        epochsPassedSinceLastAdvance = epochsPassedSinceLastAdvance > epochsLeft
-            ? epochsLeft
-            : epochsPassedSinceLastAdvance;
-
-        // update epochs
-        currentEpoch += epochsPassedSinceLastAdvance;
-        previousEpochTimestamp = block.timestamp;
-
-        // inflation amount
-        uint256 supplyToMint = EPOCH_INFLATION * epochsPassedSinceLastAdvance;
-
-        // mint supply
-        _mint(admin, supplyToMint);
-
-        emit EpochAdvanced(currentEpoch, supplyToMint);
-    }
 
     function changeAdmin(address newAdmin) external onlyAdmin {
         require(newAdmin != address(0), "zero address");
