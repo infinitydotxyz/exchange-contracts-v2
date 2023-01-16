@@ -10,44 +10,19 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // internal imports
-import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
+import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
-import { IComplication } from "../interfaces/IComplication.sol";
+import { IFlowComplication } from "../interfaces/IFlowComplication.sol";
 
 /**
-@title InfinityExchange
+@title FlowExchange
 @author nneverlander. Twitter @nneverlander
 @notice The main NFT exchange contract that holds state and does asset transfers
 @dev This contract can be extended via 'complications' - strategies that let the exchange execute various types of orders
       like dutch auctions, reverse dutch auctions, floor price orders, private sales, etc.
-
-NFTNFTNFT...........................................NFTNFTNFT
-NFTNFT                                                 NFTNFT
-NFT                                                       NFT
-.                                                           .
-.                                                           .
-.                                                           .
-.                                                           .
-.               NFTNFTNFT            NFTNFTNFT              .
-.            NFTNFTNFTNFTNFT      NFTNFTNFTNFTNFT           .
-.           NFTNFTNFTNFTNFTNFT   NFTNFTNFTNFTNFTNFT         .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.          NFTNFTNFTNFTNFTNFTN   NFTNFTNFTNFTNFTNFT         .
-.            NFTNFTNFTNFTNFT      NFTNFTNFTNFTNFT           .
-.               NFTNFTNFT            NFTNFTNFT              .
-.                                                           .
-.                                                           .
-.                                                           .
-.                                                           .
-NFT                                                       NFT
-NFTNFT                                                 NFTNFT
-NFTNFTNFT...........................................NFTNFTNFT 
-
 */
-contract InfinityExchange is
-    IInfinityExchange,
+contract FlowExchange is
+    IFlowExchange,
     ReentrancyGuard,
     Ownable,
     Pausable
@@ -123,6 +98,9 @@ contract InfinityExchange is
         matchExecutor = _matchExecutor;
     }
 
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {}
+
     // =================================================== USER FUNCTIONS =======================================================
 
     /**
@@ -179,7 +157,7 @@ contract InfinityExchange is
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
 
-        (bool canExec, bytes32 makerOrderHash) = IComplication(
+        (bool canExec, bytes32 makerOrderHash) = IFlowComplication(
             makerOrder.execParams[0]
         ).canExecMatchOneToMany(makerOrder, manyMakerOrders);
         require(canExec, "cannot execute");
@@ -351,7 +329,7 @@ contract InfinityExchange is
                 userMinOrderNonce[makerOrders[i].signer];
             require(!orderExpired, "order expired");
 
-            (bool canExec, bytes32 makerOrderHash) = IComplication(
+            (bool canExec, bytes32 makerOrderHash) = IFlowComplication(
                 makerOrders[i].execParams[0]
             ).canExecTakeOneOrder(makerOrders[i]);
             require(canExec, "cannot execute");
@@ -535,7 +513,7 @@ contract InfinityExchange is
             bytes32 sellOrderHash,
             bytes32 buyOrderHash,
             uint256 execPrice
-        ) = IComplication(makerOrder1.execParams[0]).canExecMatchOneToOne(
+        ) = IFlowComplication(makerOrder1.execParams[0]).canExecMatchOneToOne(
                 sell,
                 buy
             );
@@ -585,7 +563,7 @@ contract InfinityExchange is
         uint32 _wethTransferGasUnits,
         address weth
     ) internal {
-        (bool verified, bytes32 buyOrderHash) = IComplication(
+        (bool verified, bytes32 buyOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(false, sell, buy);
         require(verified, "order not verified");
@@ -621,7 +599,7 @@ contract InfinityExchange is
         OrderTypes.MakerOrder calldata buy,
         uint32 _protocolFeeBps
     ) internal returns (uint256) {
-        (bool verified, bytes32 sellOrderHash) = IComplication(
+        (bool verified, bytes32 sellOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(true, sell, buy);
         require(verified, "order not verified");
@@ -668,7 +646,7 @@ contract InfinityExchange is
             bytes32 sellOrderHash,
             bytes32 buyOrderHash,
             uint256 execPrice
-        ) = IComplication(sell.execParams[0]).canExecMatchOrder(
+        ) = IFlowComplication(sell.execParams[0]).canExecMatchOrder(
                 sell,
                 buy,
                 constructedNfts
@@ -1085,7 +1063,7 @@ contract InfinityExchange is
             makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
         require(!orderExpired, "order expired");
 
-        (bool executionValid, bytes32 makerOrderHash) = IComplication(
+        (bool executionValid, bytes32 makerOrderHash) = IFlowComplication(
             makerOrder.execParams[0]
         ).canExecTakeOrder(makerOrder, takerItems);
         require(executionValid, "cannot execute");

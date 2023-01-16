@@ -10,6 +10,21 @@ export async function deployContract(
   return contract.deployed();
 }
 
+// export const deployContract2 = async <C extends Contract>(
+//   name: string,
+//   factory: ContractFactory,
+//   ...args: any[]
+// ): Promise<C> => {
+//   const references = new Map<string, string>([
+//     ["Consideration", "ReferenceConsideration"],
+//     ["Conduit", "ReferenceConduit"],
+//     ["ConduitController", "ReferenceConduitController"]
+//   ]);
+
+//   const c = await factory.deploy(...args);
+//   return c as C;
+// };
+
 export const nowSeconds = (): BigNumber => {
   return BigNumber.from(Math.floor(Date.now() / 1000));
 };

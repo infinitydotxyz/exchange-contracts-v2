@@ -9,7 +9,7 @@ const {
 } = require("../helpers/orders");
 const { erc721Abi } = require("../abi/erc721");
 
-describe("Exchange_Match_One_To_Many", function () {
+describe("Exchange_Trusted_Match_One_To_Many", function () {
   let signers,
     signer1,
     signer2,
@@ -176,7 +176,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -235,7 +236,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -299,7 +301,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce1,
         nfts: nfts1,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder1 = await prepareOBOrder(
         user,
@@ -343,7 +346,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce2,
         nfts: nfts2,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder2 = await prepareOBOrder(
         user,
@@ -391,7 +395,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce3,
         nfts: nfts3,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder3 = await prepareOBOrder(
         user,
@@ -442,7 +447,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -499,7 +505,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
 
       // approve currency (required for automatic execution)
@@ -579,7 +586,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce1,
         nfts: nfts1,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder1 = await prepareOBOrder(
         user,
@@ -615,7 +623,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce2,
         nfts: nfts2,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder2 = await prepareOBOrder(
         user,
@@ -651,7 +660,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce3,
         nfts: nfts3,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder3 = await prepareOBOrder(
         user,
@@ -710,7 +720,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: false
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -769,7 +780,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce1,
         nfts: nfts1,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: false
       };
       const signedOrder1 = await prepareOBOrder(
         user,
@@ -817,7 +829,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce2,
         nfts: nfts2,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder2 = await prepareOBOrder(
         user,
@@ -861,7 +874,8 @@ describe("Exchange_Match_One_To_Many", function () {
         nonce: nonce3,
         nfts: nfts3,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder3 = await prepareOBOrder(
         user,

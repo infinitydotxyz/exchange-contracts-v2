@@ -9,7 +9,7 @@ const {
 } = require("../helpers/orders");
 const { erc721Abi } = require("../abi/erc721");
 
-describe("Exchange_Match_Constructed", function () {
+describe("Exchange_Trusted_Match_Multiple_Constructed", function () {
   let signers,
     signer1,
     signer2,
@@ -26,6 +26,7 @@ describe("Exchange_Match_Constructed", function () {
 
   let signer1Balance = toBN(0);
   let signer2Balance = toBN(0);
+  let signer3Balance = toBN(0);
   let totalProtocolFees = toBN(0);
   let orderNonce = 0;
 
@@ -136,7 +137,7 @@ describe("Exchange_Match_Constructed", function () {
   // ================================================== MAKE BUY ORDERS ==================================================
 
   // one specific collection, one specific token, max price
-  describe("OneCollectionOneTokenBuy", () => {
+  describe("OneCollectionOneTokenBuy1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -175,7 +176,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -190,8 +192,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, multiple specific tokens, max aggregate price
-  describe("OneCollectionMultipleTokensBuy", () => {
+  describe("OneCollectionOneTokenBuy2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -200,11 +201,7 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [
-            { tokenId: 1, numTokens: 1 },
-            { tokenId: 2, numTokens: 1 },
-            { tokenId: 3, numTokens: 1 }
-          ]
+          tokens: [{ tokenId: 1, numTokens: 1 }]
         }
       ];
       const execParams = {
@@ -234,7 +231,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -249,8 +247,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, any one of multiple specific tokens, max price
-  describe("OneCollectionAnyOneOfMultipleTokensBuy", () => {
+  describe("OneCollectionOneTokenBuy3", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -259,11 +256,7 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [
-            { tokenId: 12, numTokens: 1 },
-            { tokenId: 13, numTokens: 1 },
-            { tokenId: 14, numTokens: 1 }
-          ]
+          tokens: [{ tokenId: 2, numTokens: 1 }]
         }
       ];
       const execParams = {
@@ -276,7 +269,10 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
-      let numItems = 1;
+      let numItems = 0;
+      for (const nft of nfts) {
+        numItems += nft.tokens.length;
+      }
       const order = {
         id: orderId,
         chainId,
@@ -286,7 +282,7 @@ describe("Exchange_Match_Constructed", function () {
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
-        endTime: nowSeconds().add(10 * 60),
+        endTime: nowSeconds().add(24 * 60 * 60),
         nonce,
         nfts,
         execParams,
@@ -306,7 +302,7 @@ describe("Exchange_Match_Constructed", function () {
   });
 
   // one specific collection, any one token, max price
-  describe("OneCollectionAnyOneTokenBuy", () => {
+  describe("OneCollectionAnyOneTokenBuy1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -356,8 +352,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, any multiple tokens, max aggregate price, min number of tokens
-  describe("OneCollectionAnyMultipleTokensBuy", () => {
+  describe("OneCollectionAnyOneTokenBuy2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -384,7 +379,7 @@ describe("Exchange_Match_Constructed", function () {
         chainId,
         isSellOrder: false,
         signerAddress: user.address,
-        numItems: 4,
+        numItems: 1,
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
@@ -392,7 +387,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -407,8 +403,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // multiple specific collections, multiple specific tokens per collection, max aggregate price
-  describe("MultipleCollectionsMultipleTokensBuy", () => {
+  describe("OneCollectionAnyOneTokenBuy3", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -417,22 +412,7 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [{ tokenId: 11, numTokens: 1 }]
-        },
-        {
-          collection: mock721Contract2.address,
-          tokens: [
-            { tokenId: 0, numTokens: 1 },
-            { tokenId: 1, numTokens: 1 }
-          ]
-        },
-        {
-          collection: mock721Contract3.address,
-          tokens: [
-            { tokenId: 0, numTokens: 1 },
-            { tokenId: 1, numTokens: 1 },
-            { tokenId: 2, numTokens: 1 }
-          ]
+          tokens: []
         }
       ];
       const execParams = {
@@ -445,10 +425,67 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
-      let numItems = 0;
-      for (const nft of nfts) {
-        numItems += nft.tokens.length;
-      }
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: false,
+        signerAddress: user.address,
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
+      };
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      buyOrders.push(signedOrder);
+    });
+  });
+
+  // multiple specific collections, any one token per collection, max aggregate price
+  describe("MultipleCollectionsAnyOneTokenBuy1", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer1.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [
+        {
+          collection: mock721Contract1.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract2.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract3.address,
+          tokens: []
+        }
+      ];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const numItems = 1;
       const order = {
         id: orderId,
         chainId,
@@ -477,8 +514,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // multiple specific collections, any multiple tokens per collection, max aggregate price, min aggregate number of tokens
-  describe("MultipleCollectionsAnyTokensBuy", () => {
+  describe("MultipleCollectionsAnyOneTokenBuy2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -508,12 +544,13 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
+      const numItems = 1;
       const order = {
         id: orderId,
         chainId,
         isSellOrder: false,
         signerAddress: user.address,
-        numItems: 5,
+        numItems,
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
@@ -521,7 +558,68 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
+      };
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      buyOrders.push(signedOrder);
+    });
+  });
+
+  describe("MultipleCollectionsAnyOneTokenBuy3", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer1.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [
+        {
+          collection: mock721Contract1.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract2.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract3.address,
+          tokens: []
+        }
+      ];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const numItems = 1;
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: false,
+        signerAddress: user.address,
+        numItems,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -537,7 +635,7 @@ describe("Exchange_Match_Constructed", function () {
   });
 
   // any collection, any one token, max price
-  describe("AnyCollectionAnyOneTokenBuy", () => {
+  describe("AnyCollectionAnyOneTokenBuy1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -567,7 +665,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -582,8 +681,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // any collection, any multiple tokens, max aggregate price, min aggregate number of tokens
-  describe("AnyCollectionAnyMultipleTokensBuy", () => {
+  describe("AnyCollectionAnyOneTokenBuy2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
@@ -605,9 +703,55 @@ describe("Exchange_Match_Constructed", function () {
         chainId,
         isSellOrder: false,
         signerAddress: user.address,
-        numItems: 12,
-        startPrice: ethers.utils.parseEther("5"),
-        endPrice: ethers.utils.parseEther("5"),
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
+      };
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      buyOrders.push(signedOrder);
+    });
+  });
+
+  describe("AnyCollectionAnyOneTokenBuy3", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer1.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: false,
+        signerAddress: user.address,
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(24 * 60 * 60),
         nonce,
@@ -631,7 +775,7 @@ describe("Exchange_Match_Constructed", function () {
   // ================================================== MAKE SELL ORDERS ==================================================
 
   // one specific collection, one specific token, min price
-  describe("OneCollectionOneTokenSell", () => {
+  describe("OneCollectionOneTokenSell1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -670,7 +814,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
 
       // approve currency (required for automatic execution)
@@ -696,8 +841,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, multiple specific tokens, min aggregate price
-  describe("OneCollectionMultipleTokensSell", () => {
+  describe("OneCollectionOneTokenSell2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -706,11 +850,7 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [
-            { tokenId: 1, numTokens: 1 },
-            { tokenId: 2, numTokens: 1 },
-            { tokenId: 3, numTokens: 1 }
-          ]
+          tokens: [{ tokenId: 1, numTokens: 1 }]
         }
       ];
       const execParams = {
@@ -740,8 +880,20 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
+
+      // approve currency (required for automatic execution)
+      const salePrice = getCurrentOrderPrice(order);
+      await approveERC20(
+        user.address,
+        execParams.currencyAddress,
+        salePrice,
+        signer2,
+        flowExchange.address
+      );
+
       const signedOrder = await prepareOBOrder(
         user,
         chainId,
@@ -755,8 +907,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, any one of multiple specific tokens, min price
-  describe("OneCollectionAnyOneOfMultipleTokensSell", () => {
+  describe("OneCollectionOneTokenSell3", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -765,11 +916,7 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [
-            { tokenId: 12, numTokens: 1 },
-            { tokenId: 13, numTokens: 1 },
-            { tokenId: 14, numTokens: 1 }
-          ]
+          tokens: [{ tokenId: 2, numTokens: 1 }]
         }
       ];
       const execParams = {
@@ -782,7 +929,10 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
-      let numItems = 1;
+      let numItems = 0;
+      for (const nft of nfts) {
+        numItems += nft.tokens.length;
+      }
       const order = {
         id: orderId,
         chainId,
@@ -792,11 +942,75 @@ describe("Exchange_Match_Constructed", function () {
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
-        endTime: nowSeconds().add(10 * 60),
+        endTime: nowSeconds().add(24 * 60 * 60),
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
+      };
+
+      // approve currency (required for automatic execution)
+      const salePrice = getCurrentOrderPrice(order);
+      await approveERC20(
+        user.address,
+        execParams.currencyAddress,
+        salePrice,
+        signer2,
+        flowExchange.address
+      );
+
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      sellOrders.push(signedOrder);
+    });
+  });
+
+  // one specific collection, any one token, min price
+  describe("OneCollectionAnyOneTokenSell1", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer2.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [
+        {
+          collection: mock721Contract1.address,
+          tokens: []
+        }
+      ];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: true,
+        signerAddress: user.address,
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -812,7 +1026,7 @@ describe("Exchange_Match_Constructed", function () {
   });
 
   // one specific collection, any one token, min price
-  describe("OneCollectionAnyOneTokenSell", () => {
+  describe("OneCollectionAnyOneTokenSell2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -862,8 +1076,8 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // one specific collection, any multiple tokens, min aggregate price, max number of tokens
-  describe("OneCollectionAnyMultipleTokensSell", () => {
+  // one specific collection, any one token, min price
+  describe("OneCollectionAnyOneTokenSell3", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -890,7 +1104,7 @@ describe("Exchange_Match_Constructed", function () {
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
-        numItems: 4,
+        numItems: 1,
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
@@ -898,7 +1112,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -913,8 +1128,8 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // multiple specific collections, multiple specific tokens per collection, min aggregate price
-  describe("MultipleCollectionsMultipleTokensSell_ETH", () => {
+  // multiple specific collections, any one token per collection, min aggregate price
+  describe("MultipleCollectionsAnyOneTokenSell_ETH1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -923,22 +1138,15 @@ describe("Exchange_Match_Constructed", function () {
       const nfts = [
         {
           collection: mock721Contract1.address,
-          tokens: [{ tokenId: 11, numTokens: 1 }]
+          tokens: []
         },
         {
           collection: mock721Contract2.address,
-          tokens: [
-            { tokenId: 0, numTokens: 1 },
-            { tokenId: 1, numTokens: 1 }
-          ]
+          tokens: []
         },
         {
           collection: mock721Contract3.address,
-          tokens: [
-            { tokenId: 0, numTokens: 1 },
-            { tokenId: 1, numTokens: 1 },
-            { tokenId: 2, numTokens: 1 }
-          ]
+          tokens: []
         }
       ];
       const execParams = {
@@ -951,10 +1159,7 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
-      let numItems = 0;
-      for (const nft of nfts) {
-        numItems += nft.tokens.length;
-      }
+      const numItems = 1;
       const order = {
         id: orderId,
         chainId,
@@ -968,7 +1173,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -983,8 +1189,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // multiple specific collections, any multiple tokens per collection, min aggregate price, max aggregate number of tokens
-  describe("MultipleCollectionsAnyTokensSell", () => {
+  describe("MultipleCollectionsAnyOneTokenSell_ETH2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -1006,7 +1211,7 @@ describe("Exchange_Match_Constructed", function () {
       ];
       const execParams = {
         complicationAddress: obComplication.address,
-        currencyAddress: token.address
+        currencyAddress: NULL_ADDRESS
       };
       const extraParams = {};
       const nonce = ++orderNonce;
@@ -1014,12 +1219,73 @@ describe("Exchange_Match_Constructed", function () {
         ["address", "uint256", "uint256"],
         [user.address, nonce, chainId]
       );
+      const numItems = 1;
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
-        numItems: 5,
+        numItems,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
+      };
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      sellOrders.push(signedOrder);
+    });
+  });
+
+  describe("MultipleCollectionsAnyOneTokenSell_ETH3", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer2.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [
+        {
+          collection: mock721Contract1.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract2.address,
+          tokens: []
+        },
+        {
+          collection: mock721Contract3.address,
+          tokens: []
+        }
+      ];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: NULL_ADDRESS
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const numItems = 1;
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: true,
+        signerAddress: user.address,
+        numItems,
         startPrice: ethers.utils.parseEther("1"),
         endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
@@ -1043,7 +1309,7 @@ describe("Exchange_Match_Constructed", function () {
   });
 
   // any collection, any one token, min price
-  describe("AnyCollectionAnyOneTokenSell", () => {
+  describe("AnyCollectionAnyOneTokenSell1", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -1073,7 +1339,8 @@ describe("Exchange_Match_Constructed", function () {
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -1088,8 +1355,7 @@ describe("Exchange_Match_Constructed", function () {
     });
   });
 
-  // any collection, any multiple tokens, min aggregate price, max aggregate number of tokens
-  describe("AnyCollectionAnyMultipleTokensSell", () => {
+  describe("AnyCollectionAnyOneTokenSell2", () => {
     it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
@@ -1111,15 +1377,62 @@ describe("Exchange_Match_Constructed", function () {
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
-        numItems: 12,
-        startPrice: ethers.utils.parseEther("5"),
-        endPrice: ethers.utils.parseEther("5"),
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(24 * 60 * 60),
         nonce,
         nfts,
         execParams,
-        extraParams
+        extraParams,
+        isTrustedExec: true
+      };
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
+      expect(signedOrder).to.not.be.undefined;
+      sellOrders.push(signedOrder);
+    });
+  });
+
+  describe("AnyCollectionAnyOneTokenSell3", () => {
+    it("Signed order should be valid", async function () {
+      const user = {
+        address: signer2.address
+      };
+      const chainId = network.config.chainId ?? 31337;
+      const nfts = [];
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
+      const extraParams = {};
+      const nonce = ++orderNonce;
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
+      const order = {
+        id: orderId,
+        chainId,
+        isSellOrder: true,
+        signerAddress: user.address,
+        numItems: 1,
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
+        startTime: nowSeconds(),
+        endTime: nowSeconds().add(24 * 60 * 60),
+        nonce,
+        nfts,
+        execParams,
+        extraParams,
+        isTrustedExec: true
       };
       const signedOrder = await prepareOBOrder(
         user,
@@ -1136,15 +1449,15 @@ describe("Exchange_Match_Constructed", function () {
 
   // ================================================== MATCH ORDERS ===================================================
 
-  describe("Match_OneCollectionOneToken", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[0];
-      const sellOrder = sellOrders[0];
-      const constructedOrder = sellOrder;
-      const nfts = constructedOrder.nfts;
-
+  describe("Match_All", () => {
+    it("Should match valid orders", async function () {
+      // order 1
+      const buyOrder1 = buyOrders[0];
+      const sellOrder1 = sellOrders[0];
+      const constructedOrder1 = sellOrder1;
+      const nfts1 = constructedOrder1.nfts;
       // owners before sale
-      for (const item of nfts) {
+      for (const item of nfts1) {
         const collection = item.collection;
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
@@ -1152,16 +1465,322 @@ describe("Exchange_Match_Constructed", function () {
           expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
         }
       }
-
       // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
+      const salePrice1 = getCurrentSignedOrderPrice(constructedOrder1);
+
+      // order 2
+      const buyOrder2 = buyOrders[1];
+      const sellOrder2 = sellOrders[1];
+      const constructedOrder2 = sellOrder2;
+      const nfts2 = constructedOrder2.nfts;
+      // owners before sale
+      for (const item of nfts2) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice2 = getCurrentSignedOrderPrice(constructedOrder2);
+
+      // order 3
+      const buyOrder3 = buyOrders[2];
+      const sellOrder3 = sellOrders[2];
+      const constructedOrder3 = sellOrder3;
+      const nfts3 = constructedOrder3.nfts;
+      // owners before sale
+      for (const item of nfts3) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice3 = getCurrentSignedOrderPrice(constructedOrder3);
+
+      // order 4
+      const buyOrder4 = buyOrders[3];
+      const sellOrder4 = sellOrders[3];
+      const constructedOrder4 = { ...sellOrder4 };
+      // form matching nfts
+      const nfts4 = [];
+      for (const buyOrderNft of buyOrder4.nfts) {
+        const collection = buyOrderNft.collection;
+        const nft = {
+          collection,
+          tokens: [
+            {
+              tokenId: 3,
+              numTokens: 1
+            }
+          ]
+        };
+        nfts4.push(nft);
+      }
+      constructedOrder4.nfts = nfts4;
+      // owners before sale
+      for (const item of nfts4) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice4 = getCurrentSignedOrderPrice(constructedOrder4);
+
+      // order 5
+      const buyOrder5 = buyOrders[4];
+      const sellOrder5 = sellOrders[4];
+      const constructedOrder5 = { ...sellOrder5 };
+      // form matching nfts
+      const nfts5 = [];
+      for (const buyOrderNft of buyOrder5.nfts) {
+        const collection = buyOrderNft.collection;
+        const nft = {
+          collection,
+          tokens: [
+            {
+              tokenId: 4,
+              numTokens: 1
+            }
+          ]
+        };
+        nfts5.push(nft);
+      }
+      constructedOrder5.nfts = nfts5;
+      // owners before sale
+      for (const item of nfts5) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice5 = getCurrentSignedOrderPrice(constructedOrder5);
+
+      // order 6
+      const buyOrder6 = buyOrders[5];
+      const sellOrder6 = sellOrders[5];
+      const constructedOrder6 = { ...sellOrder6 };
+      // form matching nfts
+      const nfts6 = [];
+      for (const buyOrderNft of buyOrder6.nfts) {
+        const collection = buyOrderNft.collection;
+        const nft = {
+          collection,
+          tokens: [
+            {
+              tokenId: 5,
+              numTokens: 1
+            }
+          ]
+        };
+        nfts6.push(nft);
+      }
+      constructedOrder6.nfts = nfts6;
+      // owners before sale
+      for (const item of nfts6) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice6 = getCurrentSignedOrderPrice(constructedOrder6);
+
+      // order 7
+      const buyOrder7 = buyOrders[6];
+      const sellOrder7 = sellOrders[6];
+      const constructedOrder7 = { ...buyOrder7 };
+      // form matching nfts
+      const nfts7 = [
+        {
+          collection: buyOrder7.nfts[0].collection,
+          tokens: [
+            {
+              tokenId: 6,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder7.nfts = nfts7;
+      // owners before sale
+      for (const item of nfts7) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice7 = getCurrentSignedOrderPrice(constructedOrder7);
+
+      // order 8
+      const buyOrder8 = buyOrders[7];
+      const sellOrder8 = sellOrders[7];
+      const constructedOrder8 = { ...buyOrder8 };
+      // form matching nfts
+      const nfts8 = [
+        {
+          collection: buyOrder7.nfts[1].collection,
+          tokens: [
+            {
+              tokenId: 0,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder8.nfts = nfts8;
+      // owners before sale
+      for (const item of nfts8) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice8 = getCurrentSignedOrderPrice(constructedOrder8);
+
+      // order 9
+      const buyOrder9 = buyOrders[8];
+      const sellOrder9 = sellOrders[8];
+      const constructedOrder9 = { ...buyOrder9 };
+      // form matching nfts
+      const nfts9 = [
+        {
+          collection: buyOrder7.nfts[2].collection,
+          tokens: [
+            {
+              tokenId: 0,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder9.nfts = nfts9;
+      // owners before sale
+      for (const item of nfts9) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice9 = getCurrentSignedOrderPrice(constructedOrder9);
+
+      // order 10
+      const buyOrder10 = buyOrders[9];
+      const sellOrder10 = sellOrders[9];
+      const constructedOrder10 = { ...buyOrder10 };
+
+      // form matching nfts
+      const nfts10 = [
+        {
+          collection: mock721Contract1.address,
+          tokens: [
+            {
+              tokenId: 10,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder10.nfts = nfts10;
+      // owners before sale
+      for (const item of nfts10) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice10 = getCurrentSignedOrderPrice(constructedOrder10);
+
+      // order 11
+      const buyOrder11 = buyOrders[10];
+      const sellOrder11 = sellOrders[10];
+      const constructedOrder11 = { ...buyOrder11 };
+
+      // form matching nfts
+      const nfts11 = [
+        {
+          collection: mock721Contract2.address,
+          tokens: [
+            {
+              tokenId: 5,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder11.nfts = nfts11;
+      // owners before sale
+      for (const item of nfts11) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice11 = getCurrentSignedOrderPrice(constructedOrder11);
+
+      // order 12
+      const buyOrder12 = buyOrders[11];
+      const sellOrder12 = sellOrders[11];
+      const constructedOrder12 = { ...buyOrder12 };
+
+      // form matching nfts
+      const nfts12 = [
+        {
+          collection: mock721Contract3.address,
+          tokens: [
+            {
+              tokenId: 5,
+              numTokens: 1
+            }
+          ]
+        }
+      ];
+      constructedOrder12.nfts = nfts12;
+      // owners before sale
+      for (const item of nfts12) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
+        }
+      }
+      // sale price
+      const salePrice12 = getCurrentSignedOrderPrice(constructedOrder12);
 
       // balance before sale
       expect(await token.balanceOf(signer1.address)).to.equal(INITIAL_SUPPLY.div(2));
       expect(await token.balanceOf(signer2.address)).to.equal(INITIAL_SUPPLY.div(2));
 
       // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
+      let numTokens = constructedOrder1.nfts.reduce((acc, nft) => {
         return (
           acc +
           nft.tokens.reduce((acc, token) => {
@@ -1169,20 +1788,243 @@ describe("Exchange_Match_Constructed", function () {
           }, 0)
         );
       }, 0);
+      numTokens += constructedOrder2.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder3.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder4.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder5.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder6.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder7.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder8.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder9.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder10.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder11.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+      numTokens += constructedOrder12.nfts.reduce((acc, nft) => {
+        return (
+          acc +
+          nft.tokens.reduce((acc, token) => {
+            return acc + token.numTokens;
+          }, 0)
+        );
+      }, 0);
+
       console.log("total numTokens in order", numTokens);
+
+      const sellOrdersToMatch = [
+        sellOrder1,
+        sellOrder2,
+        sellOrder3,
+        sellOrder4,
+        sellOrder5,
+        sellOrder6,
+        sellOrder7,
+        sellOrder8,
+        sellOrder9,
+        sellOrder10,
+        sellOrder11,
+        sellOrder12
+      ];
+
+      const buyOrdersToMatch = [
+        buyOrder1,
+        buyOrder2,
+        buyOrder3,
+        buyOrder4,
+        buyOrder5,
+        buyOrder6,
+        buyOrder7,
+        buyOrder8,
+        buyOrder9,
+        buyOrder10,
+        buyOrder11,
+        buyOrder12
+      ];
+
+      const constructedNftsToMatch = [
+        constructedOrder1.nfts,
+        constructedOrder2.nfts,
+        constructedOrder3.nfts,
+        constructedOrder4.nfts,
+        constructedOrder5.nfts,
+        constructedOrder6.nfts,
+        constructedOrder7.nfts,
+        constructedOrder8.nfts,
+        constructedOrder9.nfts,
+        constructedOrder10.nfts,
+        constructedOrder11.nfts,
+        constructedOrder12.nfts
+      ];
+
       const gasEstimate = await flowExchange
         .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
+        .estimateGas.matchOrders(sellOrdersToMatch, buyOrdersToMatch, constructedNftsToMatch);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
       await flowExchange
         .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
+        .matchOrders(sellOrdersToMatch, buyOrdersToMatch, constructedNftsToMatch);
 
       // owners after sale
-      for (const item of nfts) {
+      for (const item of nfts1) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts2) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts3) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts4) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts5) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts6) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts7) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts8) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts9) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts10) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts11) {
+        const collection = item.collection;
+        const contract = new ethers.Contract(collection, erc721Abi, signer1);
+        for (const token of item.tokens) {
+          const tokenId = token.tokenId;
+          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
+        }
+      }
+      for (const item of nfts12) {
         const collection = item.collection;
         const contract = new ethers.Contract(collection, erc721Abi, signer1);
         for (const token of item.tokens) {
@@ -1192,6 +2034,19 @@ describe("Exchange_Match_Constructed", function () {
       }
 
       // balance after sale
+      const salePrice = salePrice1
+        .add(salePrice2)
+        .add(salePrice3)
+        .add(salePrice4)
+        .add(salePrice5)
+        .add(salePrice6)
+        .add(salePrice7)
+        .add(salePrice8)
+        .add(salePrice9)
+        .add(salePrice10)
+        .add(salePrice11)
+        .add(salePrice12);
+
       const fee = salePrice.mul(FEE_BPS).div(10000);
       signer1Balance = INITIAL_SUPPLY.div(2).sub(salePrice);
       signer2Balance = INITIAL_SUPPLY.div(2).add(salePrice.sub(fee));
@@ -1206,807 +2061,6 @@ describe("Exchange_Match_Constructed", function () {
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
       expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_OneCollectionMultipleTokens", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[1];
-      const sellOrder = sellOrders[1];
-      const constructedOrder = sellOrder;
-      const nfts = constructedOrder.nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_OneCollectionAnyOneOfMultipleTokens", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[2];
-      const sellOrder = sellOrders[2];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      for (const buyOrderNft of buyOrder.nfts) {
-        const collection = buyOrderNft.collection;
-        const nft = {
-          collection,
-          tokens: [
-            {
-              tokenId: 12,
-              numTokens: 1
-            }
-          ]
-        };
-        nfts.push(nft);
-      }
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_OneCollectionAnyOneToken", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[3];
-      const sellOrder = sellOrders[3];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      for (const buyOrderNft of buyOrder.nfts) {
-        const collection = buyOrderNft.collection;
-        const nft = {
-          collection,
-          tokens: [
-            {
-              tokenId: 4,
-              numTokens: 1
-            }
-          ]
-        };
-        nfts.push(nft);
-      }
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_OneCollectionAnyMultipleTokens", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[4];
-      const sellOrder = sellOrders[4];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      for (const buyOrderNft of buyOrder.nfts) {
-        const collection = buyOrderNft.collection;
-        const nft = {
-          collection,
-          tokens: [
-            {
-              tokenId: 5,
-              numTokens: 1
-            },
-            {
-              tokenId: 6,
-              numTokens: 1
-            },
-            {
-              tokenId: 7,
-              numTokens: 1
-            },
-            {
-              tokenId: 8,
-              numTokens: 1
-            }
-          ]
-        };
-        nfts.push(nft);
-      }
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_MultipleCollectionsMultipleTokensBuy", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[5];
-      const sellOrder = sellOrders[5];
-      const constructedOrder = { ...buyOrder };
-      const nfts = constructedOrder.nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_MultipleCollectionsAnyTokensBuy", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[6];
-      const sellOrder = sellOrders[6];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      let i = 0;
-      for (const buyOrderNft of buyOrder.nfts) {
-        ++i;
-        const collection = buyOrderNft.collection;
-        let nft;
-        if (i === 1) {
-          nft = {
-            collection,
-            tokens: [
-              {
-                tokenId: 20,
-                numTokens: 1
-              },
-              {
-                tokenId: 21,
-                numTokens: 1
-              }
-            ]
-          };
-        } else if (i === 2) {
-          nft = {
-            collection,
-            tokens: [
-              {
-                tokenId: 10,
-                numTokens: 1
-              }
-            ]
-          };
-        } else {
-          nft = {
-            collection,
-            tokens: [
-              {
-                tokenId: 10,
-                numTokens: 1
-              },
-              {
-                tokenId: 11,
-                numTokens: 1
-              }
-            ]
-          };
-        }
-
-        nfts.push(nft);
-      }
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-      // const gasPrice = await signer3.provider.getGasPrice();
-
-      // const gasCost = gasEstimate.mul(gasPrice);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_AnyCollectionAnyOneTokenBuy", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[7];
-      const sellOrder = sellOrders[7];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      const collection = mock721Contract3.address;
-      const nft = {
-        collection,
-        tokens: [
-          {
-            tokenId: 15,
-            numTokens: 1
-          }
-        ]
-      };
-      nfts.push(nft);
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
-    });
-  });
-
-  describe("Match_AnyCollectionAnyMultipleTokensBuy", () => {
-    it("Should match valid order", async function () {
-      const buyOrder = buyOrders[8];
-      const sellOrder = sellOrders[8];
-      const constructedOrder = { ...sellOrder };
-
-      // form matching nfts
-      const nfts = [];
-      const nft1 = {
-        collection: mock721Contract1.address,
-        tokens: [
-          {
-            tokenId: 30,
-            numTokens: 1
-          },
-          {
-            tokenId: 31,
-            numTokens: 1
-          },
-          {
-            tokenId: 32,
-            numTokens: 1
-          }
-        ]
-      };
-      const nft2 = {
-        collection: mock721Contract2.address,
-        tokens: [
-          {
-            tokenId: 35,
-            numTokens: 1
-          },
-          {
-            tokenId: 36,
-            numTokens: 1
-          },
-          {
-            tokenId: 37,
-            numTokens: 1
-          },
-          {
-            tokenId: 38,
-            numTokens: 1
-          },
-          {
-            tokenId: 39,
-            numTokens: 1
-          }
-        ]
-      };
-      const nft3 = {
-        collection: mock721Contract3.address,
-        tokens: [
-          {
-            tokenId: 20,
-            numTokens: 1
-          },
-          {
-            tokenId: 21,
-            numTokens: 1
-          },
-          {
-            tokenId: 22,
-            numTokens: 1
-          },
-          {
-            tokenId: 23,
-            numTokens: 1
-          }
-        ]
-      };
-
-      nfts.push(nft1);
-      nfts.push(nft2);
-      nfts.push(nft3);
-
-      constructedOrder.nfts = nfts;
-
-      // owners before sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer2.address);
-        }
-      }
-
-      // sale price
-      const salePrice = getCurrentSignedOrderPrice(constructedOrder);
-
-      // balance before sale
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      // estimate gas
-      const numTokens = constructedOrder.nfts.reduce((acc, nft) => {
-        return (
-          acc +
-          nft.tokens.reduce((acc, token) => {
-            return acc + token.numTokens;
-          }, 0)
-        );
-      }, 0);
-      console.log("total numTokens in order", numTokens);
-      const gasEstimate = await flowExchange
-        .connect(signer3)
-        .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-      console.log("gasEstimate", gasEstimate.toNumber());
-      console.log("gasEstimate per token", gasEstimate / numTokens);
-
-      // initiate exchange by 3rd party
-      await flowExchange
-        .connect(signer3)
-        .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
-
-      // owners after sale
-      for (const item of nfts) {
-        const collection = item.collection;
-        const contract = new ethers.Contract(collection, erc721Abi, signer1);
-        for (const token of item.tokens) {
-          const tokenId = token.tokenId;
-          expect(await contract.ownerOf(tokenId)).to.equal(signer1.address);
-        }
-      }
-
-      // balance after sale
-      const fee = salePrice.mul(FEE_BPS).div(10000);
-      signer1Balance = signer1Balance.sub(salePrice);
-      signer2Balance = signer2Balance.add(salePrice.sub(fee));
-      expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
-
-      const signer1TokenBalance = await token.balanceOf(signer1.address);
-      const gasRefund = signer1Balance.sub(signer1TokenBalance);
-
-      totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
-
-      const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
-      const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
-      expect(buyerBalance1).to.be.lessThan(buyerBalance2); // less than because of the gas refund
-
-      // update
-      signer1Balance = signer1TokenBalance;
     });
   });
 });

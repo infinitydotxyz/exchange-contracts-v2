@@ -7,16 +7,15 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // internal imports
-import { SignatureChecker } from "../libs/SignatureChecker.sol";
-import { OrderTypes } from "../libs/OrderTypes.sol";
-import { IComplication } from "../interfaces/IComplication.sol";
+import { OrderTypes, SignatureChecker } from "../libs/SignatureChecker.sol";
+import { IFlowComplication } from "../interfaces/IFlowComplication.sol";
 
 /**
- * @title InfinityOrderBookComplication
+ * @title FlowOrderBookComplication
  * @author nneverlander. Twitter @nneverlander
  * @notice Complication to execute orderbook orders
  */
-contract InfinityOrderBookComplication is IComplication, Ownable {
+contract FlowOrderBookComplication is IFlowComplication, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
 
@@ -43,8 +42,11 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     /// @dev Storage variable that keeps track of valid currencies used for payment (tokens)
     EnumerableSet.AddressSet private _currencies;
 
+    bool public trustedExecEnabled = false;
+
     event CurrencyAdded(address currency);
     event CurrencyRemoved(address currency);
+    event TrustedExecutionChanged(bool oldVal, bool newVal);
 
     constructor() {
         // Calculate the domain separator
@@ -53,7 +55,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256("InfinityComplication"),
+                keccak256("FlowComplication"),
                 keccak256(bytes("1")), // for versionId = 1
                 block.chainid,
                 address(this)
@@ -81,8 +83,43 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         OrderTypes.MakerOrder calldata makerOrder2
     ) external view override returns (bool, bytes32, bytes32, uint256) {
         // check if the orders are valid
+        bool _isPriceValid;
+        uint256 makerOrder1Price = _getCurrentPrice(makerOrder1);
+        uint256 makerOrder2Price = _getCurrentPrice(makerOrder2);
+        uint256 execPrice;
+        if (makerOrder1.isSellOrder) {
+            _isPriceValid = makerOrder2Price >= makerOrder1Price;
+            execPrice = makerOrder1Price;
+        } else {
+            _isPriceValid = makerOrder1Price >= makerOrder2Price;
+            execPrice = makerOrder2Price;
+        }
+
         bytes32 sellOrderHash = _hash(makerOrder1);
         bytes32 buyOrderHash = _hash(makerOrder2);
+
+        if (trustedExecEnabled) {
+            bool trustedExec = makerOrder2.constraints.length == 8 &&
+                makerOrder2.constraints[7] == 1 &&
+                makerOrder1.constraints.length == 8 &&
+                makerOrder1.constraints[7] == 1;
+            if (trustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    sellOrderHash,
+                    makerOrder1.signer,
+                    makerOrder1.sig,
+                    DOMAIN_SEPARATOR
+                ) &&
+                    SignatureChecker.verify(
+                        buyOrderHash,
+                        makerOrder2.signer,
+                        makerOrder2.sig,
+                        DOMAIN_SEPARATOR
+                    );
+                return (sigValid, sellOrderHash, buyOrderHash, execPrice);
+            }
+        }
+
         require(
             verifyMatchOneToOneOrders(
                 sellOrderHash,
@@ -107,6 +144,26 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
             makerOrder1.constraints[3] <= block.timestamp &&
             makerOrder1.constraints[4] >= block.timestamp;
 
+        return (
+            numItemsValid &&
+                _isTimeValid &&
+                doItemsIntersect(makerOrder1.nfts, makerOrder2.nfts) &&
+                _isPriceValid,
+            sellOrderHash,
+            buyOrderHash,
+            execPrice
+        );
+    }
+
+    /**
+     * @dev This function is called by an offline checker to verify whether matches can be executed
+     * irrespective of the trusted execution constraint
+     */
+    function verifyCanExecMatchOneToOne(
+        OrderTypes.MakerOrder calldata makerOrder1,
+        OrderTypes.MakerOrder calldata makerOrder2
+    ) external view returns (bool, bytes32, bytes32, uint256) {
+        // check if the orders are valid
         bool _isPriceValid;
         uint256 makerOrder1Price = _getCurrentPrice(makerOrder1);
         uint256 makerOrder2Price = _getCurrentPrice(makerOrder2);
@@ -118,6 +175,33 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
             _isPriceValid = makerOrder1Price >= makerOrder2Price;
             execPrice = makerOrder2Price;
         }
+
+        bytes32 sellOrderHash = _hash(makerOrder1);
+        bytes32 buyOrderHash = _hash(makerOrder2);
+
+        require(
+            verifyMatchOneToOneOrders(
+                sellOrderHash,
+                buyOrderHash,
+                makerOrder1,
+                makerOrder2
+            ),
+            "order not verified"
+        );
+
+        // check constraints
+        bool numItemsValid = makerOrder2.constraints[0] ==
+            makerOrder1.constraints[0] &&
+            makerOrder2.constraints[0] == 1 &&
+            makerOrder2.nfts.length == 1 &&
+            makerOrder2.nfts[0].tokens.length == 1 &&
+            makerOrder1.nfts.length == 1 &&
+            makerOrder1.nfts[0].tokens.length == 1;
+
+        bool _isTimeValid = makerOrder2.constraints[3] <= block.timestamp &&
+            makerOrder2.constraints[4] >= block.timestamp &&
+            makerOrder1.constraints[3] <= block.timestamp &&
+            makerOrder1.constraints[4] >= block.timestamp;
 
         return (
             numItemsValid &&
@@ -143,7 +227,122 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         OrderTypes.MakerOrder calldata makerOrder,
         OrderTypes.MakerOrder[] calldata manyMakerOrders
     ) external view override returns (bool, bytes32) {
-        // check if makerOrder is valid
+        bytes32 makerOrderHash = _hash(makerOrder);
+
+        if (trustedExecEnabled) {
+            bool isTrustedExec = makerOrder.constraints.length == 8 &&
+                makerOrder.constraints[7] == 1;
+            for (uint256 i; i < manyMakerOrders.length; ) {
+                isTrustedExec =
+                    isTrustedExec &&
+                    manyMakerOrders[i].constraints.length == 8 &&
+                    manyMakerOrders[i].constraints[7] == 1;
+                if (!isTrustedExec) {
+                    break; // short circuit
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+
+            if (isTrustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    makerOrderHash,
+                    makerOrder.signer,
+                    makerOrder.sig,
+                    DOMAIN_SEPARATOR
+                );
+                return (sigValid, makerOrderHash);
+            }
+        }
+
+        require(
+            isOrderValid(makerOrder, makerOrderHash),
+            "invalid maker order"
+        );
+
+        // check the constraints of the 'one' maker order
+        uint256 numNftsInOneOrder;
+        for (uint256 i; i < makerOrder.nfts.length; ) {
+            numNftsInOneOrder =
+                numNftsInOneOrder +
+                makerOrder.nfts[i].tokens.length;
+            unchecked {
+                ++i;
+            }
+        }
+
+        // check the constraints of many maker orders
+        uint256 totalNftsInManyOrders;
+        bool numNftsPerManyOrderValid = true;
+        bool isOrdersTimeValid = true;
+        bool itemsIntersect = true;
+        for (uint256 i; i < manyMakerOrders.length; ) {
+            uint256 nftsLength = manyMakerOrders[i].nfts.length;
+            uint256 numNftsPerOrder;
+            for (uint256 j; j < nftsLength; ) {
+                numNftsPerOrder =
+                    numNftsPerOrder +
+                    manyMakerOrders[i].nfts[j].tokens.length;
+                unchecked {
+                    ++j;
+                }
+            }
+            numNftsPerManyOrderValid =
+                numNftsPerManyOrderValid &&
+                manyMakerOrders[i].constraints[0] == numNftsPerOrder;
+            totalNftsInManyOrders = totalNftsInManyOrders + numNftsPerOrder;
+
+            isOrdersTimeValid =
+                isOrdersTimeValid &&
+                manyMakerOrders[i].constraints[3] <= block.timestamp &&
+                manyMakerOrders[i].constraints[4] >= block.timestamp;
+
+            itemsIntersect =
+                itemsIntersect &&
+                doItemsIntersect(makerOrder.nfts, manyMakerOrders[i].nfts);
+
+            if (!numNftsPerManyOrderValid) {
+                return (false, makerOrderHash); // short circuit
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        bool _isTimeValid = isOrdersTimeValid &&
+            makerOrder.constraints[3] <= block.timestamp &&
+            makerOrder.constraints[4] >= block.timestamp;
+
+        uint256 currentMakerOrderPrice = _getCurrentPrice(makerOrder);
+        uint256 sumCurrentOrderPrices = _sumCurrentPrices(manyMakerOrders);
+
+        bool _isPriceValid;
+        if (makerOrder.isSellOrder) {
+            _isPriceValid = sumCurrentOrderPrices >= currentMakerOrderPrice;
+        } else {
+            _isPriceValid = sumCurrentOrderPrices <= currentMakerOrderPrice;
+        }
+
+        return (
+            numNftsInOneOrder == makerOrder.constraints[0] &&
+                numNftsInOneOrder == totalNftsInManyOrders &&
+                _isTimeValid &&
+                itemsIntersect &&
+                _isPriceValid,
+            makerOrderHash
+        );
+    }
+
+    /**
+     * @dev This function is called by an offline checker to verify whether matches can be executed
+     * irrespective of the trusted execution constraint
+     */
+    function verifyCanExecMatchOneToMany(
+        OrderTypes.MakerOrder calldata makerOrder,
+        OrderTypes.MakerOrder[] calldata manyMakerOrders
+    ) external view returns (bool, bytes32) {
         bytes32 makerOrderHash = _hash(makerOrder);
         require(
             isOrderValid(makerOrder, makerOrderHash),
@@ -240,14 +439,69 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         OrderTypes.OrderItem[] calldata constructedNfts
     ) external view override returns (bool, bytes32, bytes32, uint256) {
         // check if orders are valid
+        (bool _isPriceValid, uint256 execPrice) = isPriceValid(sell, buy);
+
         bytes32 sellOrderHash = _hash(sell);
         bytes32 buyOrderHash = _hash(buy);
+
+        if (trustedExecEnabled) {
+            bool trustedExec = sell.constraints.length == 8 &&
+                sell.constraints[7] == 1 &&
+                buy.constraints.length == 8 &&
+                buy.constraints[7] == 1;
+            if (trustedExec) {
+                bool sigValid = SignatureChecker.verify(
+                    sellOrderHash,
+                    sell.signer,
+                    sell.sig,
+                    DOMAIN_SEPARATOR
+                ) &&
+                    SignatureChecker.verify(
+                        buyOrderHash,
+                        buy.signer,
+                        buy.sig,
+                        DOMAIN_SEPARATOR
+                    );
+                return (sigValid, sellOrderHash, buyOrderHash, execPrice);
+            }
+        }
+
         require(
             verifyMatchOrders(sellOrderHash, buyOrderHash, sell, buy),
             "order not verified"
         );
 
+        return (
+            isTimeValid(sell, buy) &&
+                _isPriceValid &&
+                areNumMatchItemsValid(sell, buy, constructedNfts) &&
+                doItemsIntersect(sell.nfts, constructedNfts) &&
+                doItemsIntersect(buy.nfts, constructedNfts),
+            sellOrderHash,
+            buyOrderHash,
+            execPrice
+        );
+    }
+
+    /**
+     * @dev This function is called by an offline checker to verify whether matches can be executed
+     * irrespective of the trusted execution constraint
+     */
+    function verifyCanExecMatchOrder(
+        OrderTypes.MakerOrder calldata sell,
+        OrderTypes.MakerOrder calldata buy,
+        OrderTypes.OrderItem[] calldata constructedNfts
+    ) external view returns (bool, bytes32, bytes32, uint256) {
+        // check if orders are valid
         (bool _isPriceValid, uint256 execPrice) = isPriceValid(sell, buy);
+
+        bytes32 sellOrderHash = _hash(sell);
+        bytes32 buyOrderHash = _hash(buy);
+
+        require(
+            verifyMatchOrders(sellOrderHash, buyOrderHash, sell, buy),
+            "order not verified"
+        );
 
         return (
             isTimeValid(sell, buy) &&
@@ -421,18 +675,13 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         bytes32 orderHash
     ) public view returns (bool) {
         // Verify the validity of the signature
-        (bytes32 r, bytes32 s, uint8 v) = abi.decode(
-            order.sig,
-            (bytes32, bytes32, uint8)
-        );
         bool sigValid = SignatureChecker.verify(
             orderHash,
             order.signer,
-            r,
-            s,
-            v,
+            order.sig,
             DOMAIN_SEPARATOR
         );
+
         return (sigValid &&
             order.execParams[0] == address(this) &&
             _currencies.contains(order.execParams[1]));
@@ -688,20 +937,6 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
         }
     }
 
-    // ======================================================= OWNER FUNCTIONS ============================================================
-
-    /// @dev adds a new transaction currency to the exchange
-    function addCurrency(address _currency) external onlyOwner {
-        _currencies.add(_currency);
-        emit CurrencyAdded(_currency);
-    }
-
-    /// @dev removes a transaction currency from the exchange
-    function removeCurrency(address _currency) external onlyOwner {
-        _currencies.remove(_currency);
-        emit CurrencyRemoved(_currency);
-    }
-
     // ======================================================= VIEW FUNCTIONS ============================================================
 
     /// @notice returns the number of currencies supported by the exchange
@@ -717,5 +952,27 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
     /// @notice returns whether a given currency is valid
     function isValidCurrency(address currency) external view returns (bool) {
         return _currencies.contains(currency);
+    }
+
+    // ======================================================= OWNER FUNCTIONS ============================================================
+
+    /// @dev adds a new transaction currency to the exchange
+    function addCurrency(address _currency) external onlyOwner {
+        _currencies.add(_currency);
+        emit CurrencyAdded(_currency);
+    }
+
+    /// @dev removes a transaction currency from the exchange
+    function removeCurrency(address _currency) external onlyOwner {
+        _currencies.remove(_currency);
+        emit CurrencyRemoved(_currency);
+    }
+
+    /// @dev enables/diables trusted execution
+    function setTrustedExecStatus(bool newVal) external onlyOwner {
+        bool oldVal = trustedExecEnabled;
+        require(oldVal != newVal, "no value change");
+        trustedExecEnabled = newVal;
+        emit TrustedExecutionChanged(oldVal, newVal);
     }
 }

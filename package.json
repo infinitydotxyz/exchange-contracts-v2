@@ -15,22 +15,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/infinity-xyz/exchange-contracts-v2.git"
+    "url": "git+https://github.com/infinitydotxyz/exchange-contracts-v2.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/infinity-xyz/exchange-contracts-v2/issues"
+    "url": "https://github.com/infinitydotxyz/exchange-contracts-v2/issues"
   },
-  "homepage": "https://github.com/infinity-xyz/exchange-contracts-v2#readme",
+  "homepage": "https://github.com/infinitydotxyz/exchange-contracts-v2#readme",
   "dependencies": {
     "@openzeppelin/contracts": "4.5.0",
+    "@reservoir0x/sdk": "^0.0.270",
     "@uniswap/lib": "^4.0.1-alpha"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
     "@nomiclabs/hardhat-ethers": "^2.2.1",
     "@nomiclabs/hardhat-etherscan": "^3.1.2",
-    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@rari-capital/solmate": "^6.2.0",
+    "@typechain/ethers-v5": "^10.0.0",
+    "@typechain/hardhat": "^6.0.0",
     "@types/chai": "^4.3.3",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",
@@ -44,6 +48,8 @@
     "prettier-plugin-solidity": "^1.0.0-rc.1",
     "rimraf": "^3.0.2",
     "solhint": "^3.3.7",
-    "ts-node": "^10.7.0"
+    "ts-node": "^10.7.0",
+    "typechain": "^8.0.0",
+    "typescript": "^4.5.4"
   }
 }
