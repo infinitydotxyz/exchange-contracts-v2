@@ -105,6 +105,31 @@ task("deployFlowExchange", "Deploy")
     return flowExchange;
   });
 
+task("deployFlowMatchExecutor", "Deploy")
+  .addFlag("verify", "verify contracts on etherscan")
+  .addParam("exchange", "exchange address")
+  .setAction(async (args, { ethers, run, network }) => {
+    const signer1 = (await ethers.getSigners())[0];
+    const matchExecutor = await deployContract(
+      "FlowMatchExecutor",
+      await ethers.getContractFactory("FlowMatchExecutor"),
+      signer1,
+      [args.exchange]
+    );
+
+    // verify source
+    if (args.verify) {
+      // console.log('Verifying source on etherscan');
+      await matchExecutor.deployTransaction.wait(5);
+      await run("verify:verify", {
+        address: matchExecutor.address,
+        contract: "contracts/core/FlowMatchExecutor.sol:FlowMatchExecutor",
+        constructorArguments: [args.exchange]
+      });
+    }
+    return matchExecutor;
+  });
+
 task("deployFlowOrderBookComplication", "Deploy")
   .addFlag("verify", "verify contracts on etherscan")
   .addParam("wethaddress", "weth address")
