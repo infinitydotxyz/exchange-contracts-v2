@@ -11,11 +11,11 @@ import { OrderTypes, SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IComplication } from "../interfaces/IComplication.sol";
 
 /**
- * @title InfinityOrderBookComplication
+ * @title FlowOrderBookComplication
  * @author nneverlander. Twitter @nneverlander
  * @notice Complication to execute orderbook orders
  */
-contract InfinityOrderBookComplication is IComplication, Ownable {
+contract FlowOrderBookComplication is IComplication, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
 
@@ -58,7 +58,7 @@ contract InfinityOrderBookComplication is IComplication, Ownable {
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256("InfinityComplication"),
+                keccak256("FlowComplication"),
                 keccak256(bytes("1")), // for versionId = 1
                 block.chainid,
                 address(this)

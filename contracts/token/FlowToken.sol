@@ -9,13 +9,13 @@ import { ERC20Snapshot } from "@openzeppelin/contracts/token/ERC20/extensions/ER
 import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
- * @title InfinityTokens
+ * @title FlowTokens
  * @author nneverlander. Twitter @nneverlander
- * @notice The Infinity Token ($NFT).
+ * @notice The Flow Token ($FLOW).
  */
-contract InfinityToken is
-    ERC20("Infinity", "INFT"),
-    ERC20Permit("Infinity"),
+contract FlowToken is
+    ERC20("Flow", "FLOW"),
+    ERC20Permit("Flow"),
     ERC20Burnable,
     ERC20Snapshot,
     ERC20Votes

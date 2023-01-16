@@ -12,7 +12,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { MatchExecutorTypes } from "../libs/MatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { SignatureChecker } from "../libs/SignatureChecker.sol";
-import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
+import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
 
 /**
 @title MatchExecutor
@@ -26,7 +26,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    IInfinityExchange public immutable exchange;
+    IFlowExchange public immutable exchange;
 
     /*//////////////////////////////////////////////////////////////
                               EXCHANGE STATES
@@ -52,7 +52,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(IInfinityExchange _exchange) {
+    constructor(IFlowExchange _exchange) {
         exchange = _exchange;
     }
 

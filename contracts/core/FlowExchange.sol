@@ -10,44 +10,19 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // internal imports
-import { IInfinityExchange } from "../interfaces/IInfinityExchange.sol";
+import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { IComplication } from "../interfaces/IComplication.sol";
 
 /**
-@title InfinityExchange
+@title FlowExchange
 @author nneverlander. Twitter @nneverlander
 @notice The main NFT exchange contract that holds state and does asset transfers
 @dev This contract can be extended via 'complications' - strategies that let the exchange execute various types of orders
       like dutch auctions, reverse dutch auctions, floor price orders, private sales, etc.
-
-NFTNFTNFT...........................................NFTNFTNFT
-NFTNFT                                                 NFTNFT
-NFT                                                       NFT
-.                                                           .
-.                                                           .
-.                                                           .
-.                                                           .
-.               NFTNFTNFT            NFTNFTNFT              .
-.            NFTNFTNFTNFTNFT      NFTNFTNFTNFTNFT           .
-.           NFTNFTNFTNFTNFTNFT   NFTNFTNFTNFTNFTNFT         .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.         NFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFTNFT        .
-.          NFTNFTNFTNFTNFTNFTN   NFTNFTNFTNFTNFTNFT         .
-.            NFTNFTNFTNFTNFT      NFTNFTNFTNFTNFT           .
-.               NFTNFTNFT            NFTNFTNFT              .
-.                                                           .
-.                                                           .
-.                                                           .
-.                                                           .
-NFT                                                       NFT
-NFTNFT                                                 NFTNFT
-NFTNFTNFT...........................................NFTNFTNFT 
-
 */
-contract InfinityExchange is
-    IInfinityExchange,
+contract FlowExchange is
+    IFlowExchange,
     ReentrancyGuard,
     Ownable,
     Pausable
