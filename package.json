@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/infinity-xyz/exchange-contracts-v2.git"
+    "url": "git+https://github.com/infinitydotxyz/exchange-contracts-v2.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/infinity-xyz/exchange-contracts-v2/issues"
+    "url": "https://github.com/infinitydotxyz/exchange-contracts-v2/issues"
   },
-  "homepage": "https://github.com/infinity-xyz/exchange-contracts-v2#readme",
+  "homepage": "https://github.com/infinitydotxyz/exchange-contracts-v2#readme",
   "dependencies": {
     "@openzeppelin/contracts": "4.5.0",
     "@reservoir0x/sdk": "^0.0.270",
