@@ -1,6 +1,6 @@
 ![Infinity](./static/infinitySmallerLogo.png)
 
-Beta coming soon - https://infinity.xyz
+Beta coming soon - https://flow.so
 
 # Infinity Exchange Contracts V2
 
@@ -39,7 +39,7 @@ This repo also includes our Staking and Token contracts.
 
 Staking contract allows people to stake Infinity tokens to earn voting power. Votes are needed to curate collections on the Infinity marketplace. Curation helps surface upcoming/prominent collections. All exchange fees generated from the trading activity of curated collections go to curators in proportion to how many votes they used to curate a collection. As an example: if Doodles was curated with a total of 100 votes (for a given time period) and a curator used 10 of his votes to curate it, they will get 10% of the trading fee for that time period.
 
-Token contract defines the Infinity ($NFT) token. It comes with a timelock config that allows gradual supply increase overtime. There is a max supply of 1B tokens. Initial supply will be 250M. There are 3 inflation epochs, each with a time gap of 6 months. Each inflation epoch adds 250M tokens to the supply. After 1B max supply is reached there won't be any more supply unless the max number of epochs is increased. Any change to timelock config requires a thawing period of 30 days so that the community has enough time to be updated on any changes.
+Token contract defines the Flow ($FLOW) token. It comes with a timelock config that allows gradual supply increase overtime. There is a max supply of 1B tokens. Initial supply will be 250M. There are 3 inflation epochs, each with a time gap of 6 months. Each inflation epoch adds 250M tokens to the supply. After 1B max supply is reached there won't be any more supply unless the max number of epochs is increased. Any change to timelock config requires a thawing period of 30 days so that the community has enough time to be updated on any changes.
 
 - [FlowStaker.sol](./contracts/staking/FlowStaker.sol)
 - [FlowToken.sol](./contracts/token/FlowToken.sol)
@@ -71,14 +71,14 @@ The contracts have been extensively tested. All tests can be found in the `test`
 
 # Links
 
-[App](https://infinity.xyz)
+[App](https://flow.so)
 
-[Twitter](https://twitter.com/infinitydotxyz)
+[Twitter](https://twitter.com/flowdotso)
 
-[Discord](https://discord.gg/invite/infinitydotxyz)
+[Discord](https://discord.gg/invite/flowdotso)
 
 [Github](https://github.com/infinitydotxyz)
 
-[Medium](https://medium.com/@infinitydotxyz)
+[Medium](https://flowdotso.medium.com)
 
-[Instagram](https://instagram.com/infinitydotxyz)
+[Instagram](https://instagram.com/theflowso)
