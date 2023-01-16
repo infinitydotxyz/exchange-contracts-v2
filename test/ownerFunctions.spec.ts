@@ -214,6 +214,17 @@ describe("Owner_Functions", () => {
     );
   });
 
+  it("owner should be able to update initiator on the match executor", async () => {
+    await matchExecutor.contract.connect(owner).updateInitiator(bob.address);
+    expect(await matchExecutor.contract.initiator()).to.equal(bob.address);
+  });
+
+  it("non-owner should not be able to update initiator on the match executor", async () => {
+    await expect(matchExecutor.contract.connect(alice).updateInitiator(alice.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+  });
+
   it("owner should be able to set fees on the flow exchange", async () => {
     await flowExchange.contract.connect(owner).updateProtocolFee(500);
     expect(await flowExchange.contract.protocolFeeBps()).to.equal(500);
