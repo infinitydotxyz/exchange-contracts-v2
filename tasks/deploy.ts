@@ -104,13 +104,14 @@ task("deployFlowExchange", "Deploy")
 task("deployFlowMatchExecutor", "Deploy")
   .addFlag("verify", "verify contracts on etherscan")
   .addParam("exchange", "exchange address")
+  .addParam("initiator", "initiator address")
   .setAction(async (args, { ethers, run, network }) => {
     const signer1 = (await ethers.getSigners())[0];
     const matchExecutor = await deployContract(
       "FlowMatchExecutor",
       await ethers.getContractFactory("FlowMatchExecutor"),
       signer1,
-      [args.exchange]
+      [args.exchange, args.initiator]
     );
 
     // verify source
@@ -120,7 +121,7 @@ task("deployFlowMatchExecutor", "Deploy")
       await run("verify:verify", {
         address: matchExecutor.address,
         contract: "contracts/core/FlowMatchExecutor.sol:FlowMatchExecutor",
-        constructorArguments: [args.exchange]
+        constructorArguments: [args.exchange, args.initiator]
       });
     }
     return matchExecutor;

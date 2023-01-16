@@ -40,6 +40,7 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
       //////////////////////////////////////////////////////////////*/
     event EnabledExchangeAdded(address indexed exchange);
     event EnabledExchangeRemoved(address indexed exchange);
+    event InitiatorChanged(address indexed oldVal, address indexed newVal);
 
     ///@notice admin events
     event ETHWithdrawn(address indexed destination, uint256 amount);
@@ -49,11 +50,14 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         uint256 amount
     );
 
+    address public initiator;
+
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(IFlowExchange _exchange) {
+    constructor(IFlowExchange _exchange, address _initiator) {
         exchange = _exchange;
+        initiator = _initiator;
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -97,7 +101,8 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      */
     function executeBrokerMatches(
         FlowMatchExecutorTypes.Batch[] calldata batches
-    ) external onlyOwner whenNotPaused {
+    ) external whenNotPaused {
+        require(msg.sender == initiator, "only initiator can call");
         uint256 numBatches = batches.length;
         for (uint256 i; i < numBatches; ) {
             _broker(batches[i].externalFulfillments);
@@ -114,7 +119,8 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      */
     function executeNativeMatches(
         FlowMatchExecutorTypes.MatchOrders[] calldata matches
-    ) external onlyOwner whenNotPaused {
+    ) external whenNotPaused {
+        require(msg.sender == initiator, "only initiator can call");
         _matchOrders(matches);
     }
 
@@ -164,7 +170,8 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param externalFulfillments The specification of the external calls to make and nfts to transfer
      */
     function _broker(
-        FlowMatchExecutorTypes.ExternalFulfillments calldata externalFulfillments
+        FlowMatchExecutorTypes.ExternalFulfillments
+            calldata externalFulfillments
     ) internal {
         uint256 numCalls = externalFulfillments.calls.length;
         if (numCalls > 0) {
@@ -249,7 +256,8 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                         matches[i].constructs
                     );
                 } else if (
-                    matchType == FlowMatchExecutorTypes.MatchOrdersType.OneToMany
+                    matchType ==
+                    FlowMatchExecutorTypes.MatchOrdersType.OneToMany
                 ) {
                     if (matches[i].buys.length == 1) {
                         exchange.matchOneToManyOrders(
@@ -280,7 +288,9 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         return _enabledExchanges.length();
     }
 
-    function getEnabledExchangeAt(uint256 index) external view returns (address) {
+    function getEnabledExchangeAt(
+        uint256 index
+    ) external view returns (address) {
         return _enabledExchanges.at(index);
     }
 
@@ -323,6 +333,12 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     function removeEnabledExchange(address _exchange) external onlyOwner {
         _enabledExchanges.remove(_exchange);
         emit EnabledExchangeRemoved(_exchange);
+    }
+
+    function updateInitiator(address _initiator) external onlyOwner {
+        address oldVal = initiator;
+        initiator = _initiator;
+        emit InitiatorChanged(oldVal, _initiator);
     }
 
     /**
