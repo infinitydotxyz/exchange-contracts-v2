@@ -98,6 +98,9 @@ contract FlowExchange is
         matchExecutor = _matchExecutor;
     }
 
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {}
+
     // =================================================== USER FUNCTIONS =======================================================
 
     /**

@@ -274,6 +274,20 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         }
     }
 
+    // ======================================================= VIEW FUNCTIONS ============================================================
+
+    function numEnabledExchanges() external view returns (uint256) {
+        return _enabledExchanges.length();
+    }
+
+    function getEnabledExchangeAt(uint256 index) external view returns (address) {
+        return _enabledExchanges.at(index);
+    }
+
+    function isExchangeEnabled(address _exchange) external view returns (bool) {
+        return _enabledExchanges.contains(_exchange);
+    }
+
     //////////////////////////////////////////////////// ADMIN FUNCTIONS ///////////////////////////////////////////////////////
 
     function withdrawETH(address destination) external onlyOwner {

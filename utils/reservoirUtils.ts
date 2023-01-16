@@ -1,7 +1,6 @@
 import { Provider } from "@ethersproject/abstract-provider";
 import { BigNumberish, BigNumber } from "@ethersproject/bignumber";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import * as Sdk from "@reservoir0x/sdk/dist";
 import { ethers, network } from "hardhat";
 
 // --- Misc ---
