@@ -13,7 +13,7 @@ export async function setupMatchExecutor<T extends SignerWithAddress | Contract>
   owner: SignerWithAddress,
   flowExchange: Contract
 ): Promise<MatchExecutorConfig<T>> {
-  const MatchExecutor = await getContractFactory("MatchExecutor");
+  const MatchExecutor = await getContractFactory("FlowMatchExecutor");
   let matchExecutor = await MatchExecutor.connect(owner).deploy(flowExchange.address);
 
   return {

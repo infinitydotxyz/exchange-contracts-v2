@@ -8,14 +8,14 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 // internal imports
 import { OrderTypes, SignatureChecker } from "../libs/SignatureChecker.sol";
-import { IComplication } from "../interfaces/IComplication.sol";
+import { IFlowComplication } from "../interfaces/IFlowComplication.sol";
 
 /**
  * @title FlowOrderBookComplication
  * @author nneverlander. Twitter @nneverlander
  * @notice Complication to execute orderbook orders
  */
-contract FlowOrderBookComplication is IComplication, Ownable {
+contract FlowOrderBookComplication is IFlowComplication, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     uint256 public constant PRECISION = 1e4; // precision for division; similar to bps
 

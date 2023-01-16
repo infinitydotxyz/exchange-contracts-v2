@@ -9,17 +9,17 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { MatchExecutorTypes } from "../libs/MatchExecutorTypes.sol";
+import { FlowMatchExecutorTypes } from "../libs/FlowMatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
 
 /**
-@title MatchExecutor
+@title FlowMatchExecutor
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
+contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /*//////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param batches The batches of calls to make
      */
     function executeBrokerMatches(
-        MatchExecutorTypes.Batch[] calldata batches
+        FlowMatchExecutorTypes.Batch[] calldata batches
     ) external onlyOwner whenNotPaused {
         uint256 numBatches = batches.length;
         for (uint256 i; i < numBatches; ) {
@@ -113,7 +113,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param matches The matches to make
      */
     function executeNativeMatches(
-        MatchExecutorTypes.MatchOrders[] calldata matches
+        FlowMatchExecutorTypes.MatchOrders[] calldata matches
     ) external onlyOwner whenNotPaused {
         _matchOrders(matches);
     }
@@ -164,7 +164,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param externalFulfillments The specification of the external calls to make and nfts to transfer
      */
     function _broker(
-        MatchExecutorTypes.ExternalFulfillments calldata externalFulfillments
+        FlowMatchExecutorTypes.ExternalFulfillments calldata externalFulfillments
     ) internal {
         uint256 numCalls = externalFulfillments.calls.length;
         if (numCalls > 0) {
@@ -199,7 +199,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param params The call to execute
      */
     function _call(
-        MatchExecutorTypes.Call memory params
+        FlowMatchExecutorTypes.Call memory params
     ) internal returns (bytes memory) {
         if (params.isPayable) {
             require(
@@ -224,16 +224,16 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
      * @param matches The batch of matches to execute on the exchange
      */
     function _matchOrders(
-        MatchExecutorTypes.MatchOrders[] calldata matches
+        FlowMatchExecutorTypes.MatchOrders[] calldata matches
     ) internal {
         uint256 numMatches = matches.length;
         if (numMatches > 0) {
             for (uint256 i; i < numMatches; ) {
-                MatchExecutorTypes.MatchOrdersType matchType = matches[i]
+                FlowMatchExecutorTypes.MatchOrdersType matchType = matches[i]
                     .matchType;
                 if (
                     matchType ==
-                    MatchExecutorTypes.MatchOrdersType.OneToOneSpecific
+                    FlowMatchExecutorTypes.MatchOrdersType.OneToOneSpecific
                 ) {
                     exchange.matchOneToOneOrders(
                         matches[i].buys,
@@ -241,7 +241,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                     );
                 } else if (
                     matchType ==
-                    MatchExecutorTypes.MatchOrdersType.OneToOneUnspecific
+                    FlowMatchExecutorTypes.MatchOrdersType.OneToOneUnspecific
                 ) {
                     exchange.matchOrders(
                         matches[i].sells,
@@ -249,7 +249,7 @@ contract MatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
                         matches[i].constructs
                     );
                 } else if (
-                    matchType == MatchExecutorTypes.MatchOrdersType.OneToMany
+                    matchType == FlowMatchExecutorTypes.MatchOrdersType.OneToMany
                 ) {
                     if (matches[i].buys.length == 1) {
                         exchange.matchOneToManyOrders(

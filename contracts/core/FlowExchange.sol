@@ -12,7 +12,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
 // internal imports
 import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
-import { IComplication } from "../interfaces/IComplication.sol";
+import { IFlowComplication } from "../interfaces/IFlowComplication.sol";
 
 /**
 @title FlowExchange
@@ -154,7 +154,7 @@ contract FlowExchange is
         uint256 startGas = gasleft();
         require(msg.sender == matchExecutor, "only match executor");
 
-        (bool canExec, bytes32 makerOrderHash) = IComplication(
+        (bool canExec, bytes32 makerOrderHash) = IFlowComplication(
             makerOrder.execParams[0]
         ).canExecMatchOneToMany(makerOrder, manyMakerOrders);
         require(canExec, "cannot execute");
@@ -326,7 +326,7 @@ contract FlowExchange is
                 userMinOrderNonce[makerOrders[i].signer];
             require(!orderExpired, "order expired");
 
-            (bool canExec, bytes32 makerOrderHash) = IComplication(
+            (bool canExec, bytes32 makerOrderHash) = IFlowComplication(
                 makerOrders[i].execParams[0]
             ).canExecTakeOneOrder(makerOrders[i]);
             require(canExec, "cannot execute");
@@ -510,7 +510,7 @@ contract FlowExchange is
             bytes32 sellOrderHash,
             bytes32 buyOrderHash,
             uint256 execPrice
-        ) = IComplication(makerOrder1.execParams[0]).canExecMatchOneToOne(
+        ) = IFlowComplication(makerOrder1.execParams[0]).canExecMatchOneToOne(
                 sell,
                 buy
             );
@@ -560,7 +560,7 @@ contract FlowExchange is
         uint32 _wethTransferGasUnits,
         address weth
     ) internal {
-        (bool verified, bytes32 buyOrderHash) = IComplication(
+        (bool verified, bytes32 buyOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(false, sell, buy);
         require(verified, "order not verified");
@@ -596,7 +596,7 @@ contract FlowExchange is
         OrderTypes.MakerOrder calldata buy,
         uint32 _protocolFeeBps
     ) internal returns (uint256) {
-        (bool verified, bytes32 sellOrderHash) = IComplication(
+        (bool verified, bytes32 sellOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(true, sell, buy);
         require(verified, "order not verified");
@@ -643,7 +643,7 @@ contract FlowExchange is
             bytes32 sellOrderHash,
             bytes32 buyOrderHash,
             uint256 execPrice
-        ) = IComplication(sell.execParams[0]).canExecMatchOrder(
+        ) = IFlowComplication(sell.execParams[0]).canExecMatchOrder(
                 sell,
                 buy,
                 constructedNfts
@@ -1060,7 +1060,7 @@ contract FlowExchange is
             makerOrder.constraints[5] < userMinOrderNonce[makerOrder.signer];
         require(!orderExpired, "order expired");
 
-        (bool executionValid, bytes32 makerOrderHash) = IComplication(
+        (bool executionValid, bytes32 makerOrderHash) = IFlowComplication(
             makerOrder.execParams[0]
         ).canExecTakeOrder(makerOrder, takerItems);
         require(executionValid, "cannot execute");
