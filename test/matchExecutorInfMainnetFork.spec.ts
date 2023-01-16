@@ -38,12 +38,12 @@
 //   setupNFTs,
 //   setupTokens
 // } from "../utils/reservoirUtils";
-// import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
+// import { FlowExchangeConfig, setupFlowExchange } from "../utils/setupFlowExchange";
 // import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
 
 // let matchExecutor: MatchExecutorConfig<Contract>;
-// // let infinityExchange: InfinityExchangeConfig;
-// let infinityExchange: Exchange;
+// // let flowExchange: FlowExchangeConfig;
+// let flowExchange: Exchange;
 // let orderClientBySigner: Map<
 //   SignerWithAddress,
 //   ReturnType<typeof getInfinityOrderClient>
@@ -96,7 +96,7 @@
 //         chainId,
 //         signer as any as JsonRpcSigner,
 //         order,
-//         infinityExchange.contract,
+//         flowExchange.contract,
 //         obComplContract,
 //         true
 //       );
@@ -194,19 +194,19 @@
 //     ({ erc20 } = await setupTokens(deployer));
 //     ({ erc721 } = await setupNFTs(deployer));
 
-//     // infinityExchange = await setupInfinityExchange(
+//     // flowExchange = await setupFlowExchange(
 //     //   ethers.getContractFactory,
 //     //   owner,
 //     //   Common.Addresses.Weth[chainId],
 //     //   deployer
 //     // );
 
-//     infinityExchange = new Infinity.Exchange(chainId);
+//     flowExchange = new Infinity.Exchange(chainId);
 
 //     matchExecutor = await setupMatchExecutor(
 //       ethers.getContractFactory,
 //       owner,
-//       infinityExchange.contract
+//       flowExchange.contract
 //     );
 
 //     console.log("Match Executor Address: ", matchExecutor.contract.address);
@@ -220,7 +220,7 @@
 //       to: infinityMainnetOwner,
 //       value: ethers.utils.parseEther("1")
 //     });
-//     await infinityExchange.contract
+//     await flowExchange.contract
 //       .connect(impersonatedInfinityMainnetOwner)
 //       .updateMatchExecutor(matchExecutor.contract.address);
 
@@ -261,7 +261,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -269,15 +269,15 @@
 //     ];
 //     const infinityListing = await orderClientBySigner
 //       .get(seller)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedInfinityListing = await infinityListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     /**
@@ -314,7 +314,7 @@
 //     // Approve the exchange
 //     await nft.approve(seller, Infinity.Addresses.Exchange[chainId]);
 
-//     const infinityExchange = new Infinity.Exchange(chainId);
+//     const flowExchange = new Infinity.Exchange(chainId);
 //     const builder = new Infinity.Builders.SingleToken(chainId);
 //     const infinitySellOrder = builder.build({
 //       isSellOrder: true,
@@ -339,7 +339,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -347,19 +347,19 @@
 //     ];
 //     const intermediaryListing = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedIntermediaryListing = await intermediaryListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, bn(price).mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     console.log("Encoding external fulfillments");
-//     const txData = infinityExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
+//     const txData = flowExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
 //       infinitySellOrder
 //     ]);
 //     const fulfillments: ExternalFulfillments = {
@@ -371,7 +371,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems
+//       nftsToTransfer: flowOrderItems
 //     };
 
 //     /**
@@ -442,7 +442,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -450,15 +450,15 @@
 //     ];
 //     const intermediaryListing = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedIntermediaryListing = await intermediaryListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -477,7 +477,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems
+//       nftsToTransfer: flowOrderItems
 //     };
 
 //     /**
@@ -552,7 +552,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -560,15 +560,15 @@
 //     ];
 //     const intermediaryListing = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedIntermediaryListing = await intermediaryListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -587,7 +587,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems
+//       nftsToTransfer: flowOrderItems
 //     };
 
 //     /**
@@ -684,7 +684,7 @@
 //     expect(ownerBefore2).to.eq(seller.address);
 
 //     // create infinity listings
-//     const infinityOrderItems1: OrderItem[] = [
+//     const flowOrderItems1: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -692,10 +692,10 @@
 //     ];
 //     const intermediaryListing1 = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems1);
+//       .createListing(flowOrderItems1);
 //     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
-//     const infinityOrderItems2: OrderItem[] = [
+//     const flowOrderItems2: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -703,18 +703,18 @@
 //     ];
 //     const intermediaryListing2 = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems2);
+//       .createListing(flowOrderItems2);
 //     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
 //     // create infinity offers
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(4)); // multiply for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
+//     await weth.approve(buyer, flowExchange.contract.address);
 
-//     const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems1);
+//     const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems1);
 //     const signedInfinityOffer1 = await infinityOffer1.prepare();
-//     const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems2);
+//     const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems2);
 //     const signedInfinityOffer2 = await infinityOffer2.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -740,7 +740,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems1
+//       nftsToTransfer: flowOrderItems1
 //     };
 
 //     const fulfillments2: ExternalFulfillments = {
@@ -752,7 +752,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems2
+//       nftsToTransfer: flowOrderItems2
 //     };
 
 //     /**
@@ -862,7 +862,7 @@
 //     expect(ownerBefore2).to.eq(seller.address);
 
 //     // create infinity listings
-//     const infinityOrderItems1: OrderItem[] = [
+//     const flowOrderItems1: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -870,10 +870,10 @@
 //     ];
 //     const intermediaryListing1 = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems1);
+//       .createListing(flowOrderItems1);
 //     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
-//     const infinityOrderItems2: OrderItem[] = [
+//     const flowOrderItems2: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -881,18 +881,18 @@
 //     ];
 //     const intermediaryListing2 = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems2);
+//       .createListing(flowOrderItems2);
 //     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
 //     // create infinity offers
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(4)); // multiply for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
+//     await weth.approve(buyer, flowExchange.contract.address);
 
-//     const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems1);
+//     const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems1);
 //     const signedInfinityOffer1 = await infinityOffer1.prepare();
-//     const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems2);
+//     const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems2);
 //     const signedInfinityOffer2 = await infinityOffer2.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -924,7 +924,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems1.concat(infinityOrderItems2)
+//       nftsToTransfer: flowOrderItems1.concat(flowOrderItems2)
 //     };
 
 //     /**
@@ -995,7 +995,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -1003,15 +1003,15 @@
 //     ];
 //     const intermediaryListing = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedIntermediaryListing = await intermediaryListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -1030,7 +1030,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems
+//       nftsToTransfer: flowOrderItems
 //     };
 
 //     /**
@@ -1099,7 +1099,7 @@
 //     expect(ownerBefore).to.eq(seller.address);
 
 //     // create infinity listing
-//     const infinityOrderItems: OrderItem[] = [
+//     const flowOrderItems: OrderItem[] = [
 //       {
 //         collection: erc721.address,
 //         tokens: [{ tokenId, numTokens: "1" }]
@@ -1107,15 +1107,15 @@
 //     ];
 //     const intermediaryListing = await orderClientBySigner
 //       .get(owner)!
-//       .createListing(infinityOrderItems);
+//       .createListing(flowOrderItems);
 //     const signedIntermediaryListing = await intermediaryListing.prepare();
 
 //     // create infinity offer
 //     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
 //     // Mint weth to buyer and approve infinity exchange
 //     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-//     await weth.approve(buyer, infinityExchange.contract.address);
-//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+//     await weth.approve(buyer, flowExchange.contract.address);
+//     const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
 //     const signedInfinityOffer = await infinityOffer.prepare();
 
 //     console.log("Encoding external fulfillments");
@@ -1134,7 +1134,7 @@
 //           isPayable: true
 //         }
 //       ],
-//       nftsToTransfer: infinityOrderItems
+//       nftsToTransfer: flowOrderItems
 //     };
 
 //     /**

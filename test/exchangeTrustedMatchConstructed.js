@@ -15,7 +15,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
     signer2,
     signer3,
     token,
-    infinityExchange,
+    flowExchange,
     mock721Contract1,
     mock721Contract2,
     mock721Contract3,
@@ -82,28 +82,28 @@ describe("Exchange_Trusted_Match_Constructed", function () {
     );
 
     // Exchange
-    infinityExchange = await deployContract(
-      "InfinityExchange",
-      await ethers.getContractFactory("InfinityExchange"),
+    flowExchange = await deployContract(
+      "FlowExchange",
+      await ethers.getContractFactory("FlowExchange"),
       signer1,
       [token.address, signer3.address]
     );
 
     // OB complication
     obComplication = await deployContract(
-      "InfinityOrderBookComplication",
-      await ethers.getContractFactory("InfinityOrderBookComplication"),
+      "FlowOrderBookComplication",
+      await ethers.getContractFactory("FlowOrderBookComplication"),
       signer1,
       [token.address]
     );
 
     // add currencies to registry
-    // await infinityExchange.addCurrency(token.address);
-    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    // await flowExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(NULL_ADDRESS);
     await obComplication.addCurrency(token.address);
 
     // add complications to registry
-    // await infinityExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -183,7 +183,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -243,7 +243,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -300,7 +300,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -352,7 +352,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -404,7 +404,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -475,7 +475,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -535,7 +535,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -582,7 +582,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -629,7 +629,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer1,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -690,7 +690,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         execParams.currencyAddress,
         salePrice,
         signer2,
-        infinityExchange.address
+        flowExchange.address
       );
 
       const signedOrder = await prepareOBOrder(
@@ -698,7 +698,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -758,7 +758,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -815,7 +815,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -867,7 +867,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -919,7 +919,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -990,7 +990,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -1050,7 +1050,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -1097,7 +1097,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -1144,7 +1144,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         chainId,
         signer2,
         order,
-        infinityExchange,
+        flowExchange,
         obComplication
       );
       expect(signedOrder).to.not.be.undefined;
@@ -1188,14 +1188,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1219,7 +1219,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1263,14 +1263,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1294,7 +1294,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1354,14 +1354,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1385,7 +1385,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1445,14 +1445,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1476,7 +1476,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1548,14 +1548,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1579,7 +1579,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1623,14 +1623,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1654,7 +1654,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1748,7 +1748,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
@@ -1758,7 +1758,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       // const gasCost = gasEstimate.mul(gasPrice);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1782,7 +1782,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1840,14 +1840,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -1871,7 +1871,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -1986,14 +1986,14 @@ describe("Exchange_Trusted_Match_Constructed", function () {
         );
       }, 0);
       console.log("total numTokens in order", numTokens);
-      const gasEstimate = await infinityExchange
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
       console.log("gasEstimate", gasEstimate.toNumber());
       console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange
+      await flowExchange
         .connect(signer3)
         .matchOrders([sellOrder], [buyOrder], [constructedOrder.nfts]);
 
@@ -2017,7 +2017,7 @@ describe("Exchange_Trusted_Match_Constructed", function () {
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
 
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));

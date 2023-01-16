@@ -111,14 +111,14 @@ export async function prepareOBOrder(
   chainId: BigNumberish,
   signer: JsonRpcSigner,
   order: OBOrder,
-  infinityExchange: Contract,
+  flowExchange: Contract,
   obComplication: Contract,
   skipOnChainOwnershipCheck: boolean = false
 ): Promise<SignedOBOrder | undefined> {
   const validOrder = await isOrderValid(
     user,
     order,
-    infinityExchange,
+    flowExchange,
     signer,
     skipOnChainOwnershipCheck
   );
@@ -127,7 +127,7 @@ export async function prepareOBOrder(
   }
 
   // grant approvals
-  const approvals = await grantApprovals(user, order, signer, infinityExchange.address);
+  const approvals = await grantApprovals(user, order, signer, flowExchange.address);
   if (!approvals) {
     return undefined;
   }
@@ -142,7 +142,7 @@ export async function batchPrepareOBOrders(
   chainId: BigNumberish,
   signer: JsonRpcSigner,
   orders: OBOrder[],
-  infinityExchange: Contract,
+  flowExchange: Contract,
   obComplication: Contract,
   skipOnChainOwnershipCheck: boolean = false
 ): Promise<SignedOBOrder[] | undefined> {
@@ -150,7 +150,7 @@ export async function batchPrepareOBOrders(
     const validOrder = await isOrderValid(
       user,
       order,
-      infinityExchange,
+      flowExchange,
       signer,
       skipOnChainOwnershipCheck
     );
@@ -159,7 +159,7 @@ export async function batchPrepareOBOrders(
     }
 
     // grant approvals
-    const approvals = await grantApprovals(user, order, signer, infinityExchange.address);
+    const approvals = await grantApprovals(user, order, signer, flowExchange.address);
     if (!approvals) {
       return undefined;
     }
@@ -173,7 +173,7 @@ export async function batchPrepareOBOrders(
 export async function isOrderValid(
   user: User,
   order: OBOrder,
-  infinityExchange: Contract,
+  flowExchange: Contract,
   signer: JsonRpcSigner,
   skipOnChainOwnershipCheck: boolean = false
 ): Promise<boolean> {
@@ -187,7 +187,7 @@ export async function isOrderValid(
   }
 
   // check if nonce is valid
-  const isNonceValid = await infinityExchange.isNonceValid(user.address, order.nonce);
+  const isNonceValid = await flowExchange.isNonceValid(user.address, order.nonce);
 
   if (!isNonceValid) {
     console.error("Order nonce is not valid");
@@ -321,7 +321,7 @@ export async function signOBOrder(
   signer: JsonRpcSigner
 ): Promise<SignedOBOrder | undefined> {
   const domain = {
-    name: "InfinityComplication",
+    name: "FlowComplication",
     version: "1",
     chainId: chainId,
     verifyingContract: verifyingContractAddress
@@ -377,7 +377,7 @@ export async function bulkSignOBOrders(
   signer: JsonRpcSigner
 ): Promise<SignedOBOrder[] | undefined> {
   const domain = {
-    name: "InfinityComplication",
+    name: "FlowComplication",
     version: "1",
     chainId: chainId,
     verifyingContract: verifyingContractAddress
@@ -438,7 +438,7 @@ export async function signFormattedOrder(
   signer: JsonRpcSigner
 ): Promise<string> {
   const domain = {
-    name: "InfinityComplication",
+    name: "FlowComplication",
     version: "1",
     chainId: chainId,
     verifyingContract: contractAddress

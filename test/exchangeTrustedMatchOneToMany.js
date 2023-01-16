@@ -1,16 +1,21 @@
-const { expect } = require('chai');
-const { ethers, network } = require('hardhat');
-const { deployContract, nowSeconds, NULL_ADDRESS } = require('../tasks/utils');
-const { prepareOBOrder, getCurrentSignedOrderPrice, approveERC20, getCurrentOrderPrice } = require('../helpers/orders');
-const { erc721Abi } = require('../abi/erc721');
+const { expect } = require("chai");
+const { ethers, network } = require("hardhat");
+const { deployContract, nowSeconds, NULL_ADDRESS } = require("../tasks/utils");
+const {
+  prepareOBOrder,
+  getCurrentSignedOrderPrice,
+  approveERC20,
+  getCurrentOrderPrice
+} = require("../helpers/orders");
+const { erc721Abi } = require("../abi/erc721");
 
-describe('Exchange_Trusted_Match_One_To_Many', function () {
+describe("Exchange_Trusted_Match_One_To_Many", function () {
   let signers,
     signer1,
     signer2,
     signer3,
     token,
-    infinityExchange,
+    flowExchange,
     mock721Contract1,
     mock721Contract2,
     mock721Contract3,
@@ -40,7 +45,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
   before(async () => {
     // reset state
     await network.provider.request({
-      method: 'hardhat_reset',
+      method: "hardhat_reset",
       params: []
     });
 
@@ -51,45 +56,55 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
     signer3 = signers[2];
 
     // token
-    token = await deployContract('MockERC20', await ethers.getContractFactory('MockERC20'), signers[0]);
+    token = await deployContract(
+      "MockERC20",
+      await ethers.getContractFactory("MockERC20"),
+      signers[0]
+    );
 
     // NFT contracts
-    mock721Contract1 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 1',
-      'MCKNFT1'
-    ]);
-    mock721Contract2 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 2',
-      'MCKNFT2'
-    ]);
-    mock721Contract3 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 3',
-      'MCKNFT3'
-    ]);
+    mock721Contract1 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 1", "MCKNFT1"]
+    );
+    mock721Contract2 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 2", "MCKNFT2"]
+    );
+    mock721Contract3 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 3", "MCKNFT3"]
+    );
 
     // Exchange
-    infinityExchange = await deployContract(
-      'InfinityExchange',
-      await ethers.getContractFactory('InfinityExchange'),
+    flowExchange = await deployContract(
+      "FlowExchange",
+      await ethers.getContractFactory("FlowExchange"),
       signer1,
       [token.address, signer3.address]
     );
 
     // OB complication
     obComplication = await deployContract(
-      'InfinityOrderBookComplication',
-      await ethers.getContractFactory('InfinityOrderBookComplication'),
+      "FlowOrderBookComplication",
+      await ethers.getContractFactory("FlowOrderBookComplication"),
       signer1,
       [token.address]
     );
 
     // add currencies to registry
-    // await infinityExchange.addCurrency(token.address);
-    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    // await flowExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(NULL_ADDRESS);
     await obComplication.addCurrency(token.address);
 
     // add complications to registry
-    // await infinityExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -100,8 +115,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
     }
   });
 
-  describe('Setup', () => {
-    it('Should init properly', async function () {
+  describe("Setup", () => {
+    it("Should init properly", async function () {
       expect(await token.decimals()).to.equal(18);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
 
@@ -122,8 +137,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
   // ================================================== MAKE BUY ORDERS ==================================================
 
   // one specific collection, one specific token, max price
-  describe('OneCollectionOneTokenBuy', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionOneTokenBuy", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
       };
@@ -134,10 +149,16 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           tokens: [{ tokenId: 0, numTokens: 1 }]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -158,15 +179,22 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
   });
 
   // one specific collection, multiple specific tokens, max aggregate price
-  describe('OneCollectionMultipleTokensBuy', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionMultipleTokensBuy", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
       };
@@ -181,10 +209,16 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           ]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -205,21 +239,31 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
   });
 
   // multiple specific collections, any multiple tokens per collection, max aggregate price, min aggregate number of tokens
-  describe('MultipleCollectionsAnyTokensBuy', () => {
-    it('Signed order should be valid', async function () {
+  describe("MultipleCollectionsAnyTokensBuy", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
       };
       const chainId = network.config.chainId ?? 31337;
 
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
 
       // order1
@@ -240,7 +284,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce1 = ++orderNonce;
       const orderId1 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce1, chainId]
       );
       const order1 = {
@@ -260,7 +304,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder1 = await prepareOBOrder(user, chainId, signer1, order1, infinityExchange, obComplication);
+      const signedOrder1 = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order1,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder1).to.not.be.undefined;
       buyOrders.push(signedOrder1);
 
@@ -278,7 +329,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce2 = ++orderNonce;
       const orderId2 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce2, chainId]
       );
       const order2 = {
@@ -298,7 +349,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder2 = await prepareOBOrder(user, chainId, signer1, order2, infinityExchange, obComplication);
+      const signedOrder2 = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order2,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder2).to.not.be.undefined;
       buyOrders.push(signedOrder2);
 
@@ -320,7 +378,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce3 = ++orderNonce;
       const orderId3 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce3, chainId]
       );
       const order3 = {
@@ -340,15 +398,22 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder3 = await prepareOBOrder(user, chainId, signer1, order3, infinityExchange, obComplication);
+      const signedOrder3 = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order3,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder3).to.not.be.undefined;
       buyOrders.push(signedOrder3);
     });
   });
 
   // one specific collection, any multiple tokens, max aggregate price, min number of tokens
-  describe('OneCollectionAnyMultipleTokensBuy', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionAnyMultipleTokensBuy", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer1.address
       };
@@ -359,10 +424,16 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           tokens: []
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
@@ -379,7 +450,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer1, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer1,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       buyOrders.push(signedOrder);
     });
@@ -388,8 +466,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
   // ================================================== MAKE SELL ORDERS ==================================================
 
   // one specific collection, one specific token, min price
-  describe('OneCollectionOneTokenSell_ETH', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionOneTokenSell_ETH", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -400,10 +478,16 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           tokens: [{ tokenId: 0, numTokens: 1 }]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: NULL_ADDRESS };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: NULL_ADDRESS
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -427,17 +511,30 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
 
       // approve currency (required for automatic execution)
       const salePrice = getCurrentOrderPrice(order);
-      await approveERC20(user.address, execParams.currencyAddress, salePrice, signer2, infinityExchange.address);
+      await approveERC20(
+        user.address,
+        execParams.currencyAddress,
+        salePrice,
+        signer2,
+        flowExchange.address
+      );
 
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, multiple specific tokens, min aggregate price
-  describe('OneCollectionMultipleTokensSell_ETH', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionMultipleTokensSell_ETH", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -460,12 +557,15 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           tokens: [{ tokenId: 3, numTokens: 1 }]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: NULL_ADDRESS };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: NULL_ADDRESS
+      };
       const extraParams = {};
 
       const nonce1 = ++orderNonce;
       const orderId1 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce1, chainId]
       );
       let numItems1 = 0;
@@ -489,13 +589,20 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder1 = await prepareOBOrder(user, chainId, signer2, order1, infinityExchange, obComplication);
+      const signedOrder1 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order1,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder1).to.not.be.undefined;
       sellOrders.push(signedOrder1);
 
       const nonce2 = ++orderNonce;
       const orderId2 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce2, chainId]
       );
       let numItems2 = 0;
@@ -519,13 +626,20 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder2 = await prepareOBOrder(user, chainId, signer2, order2, infinityExchange, obComplication);
+      const signedOrder2 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order2,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder2).to.not.be.undefined;
       sellOrders.push(signedOrder2);
 
       const nonce3 = ++orderNonce;
       const orderId3 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce3, chainId]
       );
       let numItems3 = 0;
@@ -549,15 +663,22 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder3 = await prepareOBOrder(user, chainId, signer2, order3, infinityExchange, obComplication);
+      const signedOrder3 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order3,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder3).to.not.be.undefined;
       sellOrders.push(signedOrder3);
     });
   });
 
   // multiple specific collections, any multiple tokens per collection, min aggregate price, max aggregate number of tokens
-  describe('MultipleCollectionsAnyTokenSell_ETH', () => {
-    it('Signed order should be valid', async function () {
+  describe("MultipleCollectionsAnyTokenSell_ETH", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -576,10 +697,16 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           tokens: []
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: NULL_ADDRESS };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: NULL_ADDRESS
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
@@ -596,20 +723,30 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: false
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, any multiple tokens, min aggregate price, max number of tokens
-  describe('OneCollectionAnyMultipleTokensSell_ETH', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionAnyMultipleTokensSell_ETH", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
       const chainId = network.config.chainId ?? 31337;
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: NULL_ADDRESS };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: NULL_ADDRESS
+      };
       const extraParams = {};
 
       // order 1
@@ -626,7 +763,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce1 = ++orderNonce;
       const orderId1 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce1, chainId]
       );
       const order1 = {
@@ -646,7 +783,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: false
       };
-      const signedOrder1 = await prepareOBOrder(user, chainId, signer2, order1, infinityExchange, obComplication);
+      const signedOrder1 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order1,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder1).to.not.be.undefined;
       sellOrders.push(signedOrder1);
 
@@ -668,7 +812,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce2 = ++orderNonce;
       const orderId2 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce2, chainId]
       );
       const order2 = {
@@ -688,7 +832,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder2 = await prepareOBOrder(user, chainId, signer2, order2, infinityExchange, obComplication);
+      const signedOrder2 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order2,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder2).to.not.be.undefined;
       sellOrders.push(signedOrder2);
 
@@ -706,7 +857,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       ];
       const nonce3 = ++orderNonce;
       const orderId3 = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+        ["address", "uint256", "uint256"],
         [user.address, nonce3, chainId]
       );
       const order3 = {
@@ -726,7 +877,14 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         extraParams,
         isTrustedExec: true
       };
-      const signedOrder3 = await prepareOBOrder(user, chainId, signer2, order3, infinityExchange, obComplication);
+      const signedOrder3 = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order3,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder3).to.not.be.undefined;
       sellOrders.push(signedOrder3);
     });
@@ -734,8 +892,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
 
   // ============================================================ MATCHES ============================================================
 
-  describe('Match_OneCollectionOneToken', () => {
-    it('Should match valid order', async function () {
+  describe("Match_OneCollectionOneToken", () => {
+    it("Should match valid order", async function () {
       const buyOrder = buyOrders[0];
       const sellOrder = sellOrders[0];
       const nfts = sellOrder.nfts;
@@ -766,15 +924,15 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOneToManyOrders(buyOrder, [sellOrder]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder]);
+      await flowExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder]);
 
       // owners after sale
       for (const item of nfts) {
@@ -795,7 +953,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -806,8 +964,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
     });
   });
 
-  describe('Match_OneCollectionMultipleTokens', () => {
-    it('Should match valid order', async function () {
+  describe("Match_OneCollectionMultipleTokens", () => {
+    it("Should match valid order", async function () {
       const buyOrder = buyOrders[1];
 
       expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
@@ -880,15 +1038,17 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
         );
       }, 0);
       const numTokens = numTokens1 + numTokens2 + numTokens3;
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
         .connect(signer3)
         .estimateGas.matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // initiate exchange by 3rd party
-      await infinityExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3]);
+      await flowExchange
+        .connect(signer3)
+        .matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3]);
 
       // owners after sale
       for (const item of nfts1) {
@@ -926,7 +1086,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
       totalProtocolFees = totalProtocolFees.add(fee).add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       const buyerBalance1 = parseFloat(ethers.utils.formatEther(signer1TokenBalance));
       const buyerBalance2 = parseFloat(ethers.utils.formatEther(signer1Balance));
@@ -937,8 +1097,8 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
     });
   });
 
-  describe('Match_MultipleCollectionsAnyTokensSell_ETH', () => {
-    it('Should not match non specific orders', async function () {
+  describe("Match_MultipleCollectionsAnyTokensSell_ETH", () => {
+    it("Should not match non specific orders", async function () {
       const sellOrder = sellOrders[4];
 
       expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
@@ -1011,8 +1171,10 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
 
       // initiate exchange by 3rd party
       await expect(
-        infinityExchange.connect(signer3).matchOneToManyOrders(sellOrder, [buyOrder1, buyOrder2, buyOrder3])
-      ).to.be.revertedWith('cannot execute');
+        flowExchange
+          .connect(signer3)
+          .matchOneToManyOrders(sellOrder, [buyOrder1, buyOrder2, buyOrder3])
+      ).to.be.revertedWith("cannot execute");
 
       // owners after sale should remain same
       for (const item of buyOrder1.nfts) {
@@ -1044,15 +1206,15 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
       totalProtocolFees = totalProtocolFees.add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       // update to right amount
       signer1Balance = signer1TokenBalance;
     });
   });
 
-  describe('Match_OneCollectionAnyMultipleTokensBuy_ETH', () => {
-    it('Should not match non-specific order', async function () {
+  describe("Match_OneCollectionAnyMultipleTokensBuy_ETH", () => {
+    it("Should not match non-specific order", async function () {
       const buyOrder = buyOrders[5];
       // balance before sale
       expect(await token.balanceOf(signer2.address)).to.equal(signer2Balance);
@@ -1125,8 +1287,10 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
 
       // initiate exchange by 3rd party
       await expect(
-        infinityExchange.connect(signer3).matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3])
-      ).to.be.revertedWith('cannot execute');
+        flowExchange
+          .connect(signer3)
+          .matchOneToManyOrders(buyOrder, [sellOrder1, sellOrder2, sellOrder3])
+      ).to.be.revertedWith("cannot execute");
 
       // owners after sale should remain same
       for (const item of sellOrder1.nfts) {
@@ -1158,7 +1322,7 @@ describe('Exchange_Trusted_Match_One_To_Many', function () {
       const signer1TokenBalance = await token.balanceOf(signer1.address);
       const gasRefund = signer1Balance.sub(signer1TokenBalance);
       totalProtocolFees = totalProtocolFees.add(gasRefund);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
 
       // update to right amount
       signer1Balance = signer1TokenBalance;

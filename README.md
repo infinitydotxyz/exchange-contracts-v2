@@ -25,10 +25,10 @@ Together with our off chain sniping engine, the contracts support a host of feat
 
 # Modular architecture
 
-Contracts are designed to be extensible. The main contract is `InfinityExchange.sol` which is used for taking approvals for spending NFTs and transaction currencies like `WETH`. It also has transfer functions that move assets between addresses. The contract is extensible via `Complications`. Complications are used to extend the functionality of the main contract to support different order types. We currently have one complication - `InfinityOrderBookComplication` that supports the order types above. More `complications` are in the works.
+Contracts are designed to be extensible. The main contract is `FlowExchange.sol` which is used for taking approvals for spending NFTs and transaction currencies like `WETH`. It also has transfer functions that move assets between addresses. The contract is extensible via `Complications`. Complications are used to extend the functionality of the main contract to support different order types. We currently have one complication - `FlowOrderBookComplication` that supports the order types above. More `complications` are in the works.
 
-- [InfinityExchange.sol](./contracts/core/InfinityExchange.sol) - main contract that stores state and has user approvals for spending assets
-- [InfinityOrderBookComplication.sol](./contracts/core/InfinityOrderBookComplication.sol) - our first complication that helps execute the order types listed above
+- [FlowExchange.sol](./contracts/core/FlowExchange.sol) - main contract that stores state and has user approvals for spending assets
+- [FlowOrderBookComplication.sol](./contracts/core/FlowOrderBookComplication.sol) - our first complication that helps execute the order types listed above
 
 ![Exchange graph](./static/contractGraphExchange.svg?sanitize-true)
 ![OB Complication graph](./static/contractGraphOBComplication.svg?sanitize-true)
@@ -41,8 +41,8 @@ Staking contract allows people to stake Infinity tokens to earn voting power. Vo
 
 Token contract defines the Infinity ($NFT) token. It comes with a timelock config that allows gradual supply increase overtime. There is a max supply of 1B tokens. Initial supply will be 250M. There are 3 inflation epochs, each with a time gap of 6 months. Each inflation epoch adds 250M tokens to the supply. After 1B max supply is reached there won't be any more supply unless the max number of epochs is increased. Any change to timelock config requires a thawing period of 30 days so that the community has enough time to be updated on any changes.
 
-- [InfinityStaker.sol](./contracts/staking/InfinityStaker.sol)
-- [InfinityToken.sol](./contracts/token/InfinityToken.sol)
+- [FlowStaker.sol](./contracts/staking/FlowStaker.sol)
+- [FlowToken.sol](./contracts/token/FlowToken.sol)
 
 # Gas costs
 
@@ -50,7 +50,7 @@ Our contracts are the most efficient NFT exchange contracts in the world. Users 
 
 Match orders gas table (auto sniped by our matching engine):
 
-Min gas is for autosniping single NFTs and max gas is for multiple NFTs (10 in the highest case). 
+Min gas is for autosniping single NFTs and max gas is for multiple NFTs (10 in the highest case).
 
 ![Match_Orders](./static/matchOrdersGas.png)
 
@@ -67,7 +67,6 @@ The contracts have been extensively tested. All tests can be found in the `test`
 # Audits
 
 - [Immunefi bug bounty](https://immunefi.com/bounty/infinity/)
-  
 - [Code4Arena audit contest](https://code4rena.com/contests/2022-06-infinity-nft-marketplace-contest)
 
 # Links

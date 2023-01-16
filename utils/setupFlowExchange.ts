@@ -3,7 +3,7 @@ import { deployContract } from "../tasks/utils";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 import { Contract } from "ethers";
 
-export type InfinityExchangeConfig = {
+export type FlowExchangeConfig = {
   contract: Contract;
   obComplication: Contract;
   WETH: string;
@@ -11,31 +11,31 @@ export type InfinityExchangeConfig = {
   matchExecutor: SignerWithAddress;
 };
 
-export async function setupInfinityExchange(
+export async function setupFlowExchange(
   getContractFactory: HardhatEthersHelpers["getContractFactory"],
   owner: SignerWithAddress,
   wethAddress: string,
   matchExecutor: SignerWithAddress
 ) {
-  const infinityExchange = await deployContract(
-    "InfinityExchange",
-    await getContractFactory("InfinityExchange"),
+  const flowExchange = await deployContract(
+    "FlowExchange",
+    await getContractFactory("FlowExchange"),
     owner,
     [wethAddress, matchExecutor.address]
   );
 
   const obComplication = await deployContract(
-    "InfinityOrderBookComplication",
-    await getContractFactory("InfinityOrderBookComplication"),
+    "FlowOrderBookComplication",
+    await getContractFactory("FlowOrderBookComplication"),
     owner,
     [wethAddress]
   );
 
   return {
-    contract: infinityExchange,
+    contract: flowExchange,
     obComplication,
     owner,
     WETH: wethAddress,
-    matchExecutor: matchExecutor,
+    matchExecutor: matchExecutor
   };
 }

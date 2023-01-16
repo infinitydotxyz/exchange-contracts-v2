@@ -38,11 +38,11 @@ import {
   setupNFTs,
   setupTokens
 } from "../utils/reservoirUtils";
-import { InfinityExchangeConfig, setupInfinityExchange } from "../utils/setupInfinityExchange";
+import { FlowExchangeConfig, setupFlowExchange } from "../utils/setupFlowExchange";
 import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExecutor";
 
 let matchExecutor: MatchExecutorConfig<Contract>;
-let infinityExchange: InfinityExchangeConfig;
+let flowExchange: FlowExchangeConfig;
 let orderClientBySigner: Map<
   SignerWithAddress,
   ReturnType<typeof getInfinityOrderClient>
@@ -50,7 +50,7 @@ let orderClientBySigner: Map<
 
 const getInfinityOrderClient = (
   signer: SignerWithAddress,
-  infinityExchange: InfinityExchangeConfig,
+  flowExchange: FlowExchangeConfig,
   signingFor?: string
 ) => {
   const chainId = getChainId();
@@ -98,8 +98,8 @@ const getInfinityOrderClient = (
         chainId,
         signer as any as JsonRpcSigner,
         order,
-        infinityExchange.contract,
-        infinityExchange.obComplication,
+        flowExchange.contract,
+        flowExchange.obComplication,
         true
       );
     };
@@ -162,8 +162,8 @@ const getInfinityOrderClient = (
         chainId,
         signer as any as JsonRpcSigner,
         orders,
-        infinityExchange.contract,
-        infinityExchange.obComplication,
+        flowExchange.contract,
+        flowExchange.obComplication,
         true
       );
     };
@@ -174,7 +174,7 @@ const getInfinityOrderClient = (
   const createListing = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
-      complicationAddress: infinityExchange.obComplication.address,
+      complicationAddress: flowExchange.obComplication.address,
       currencyAddress: Common.Addresses.Eth[chainId]
     },
     numItems = 1,
@@ -200,7 +200,7 @@ const getInfinityOrderClient = (
   const batchCreateListings = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
-      complicationAddress: infinityExchange.obComplication.address,
+      complicationAddress: flowExchange.obComplication.address,
       currencyAddress: Common.Addresses.Eth[chainId]
     },
     numItems = 1,
@@ -226,8 +226,8 @@ const getInfinityOrderClient = (
   const createOffer = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
-      complicationAddress: infinityExchange.obComplication.address,
-      currencyAddress: infinityExchange.WETH
+      complicationAddress: flowExchange.obComplication.address,
+      currencyAddress: flowExchange.WETH
     },
     numItems = 1,
     startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
@@ -252,8 +252,8 @@ const getInfinityOrderClient = (
   const batchCreateOffers = async (
     nfts: OrderItem[],
     execParams: ExecParams = {
-      complicationAddress: infinityExchange.obComplication.address,
-      currencyAddress: infinityExchange.WETH
+      complicationAddress: flowExchange.obComplication.address,
+      currencyAddress: flowExchange.WETH
     },
     numItems = 1,
     startPrice: ethersBigNumberish = ethers.utils.parseEther("1"),
@@ -314,7 +314,7 @@ describe("Trusted_Match_Executor", () => {
     ({ erc20 } = await setupTokens(deployer));
     ({ erc721 } = await setupNFTs(deployer));
 
-    infinityExchange = await setupInfinityExchange(
+    flowExchange = await setupFlowExchange(
       ethers.getContractFactory,
       owner,
       Common.Addresses.Weth[chainId],
@@ -324,12 +324,10 @@ describe("Trusted_Match_Executor", () => {
     matchExecutor = await setupMatchExecutor(
       ethers.getContractFactory,
       owner,
-      infinityExchange.contract
+      flowExchange.contract
     );
 
-    await infinityExchange.contract
-      .connect(owner)
-      .updateMatchExecutor(matchExecutor.contract.address);
+    await flowExchange.contract.connect(owner).updateMatchExecutor(matchExecutor.contract.address);
 
     // add enabled exchanges
     await matchExecutor.contract.addEnabledExchange(Infinity.Addresses.Exchange[chainId]);
@@ -347,12 +345,12 @@ describe("Trusted_Match_Executor", () => {
     await matchExecutor.contract.addEnabledExchange(ZeroExV4.Addresses.Exchange[chainId]);
     await matchExecutor.contract.addEnabledExchange(Zora.Addresses.Exchange[chainId]);
 
-    orderClientBySigner.set(bob, getInfinityOrderClient(bob, infinityExchange));
+    orderClientBySigner.set(bob, getInfinityOrderClient(bob, flowExchange));
     orderClientBySigner.set(
       owner,
-      getInfinityOrderClient(owner, infinityExchange, matchExecutor.contract.address)
+      getInfinityOrderClient(owner, flowExchange, matchExecutor.contract.address)
     );
-    orderClientBySigner.set(alice, getInfinityOrderClient(alice, infinityExchange));
+    orderClientBySigner.set(alice, getInfinityOrderClient(alice, flowExchange));
   });
 
   it("snipes a ETH <=> ERC721 single token native listing", async () => {
@@ -371,23 +369,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const infinityListing = await orderClientBySigner
-      .get(seller)!
-      .createListing(infinityOrderItems);
+    const infinityListing = await orderClientBySigner.get(seller)!.createListing(flowOrderItems);
     const signedInfinityListing = await infinityListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     /**
@@ -440,7 +436,7 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore4).to.eq(seller.address);
 
     // create infinity listings
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [
@@ -453,17 +449,15 @@ describe("Trusted_Match_Executor", () => {
     ];
     const infinityListings = await orderClientBySigner
       .get(seller)!
-      .batchCreateListings(infinityOrderItems);
+      .batchCreateListings(flowOrderItems);
     const signedInfinityListings = await infinityListings.batchPrepare();
 
     // create infinity offers
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(100)); // multiply for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffers = await orderClientBySigner
-      .get(buyer)!
-      .batchCreateOffers(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffers = await orderClientBySigner.get(buyer)!.batchCreateOffers(flowOrderItems);
     const signedInfinityOffers = await infinityOffers.batchPrepare();
 
     /**
@@ -529,7 +523,7 @@ describe("Trusted_Match_Executor", () => {
 
     // infinity listing
     await nft.approve(seller, Infinity.Addresses.Exchange[chainId]);
-    const infinityExchange = new Infinity.Exchange(chainId);
+    const flowExchange = new Infinity.Exchange(chainId);
     const infnityBuilder = new Infinity.Builders.SingleToken(chainId);
     const infinitySellOrder = infnityBuilder.build({
       isSellOrder: true,
@@ -645,7 +639,7 @@ describe("Trusted_Match_Executor", () => {
     await lrSellOrder.checkFillability(ethers.provider);
 
     // create infinity listings
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [
@@ -660,24 +654,21 @@ describe("Trusted_Match_Executor", () => {
     ];
     const infinityListings = await orderClientBySigner
       .get(owner)!
-      .batchCreateListings(infinityOrderItems);
+      .batchCreateListings(flowOrderItems);
     const signedInfinityListings = await infinityListings.batchPrepare();
 
     // create infinity offers
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, bn(price).mul(100)); // multiply for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffers = await orderClientBySigner
-      .get(buyer)!
-      .batchCreateOffers(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffers = await orderClientBySigner.get(buyer)!.batchCreateOffers(flowOrderItems);
     const signedInfinityOffers = await infinityOffers.batchPrepare();
 
     console.log("Encoding external fulfillments");
-    const infinityTxData = infinityExchange.takeMultipleOneOrdersTx(
-      matchExecutor.contract.address,
-      [infinitySellOrder]
-    );
+    const infinityTxData = flowExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
+      infinitySellOrder
+    ]);
     const seaportTxData = seaportExchange.fillOrderTx(
       matchExecutor.contract.address,
       seaportSellOrder,
@@ -742,7 +733,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -823,7 +814,7 @@ describe("Trusted_Match_Executor", () => {
 
     // infinity listing
     await nft.approve(seller, Infinity.Addresses.Exchange[chainId]);
-    const infinityExchange = new Infinity.Exchange(chainId);
+    const flowExchange = new Infinity.Exchange(chainId);
     const infnityBuilder = new Infinity.Builders.SingleToken(chainId);
     const infinitySellOrder = infnityBuilder.build({
       isSellOrder: true,
@@ -918,7 +909,7 @@ describe("Trusted_Match_Executor", () => {
     const signedInfinityNativeBulkSellOrders = await infinityNativeBulkSellOrders.batchPrepare();
 
     // create infinity listings
-    const infinityOrderItems123: OrderItem[] = [
+    const flowOrderItems123: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [
@@ -930,10 +921,10 @@ describe("Trusted_Match_Executor", () => {
     ];
     const intermediaryListings123 = await orderClientBySigner
       .get(owner)!
-      .batchCreateListings(infinityOrderItems123);
+      .batchCreateListings(flowOrderItems123);
     const signedIntermediaryListings123 = await intermediaryListings123.batchPrepare();
 
-    const infinityOrderItems4: OrderItem[] = [
+    const flowOrderItems4: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId4, numTokens: "1" }]
@@ -947,14 +938,14 @@ describe("Trusted_Match_Executor", () => {
     ]);
     const signedIntermediaryListing4 = await intermediaryListing4.prepare();
 
-    const infinityOrderItems5: OrderItem[] = [
+    const flowOrderItems5: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId5, numTokens: "1" }]
       }
     ];
 
-    const infinityOrderItems6: OrderItem[] = [
+    const flowOrderItems6: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId6, numTokens: "1" }]
@@ -966,25 +957,24 @@ describe("Trusted_Match_Executor", () => {
     );
 
     // create infinity offers
-    const allInfinityOrderItems = infinityOrderItems123.concat(
-      infinityOrderItems4,
-      infinityOrderItems5,
-      infinityOrderItems6
+    const allInfinityOrderItems = flowOrderItems123.concat(
+      flowOrderItems4,
+      flowOrderItems5,
+      flowOrderItems6
     );
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, bn(price).mul(100)); // multiply for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
+    await weth.approve(buyer, flowExchange.contract.address);
     const batchedInfinityOffers = await orderClientBySigner
       .get(buyer)!
       .batchCreateOffers(allInfinityOrderItems);
     const allBatchSignedInfinityOffers = await batchedInfinityOffers.batchPrepare();
 
     console.log("Encoding external fulfillments");
-    const infinityTxData = infinityExchange.takeMultipleOneOrdersTx(
-      matchExecutor.contract.address,
-      [infinitySellOrder]
-    );
+    const infinityTxData = flowExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
+      infinitySellOrder
+    ]);
     const seaportTxData = seaportExchange.fillOrderTx(
       matchExecutor.contract.address,
       seaportSellOrder,
@@ -1027,7 +1017,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems123.concat(infinityOrderItems4)
+      nftsToTransfer: flowOrderItems123.concat(flowOrderItems4)
     };
 
     /**
@@ -1098,7 +1088,7 @@ describe("Trusted_Match_Executor", () => {
     // Approve the exchange
     await nft.approve(seller, Infinity.Addresses.Exchange[chainId]);
 
-    const infinityExchange = new Infinity.Exchange(chainId);
+    const flowExchange = new Infinity.Exchange(chainId);
     const builder = new Infinity.Builders.SingleToken(chainId);
     const infinitySellOrder = builder.build({
       isSellOrder: true,
@@ -1123,27 +1113,25 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, bn(price).mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
-    const txData = infinityExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
+    const txData = flowExchange.takeMultipleOneOrdersTx(matchExecutor.contract.address, [
       infinitySellOrder
     ]);
     const fulfillments: ExternalFulfillments = {
@@ -1155,7 +1143,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -1226,23 +1214,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1261,7 +1247,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -1346,23 +1332,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1381,7 +1365,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     const buyerEthBalanceBefore = await ethers.provider.getBalance(buyer.address);
@@ -1470,23 +1454,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1505,7 +1487,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -1589,23 +1571,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1624,7 +1604,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -1721,7 +1701,7 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore2).to.eq(seller.address);
 
     // create infinity listings
-    const infinityOrderItems1: OrderItem[] = [
+    const flowOrderItems1: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -1729,10 +1709,10 @@ describe("Trusted_Match_Executor", () => {
     ];
     const intermediaryListing1 = await orderClientBySigner
       .get(owner)!
-      .createListing(infinityOrderItems1);
+      .createListing(flowOrderItems1);
     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
-    const infinityOrderItems2: OrderItem[] = [
+    const flowOrderItems2: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -1740,18 +1720,18 @@ describe("Trusted_Match_Executor", () => {
     ];
     const intermediaryListing2 = await orderClientBySigner
       .get(owner)!
-      .createListing(infinityOrderItems2);
+      .createListing(flowOrderItems2);
     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
     // create infinity offers
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(4)); // multiply for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
+    await weth.approve(buyer, flowExchange.contract.address);
 
-    const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems1);
+    const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems1);
     const signedInfinityOffer1 = await infinityOffer1.prepare();
-    const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems2);
+    const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems2);
     const signedInfinityOffer2 = await infinityOffer2.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1777,7 +1757,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems1
+      nftsToTransfer: flowOrderItems1
     };
 
     const fulfillments2: ExternalFulfillments = {
@@ -1789,7 +1769,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems2
+      nftsToTransfer: flowOrderItems2
     };
 
     /**
@@ -1899,7 +1879,7 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore2).to.eq(seller.address);
 
     // create infinity listings
-    const infinityOrderItems1: OrderItem[] = [
+    const flowOrderItems1: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -1907,10 +1887,10 @@ describe("Trusted_Match_Executor", () => {
     ];
     const intermediaryListing1 = await orderClientBySigner
       .get(owner)!
-      .createListing(infinityOrderItems1);
+      .createListing(flowOrderItems1);
     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
-    const infinityOrderItems2: OrderItem[] = [
+    const flowOrderItems2: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -1918,18 +1898,18 @@ describe("Trusted_Match_Executor", () => {
     ];
     const intermediaryListing2 = await orderClientBySigner
       .get(owner)!
-      .createListing(infinityOrderItems2);
+      .createListing(flowOrderItems2);
     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
     // create infinity offers
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(4)); // multiply for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
+    await weth.approve(buyer, flowExchange.contract.address);
 
-    const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems1);
+    const infinityOffer1 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems1);
     const signedInfinityOffer1 = await infinityOffer1.prepare();
-    const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems2);
+    const infinityOffer2 = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems2);
     const signedInfinityOffer2 = await infinityOffer2.prepare();
 
     console.log("Encoding external fulfillments");
@@ -1961,7 +1941,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems1.concat(infinityOrderItems2)
+      nftsToTransfer: flowOrderItems1.concat(flowOrderItems2)
     };
 
     /**
@@ -2032,23 +2012,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2067,7 +2045,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2136,23 +2114,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2171,7 +2147,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2255,23 +2231,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2290,7 +2264,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2369,23 +2343,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2404,7 +2376,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2483,23 +2455,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2518,7 +2488,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2590,23 +2560,21 @@ describe("Trusted_Match_Executor", () => {
     expect(await erc721.ownerOf(tokenId), fndExchange.contract.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2623,7 +2591,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2705,23 +2673,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2738,7 +2704,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2812,23 +2778,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2845,7 +2809,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -2913,23 +2877,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -2948,7 +2910,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -3026,23 +2988,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -3061,7 +3021,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -3130,23 +3090,21 @@ describe("Trusted_Match_Executor", () => {
     expect(ownerBefore).to.eq(seller.address);
 
     // create infinity listing
-    const infinityOrderItems: OrderItem[] = [
+    const flowOrderItems: OrderItem[] = [
       {
         collection: erc721.address,
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner
-      .get(owner)!
-      .createListing(infinityOrderItems);
+    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create infinity offer
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
     // Mint weth to buyer and approve infinity exchange
     await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-    await weth.approve(buyer, infinityExchange.contract.address);
-    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+    await weth.approve(buyer, flowExchange.contract.address);
+    const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
     const signedInfinityOffer = await infinityOffer.prepare();
 
     console.log("Encoding external fulfillments");
@@ -3160,7 +3118,7 @@ describe("Trusted_Match_Executor", () => {
           isPayable: true
         }
       ],
-      nftsToTransfer: infinityOrderItems
+      nftsToTransfer: flowOrderItems
     };
 
     /**
@@ -3226,7 +3184,7 @@ describe("Trusted_Match_Executor", () => {
   //   await punksExchange.createListing(seller, punksSellOrder);
 
   //   // create infinity listing
-  //   const infinityOrderItems: OrderItem[] = [
+  //   const flowOrderItems: OrderItem[] = [
   //     {
   //       collection: wrappedPunksAddress,
   //       tokens: [{ tokenId, numTokens: "1" }]
@@ -3234,15 +3192,15 @@ describe("Trusted_Match_Executor", () => {
   //   ];
   //   const intermediaryListing = await orderClientBySigner
   //     .get(owner)!
-  //     .createListing(infinityOrderItems);
+  //     .createListing(flowOrderItems);
   //   const signedIntermediaryListing = await intermediaryListing.prepare();
 
   //   // create infinity offer
   //   const weth = new Common.Helpers.Weth(ethers.provider, chainId);
   //   // Mint weth to buyer and approve infinity exchange
   //   await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-  //   await weth.approve(buyer, infinityExchange.contract.address);
-  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+  //   await weth.approve(buyer, flowExchange.contract.address);
+  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
   //   const signedInfinityOffer = await infinityOffer.prepare();
 
   //   console.log("Encoding external fulfillments");
@@ -3256,7 +3214,7 @@ describe("Trusted_Match_Executor", () => {
   //         isPayable: true
   //       }
   //     ],
-  //     nftsToTransfer: infinityOrderItems
+  //     nftsToTransfer: flowOrderItems
   //   };
 
   //   /**
@@ -3335,7 +3293,7 @@ describe("Trusted_Match_Executor", () => {
   //   const x2y2Exchange = new X2Y2.Exchange(chainId, String(process.env.X2Y2_API_KEY));
 
   //   // create infinity listing
-  //   const infinityOrderItems: OrderItem[] = [
+  //   const flowOrderItems: OrderItem[] = [
   //     {
   //       collection: erc721.address,
   //       tokens: [{ tokenId, numTokens: "1" }]
@@ -3343,15 +3301,15 @@ describe("Trusted_Match_Executor", () => {
   //   ];
   //   const intermediaryListing = await orderClientBySigner
   //     .get(owner)!
-  //     .createListing(infinityOrderItems);
+  //     .createListing(flowOrderItems);
   //   const signedIntermediaryListing = await intermediaryListing.prepare();
 
   //   // create infinity offer
   //   const weth = new Common.Helpers.Weth(ethers.provider, chainId);
   //   // Mint weth to buyer and approve infinity exchange
   //   await weth.deposit(buyer, price.mul(2)); // multiply by 2 for buffer
-  //   await weth.approve(buyer, infinityExchange.contract.address);
-  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(infinityOrderItems);
+  //   await weth.approve(buyer, flowExchange.contract.address);
+  //   const infinityOffer = await orderClientBySigner.get(buyer)!.createOffer(flowOrderItems);
   //   const signedInfinityOffer = await infinityOffer.prepare();
 
   //   console.log("Encoding external fulfillments");
@@ -3368,7 +3326,7 @@ describe("Trusted_Match_Executor", () => {
   //         isPayable: true
   //       }
   //     ],
-  //     nftsToTransfer: infinityOrderItems
+  //     nftsToTransfer: flowOrderItems
   //   };
 
   //   /**

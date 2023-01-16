@@ -4,21 +4,21 @@ import { Contract } from "ethers";
 
 export interface MatchExecutorConfig<T extends SignerWithAddress | Contract> {
   contract: Contract;
-  infinityExchange: Contract;
+  flowExchange: Contract;
   owner: SignerWithAddress;
 }
 
 export async function setupMatchExecutor<T extends SignerWithAddress | Contract>(
   getContractFactory: HardhatEthersHelpers["getContractFactory"],
   owner: SignerWithAddress,
-  infinityExchange: Contract
+  flowExchange: Contract
 ): Promise<MatchExecutorConfig<T>> {
   const MatchExecutor = await getContractFactory("MatchExecutor");
-  let matchExecutor = await MatchExecutor.connect(owner).deploy(infinityExchange.address);
+  let matchExecutor = await MatchExecutor.connect(owner).deploy(flowExchange.address);
 
   return {
     contract: matchExecutor,
     owner,
-    infinityExchange: infinityExchange
+    flowExchange: flowExchange
   };
 }

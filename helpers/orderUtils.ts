@@ -117,7 +117,7 @@ export function getDomainSeparator(
           ["string"],
           ["EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"]
         ),
-        solidityKeccak256(["string"], ["InfinityComplication"]),
+        solidityKeccak256(["string"], ["FlowComplication"]),
         solidityKeccak256(["string"], ["1"]), // for versionId = 1
         chainId,
         verifyingContractAddress
