@@ -1,16 +1,21 @@
-const { expect } = require('chai');
-const { ethers, network } = require('hardhat');
-const { deployContract, NULL_ADDRESS, nowSeconds } = require('../tasks/utils');
-const { prepareOBOrder, getCurrentSignedOrderPrice, approveERC20, signFormattedOrder } = require('../helpers/orders');
-const { erc721Abi } = require('../abi/erc721');
+const { expect } = require("chai");
+const { ethers, network } = require("hardhat");
+const { deployContract, NULL_ADDRESS, nowSeconds } = require("../tasks/utils");
+const {
+  prepareOBOrder,
+  getCurrentSignedOrderPrice,
+  approveERC20,
+  signFormattedOrder
+} = require("../helpers/orders");
+const { erc721Abi } = require("../abi/erc721");
 
-describe('Exchange_Maker_Sell_Taker_Buy', function () {
+describe("Exchange_Maker_Sell_Taker_Buy", function () {
   let signers,
     signer1,
     signer2,
     signer3,
     token,
-    infinityExchange,
+    flowExchange,
     mock721Contract1,
     mock721Contract2,
     mock721Contract3,
@@ -39,7 +44,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
   before(async () => {
     // reset state
     await network.provider.request({
-      method: 'hardhat_reset',
+      method: "hardhat_reset",
       params: []
     });
 
@@ -49,45 +54,55 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     signer2 = signers[1];
     signer3 = signers[2];
     // token
-    token = await deployContract('MockERC20', await ethers.getContractFactory('MockERC20'), signers[0]);
+    token = await deployContract(
+      "MockERC20",
+      await ethers.getContractFactory("MockERC20"),
+      signers[0]
+    );
 
     // NFT contracts
-    mock721Contract1 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 1',
-      'MCKNFT1'
-    ]);
-    mock721Contract2 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 2',
-      'MCKNFT2'
-    ]);
-    mock721Contract3 = await deployContract('MockERC721', await ethers.getContractFactory('MockERC721'), signer1, [
-      'Mock NFT 3',
-      'MCKNFT3'
-    ]);
+    mock721Contract1 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 1", "MCKNFT1"]
+    );
+    mock721Contract2 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 2", "MCKNFT2"]
+    );
+    mock721Contract3 = await deployContract(
+      "MockERC721",
+      await ethers.getContractFactory("MockERC721"),
+      signer1,
+      ["Mock NFT 3", "MCKNFT3"]
+    );
 
     // Exchange
-    infinityExchange = await deployContract(
-      'InfinityExchange',
-      await ethers.getContractFactory('InfinityExchange'),
+    flowExchange = await deployContract(
+      "FlowExchange",
+      await ethers.getContractFactory("FlowExchange"),
       signer1,
       [token.address, signer3.address]
     );
 
     // OB complication
     obComplication = await deployContract(
-      'InfinityOrderBookComplication',
-      await ethers.getContractFactory('InfinityOrderBookComplication'),
+      "FlowOrderBookComplication",
+      await ethers.getContractFactory("FlowOrderBookComplication"),
       signer1,
       [token.address]
     );
 
     // add currencies to registry
-    // await infinityExchange.addCurrency(token.address);
-    // await infinityExchange.addCurrency(NULL_ADDRESS);
+    // await flowExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(NULL_ADDRESS);
     await obComplication.addCurrency(token.address);
 
     // add complications to registry
-    // await infinityExchange.addCurrency(token.address);
+    // await flowExchange.addCurrency(token.address);
 
     // send assets
     await token.transfer(signer2.address, INITIAL_SUPPLY.div(2).toString());
@@ -98,8 +113,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     }
   });
 
-  describe('Setup', () => {
-    it('Should init properly', async function () {
+  describe("Setup", () => {
+    it("Should init properly", async function () {
       expect(await token.decimals()).to.equal(18);
       expect(await token.totalSupply()).to.equal(INITIAL_SUPPLY);
 
@@ -120,8 +135,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
   // ================================================== MAKE SELL ORDERS ==================================================
 
   // one specific collection, one specific token, min price
-  describe('OneCollectionOneTokenSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionOneTokenSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -132,10 +147,16 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           tokens: [{ tokenId: 0, numTokens: 1 }]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -146,8 +167,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         isSellOrder: true,
         signerAddress: user.address,
         numItems,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -155,15 +176,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, multiple specific tokens, min aggregate price
-  describe('OneCollectionMultipleTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionMultipleTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -178,10 +206,16 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           ]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -192,8 +226,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         isSellOrder: true,
         signerAddress: user.address,
         numItems,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -201,15 +235,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, any one of multiple specific tokens, min price
-  describe('OneCollectionAnyOneOfMultipleTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionAnyOneOfMultipleTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -224,10 +265,16 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           ]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 1;
       const order = {
         id: orderId,
@@ -235,8 +282,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         isSellOrder: true,
         signerAddress: user.address,
         numItems,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -244,15 +291,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, any one token, min price
-  describe('OneCollectionAnyOneTokenSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionAnyOneTokenSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -263,18 +317,24 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           tokens: []
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
         numItems: 1,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -282,15 +342,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // one specific collection, any multiple tokens, min aggregate price, max number of tokens
-  describe('OneCollectionAnyMultipleTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("OneCollectionAnyMultipleTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -301,18 +368,24 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           tokens: []
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
         numItems: 4,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -320,15 +393,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // multiple specific collections, multiple specific tokens per collection, min aggregate price
-  describe('MultipleCollectionsMultipleTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("MultipleCollectionsMultipleTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -354,10 +434,16 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           ]
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       let numItems = 0;
       for (const nft of nfts) {
         numItems += nft.tokens.length;
@@ -368,8 +454,8 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         isSellOrder: true,
         signerAddress: user.address,
         numItems,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -377,15 +463,22 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // multiple specific collections, any multiple tokens per collection, min aggregate price, max aggregate number of tokens
-  describe('MultipleCollectionsAnyTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("MultipleCollectionsAnyTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
@@ -404,18 +497,24 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           tokens: []
         }
       ];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
         numItems: 5,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -423,32 +522,45 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // any collection, any one token, min price
-  describe('AnyCollectionAnyOneTokenSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("AnyCollectionAnyOneTokenSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
       const chainId = network.config.chainId ?? 31337;
       const nfts = [];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
         numItems: 1,
-        startPrice: ethers.utils.parseEther('1'),
-        endPrice: ethers.utils.parseEther('1'),
+        startPrice: ethers.utils.parseEther("1"),
+        endPrice: ethers.utils.parseEther("1"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -456,32 +568,45 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
   });
 
   // any collection, any multiple tokens, min aggregate price, max aggregate number of tokens
-  describe('AnyCollectionAnyMultipleTokensSell', () => {
-    it('Signed order should be valid', async function () {
+  describe("AnyCollectionAnyMultipleTokensSell", () => {
+    it("Signed order should be valid", async function () {
       const user = {
         address: signer2.address
       };
       const chainId = network.config.chainId ?? 31337;
       const nfts = [];
-      const execParams = { complicationAddress: obComplication.address, currencyAddress: token.address };
+      const execParams = {
+        complicationAddress: obComplication.address,
+        currencyAddress: token.address
+      };
       const extraParams = {};
       const nonce = ++orderNonce;
-      const orderId = ethers.utils.solidityKeccak256(['address', 'uint256', 'uint256'], [user.address, nonce, chainId]);
+      const orderId = ethers.utils.solidityKeccak256(
+        ["address", "uint256", "uint256"],
+        [user.address, nonce, chainId]
+      );
       const order = {
         id: orderId,
         chainId,
         isSellOrder: true,
         signerAddress: user.address,
         numItems: 12,
-        startPrice: ethers.utils.parseEther('5'),
-        endPrice: ethers.utils.parseEther('5'),
+        startPrice: ethers.utils.parseEther("5"),
+        endPrice: ethers.utils.parseEther("5"),
         startTime: nowSeconds(),
         endTime: nowSeconds().add(10 * 60),
         nonce,
@@ -489,7 +614,14 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         execParams,
         extraParams
       };
-      const signedOrder = await prepareOBOrder(user, chainId, signer2, order, infinityExchange, obComplication);
+      const signedOrder = await prepareOBOrder(
+        user,
+        chainId,
+        signer2,
+        order,
+        flowExchange,
+        obComplication
+      );
       expect(signedOrder).to.not.be.undefined;
       sellOrders.push(signedOrder);
     });
@@ -497,11 +629,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
   // ================================================== TAKE SELL ORDERS ===================================================
 
-  describe('Take_OneCollectionOneTokenSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_OneCollectionOneTokenSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -511,7 +643,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       const salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -521,11 +653,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -550,13 +682,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -571,7 +705,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = INITIAL_SUPPLY.div(2).sub(salePrice);
       signer2Balance = INITIAL_SUPPLY.div(2).add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -579,11 +713,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_OneCollectionMultipleTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_OneCollectionMultipleTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -593,7 +727,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       const salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -603,11 +737,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -632,13 +766,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -653,7 +789,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -661,11 +797,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_OneCollectionAnyOneOfMultipleTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_OneCollectionAnyOneOfMultipleTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -691,7 +827,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       const salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -701,11 +837,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -730,13 +866,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -751,7 +889,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -759,11 +897,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_OneCollectionAnyOneTokenSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_OneCollectionAnyOneTokenSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -789,7 +927,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -799,11 +937,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -831,13 +969,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -852,7 +992,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -860,11 +1000,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_OneCollectionAnyMultipleTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_OneCollectionAnyMultipleTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -902,7 +1042,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -912,11 +1052,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -944,13 +1084,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -965,7 +1107,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -973,11 +1115,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_MultipleCollectionsMultipleTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_MultipleCollectionsMultipleTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -987,7 +1129,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -997,11 +1139,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -1029,13 +1171,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -1050,7 +1194,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -1058,11 +1202,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_MultipleCollectionsAnyTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_MultipleCollectionsAnyTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -1122,7 +1266,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -1132,11 +1276,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -1164,13 +1308,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -1185,7 +1331,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -1193,11 +1339,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_AnyCollectionAnyOneTokenSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_AnyCollectionAnyOneTokenSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -1220,7 +1366,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -1230,11 +1376,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -1262,13 +1408,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -1283,7 +1431,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);
@@ -1291,11 +1439,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
     });
   });
 
-  describe('Take_AnyCollectionAnyMultipleTokensSell', () => {
-    it('Should take valid order', async function () {
+  describe("Take_AnyCollectionAnyMultipleTokensSell", () => {
+    it("Should take valid order", async function () {
       const sellOrder = sellOrders[++numTakeOrders];
       const chainId = network.config.chainId ?? 31337;
-      const contractAddress = infinityExchange.address;
+      const contractAddress = flowExchange.address;
       const isSellOrder = false;
 
       const constraints = sellOrder.constraints;
@@ -1374,7 +1522,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
 
       // approve currency
       let salePrice = getCurrentSignedOrderPrice(sellOrder);
-      await approveERC20(signer1.address, execParams[1], salePrice, signer1, infinityExchange.address);
+      await approveERC20(signer1.address, execParams[1], salePrice, signer1, flowExchange.address);
 
       // sign order
       const buyOrder = {
@@ -1384,11 +1532,11 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
         nfts,
         constraints,
         execParams,
-        sig: ''
+        sig: ""
       };
       buyOrder.sig = await signFormattedOrder(chainId, contractAddress, buyOrder, signer1);
 
-      // const isSigValid = await infinityExchange.verifyOrderSig(buyOrder);
+      // const isSigValid = await flowExchange.verifyOrderSig(buyOrder);
       // expect(isSigValid).to.equal(true);
       // owners before sale
       for (const item of nfts) {
@@ -1416,13 +1564,15 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
           }, 0)
         );
       }, 0);
-      console.log('total numTokens in order', numTokens);
-      const gasEstimate = await infinityExchange.connect(signer1).estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
-      console.log('gasEstimate', gasEstimate.toNumber());
-      console.log('gasEstimate per token', gasEstimate / numTokens);
+      console.log("total numTokens in order", numTokens);
+      const gasEstimate = await flowExchange
+        .connect(signer1)
+        .estimateGas.takeOrders([sellOrder], [buyOrder.nfts]);
+      console.log("gasEstimate", gasEstimate.toNumber());
+      console.log("gasEstimate per token", gasEstimate / numTokens);
 
       // perform exchange
-      await infinityExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
+      await flowExchange.connect(signer1).takeOrders([sellOrder], [buyOrder.nfts]);
 
       // owners after sale
       for (const item of nfts) {
@@ -1437,7 +1587,7 @@ describe('Exchange_Maker_Sell_Taker_Buy', function () {
       // balance after sale
       const fee = salePrice.mul(FEE_BPS).div(10000);
       totalProtocolFees = totalProtocolFees.add(fee);
-      expect(await token.balanceOf(infinityExchange.address)).to.equal(totalProtocolFees);
+      expect(await token.balanceOf(flowExchange.address)).to.equal(totalProtocolFees);
       signer1Balance = signer1Balance.sub(salePrice);
       signer2Balance = signer2Balance.add(salePrice.sub(fee));
       expect(await token.balanceOf(signer1.address)).to.equal(signer1Balance);

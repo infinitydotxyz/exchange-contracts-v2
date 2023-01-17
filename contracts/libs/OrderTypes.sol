@@ -32,10 +32,11 @@ library OrderTypes {
         // end time in block.timestamp
         // nonce of the order
         // max tx.gasprice in wei that a user is willing to pay for gas
+        // 1 for trustedExecution, 0 or non-existent for not trustedExecution
         uint256[] constraints;
         ///@dev nfts array contains order items where each item is a collection and its tokenIds
         OrderItem[] nfts;
-        ///@dev address of complication for trade execution (e.g. InfinityOrderBookComplication), address of the currency (e.g., WETH)
+        ///@dev address of complication for trade execution (e.g. FlowOrderBookComplication), address of the currency (e.g., WETH)
         address[] execParams;
         ///@dev additional parameters like traits for trait orders, private sale buyer for OTC orders etc
         bytes extraParams;
