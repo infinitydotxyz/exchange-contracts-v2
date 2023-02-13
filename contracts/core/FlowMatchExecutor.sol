@@ -13,13 +13,20 @@ import { FlowMatchExecutorTypes } from "../libs/FlowMatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
+import { EIP2098_allButHighestBitMask } from "../libs/Constants.sol";
 
 /**
 @title FlowMatchExecutor
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
+contract FlowMatchExecutor is
+    IERC1271,
+    IERC721Receiver,
+    Ownable,
+    Pausable,
+    SignatureChecker
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /*//////////////////////////////////////////////////////////////
@@ -70,18 +77,8 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         bytes32 message,
         bytes calldata signature
     ) external view override returns (bytes4) {
-        (bytes32 r, bytes32 s, bytes32 vBytes) = _decodePackedSig(
-            signature,
-            32,
-            32,
-            1
-        );
-        uint8 v = uint8(uint256(vBytes));
-        if (SignatureChecker.recover(message, r, s, v) == owner()) {
-            return 0x1626ba7e; // EIP-1271 magic value
-        } else {
-            return 0xffffffff;
-        }
+        _assertValidSignatureHelper(owner(), message, signature);
+        return 0x1626ba7e; // EIP-1271 magic value
     }
 
     function onERC721Received(
@@ -125,45 +122,6 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
     }
 
     //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
-
-    /**
-     * @notice Decodes abi encodePacked signature. There is no abi.decodePacked so we have to do it manually
-     * @param _data The abi encodePacked data
-     * @param _la The length of the first parameter i.e r
-     * @param _lb The length of the second parameter i.e s
-     * @param _lc The length of the third parameter i.e v
-     */
-    function _decodePackedSig(
-        bytes memory _data,
-        uint256 _la,
-        uint256 _lb,
-        uint256 _lc
-    ) internal pure returns (bytes32 _a, bytes32 _b, bytes32 _c) {
-        uint256 o;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let s := add(_data, 32)
-            _a := mload(s)
-            let l := sub(32, _la)
-            if l {
-                _a := div(_a, exp(2, mul(l, 8)))
-            }
-            o := add(s, _la)
-            _b := mload(o)
-            l := sub(32, _lb)
-            if l {
-                _b := div(_b, exp(2, mul(l, 8)))
-            }
-            o := add(o, _lb)
-            _c := mload(o)
-            l := sub(32, _lc)
-            if l {
-                _c := div(_c, exp(2, mul(l, 8)))
-            }
-            o := sub(o, s)
-        }
-        require(_data.length >= o, "out of bounds");
-    }
 
     /**
      * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
