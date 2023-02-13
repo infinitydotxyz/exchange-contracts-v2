@@ -124,45 +124,6 @@ contract FlowMatchExecutor is
     //////////////////////////////////////////////////// INTERNAL FUNCTIONS ///////////////////////////////////////////////////////
 
     /**
-     * @notice Decodes abi encodePacked signature. There is no abi.decodePacked so we have to do it manually
-     * @param _data The abi encodePacked data
-     * @param _la The length of the first parameter i.e r
-     * @param _lb The length of the second parameter i.e s
-     * @param _lc The length of the third parameter i.e v
-     */
-    function _decodePackedSig(
-        bytes memory _data,
-        uint256 _la,
-        uint256 _lb,
-        uint256 _lc
-    ) internal pure returns (bytes32 _a, bytes32 _b, bytes32 _c) {
-        uint256 o;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let s := add(_data, 32)
-            _a := mload(s)
-            let l := sub(32, _la)
-            if l {
-                _a := div(_a, exp(2, mul(l, 8)))
-            }
-            o := add(s, _la)
-            _b := mload(o)
-            l := sub(32, _lb)
-            if l {
-                _b := div(_b, exp(2, mul(l, 8)))
-            }
-            o := add(o, _lb)
-            _c := mload(o)
-            l := sub(32, _lc)
-            if l {
-                _c := div(_c, exp(2, mul(l, 8)))
-            }
-            o := sub(o, s)
-        }
-        require(_data.length >= o, "out of bounds");
-    }
-
-    /**
      * @notice broker a trade by fulfilling orders on other exchanges and transferring nfts to the intermediary
      * @param externalFulfillments The specification of the external calls to make and nfts to transfer
      */
