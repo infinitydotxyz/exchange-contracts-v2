@@ -139,9 +139,6 @@ export async function prepareOBOrder(
 
   // sign order
   const signedOBOrder = await signOBOrder(chainId, obComplication.address, order, signer);
-  // if (signedOBOrder) {
-  //   await checkSignature(chainId, obComplication.address, signedOBOrder);
-  // }
   return signedOBOrder;
 }
 
@@ -175,10 +172,6 @@ export async function batchPrepareOBOrders(
 
   // sign orders
   const signedOBOrders = await bulkSignOBOrders(chainId, obComplication.address, orders, signer);
-  // check signature
-  // for (const signedOrder of signedOBOrders) {
-  //   await checkSignature(chainId, obComplication.address, signedOrder);
-  // }
   return signedOBOrders;
 }
 
@@ -359,7 +352,7 @@ export async function signFormattedOrder(
     //   ["bytes32", "bytes32", "uint8"],
     //   [splitSig.r, splitSig.s, splitSig.v]
     // );
-    // return encodedSig;
+    // return encodedSig; todo remove
   } catch (e) {
     console.error("Error signing order", e);
   }
@@ -415,7 +408,7 @@ async function signOBOrder(
     // const encodedSig = defaultAbiCoder.encode(
     //   ["bytes32", "bytes32", "uint8"],
     //   [splitSig.r, splitSig.s, splitSig.v]
-    // );
+    // ); todo remove
     const signedOrder: SignedOBOrder = { ...orderToSign, sig };
     return signedOrder;
   } catch (e) {

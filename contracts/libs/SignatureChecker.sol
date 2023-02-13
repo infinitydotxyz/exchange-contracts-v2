@@ -11,8 +11,6 @@ import { OrderTypes } from "../libs/OrderTypes.sol";
 import { TypehashDirectory } from "./TypehashDirectory.sol";
 import { EIP2098_allButHighestBitMask, OneWord, OneWordShift } from "./Constants.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title SignatureChecker
  * @notice This library allows verification of signatures for both EOAs and contracts
@@ -49,36 +47,6 @@ contract SignatureChecker is LowLevelHelpers {
 
     constructor() {
         _BULK_ORDER_TYPEHASH_DIRECTORY = new TypehashDirectory();
-    }
-
-    /**
-     * @notice Recovers the signer of a signature (for EOA)
-     * @param hashed hash containing the signed message
-     * @param r parameter
-     * @param s parameter
-     * @param v parameter (27 or 28). This prevents malleability since the public key recovery equation has two possible solutions.
-     */
-    function recover(
-        bytes32 hashed,
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) internal pure returns (address) {
-        // https://ethereum.stackexchange.com/questions/83174/is-it-best-practice-to-check-signature-malleability-in-ecrecover
-        // https://crypto.iacr.org/2019/affevents/wac/medias/Heninger-BiasedNonceSense.pdf
-        require(
-            uint256(s) <=
-                0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-            "Signature: Invalid s parameter"
-        );
-
-        require(v == 27 || v == 28, "Signature: Invalid v parameter");
-
-        // If the signature is valid (and not malleable), return the signer address
-        address signer = ecrecover(hashed, v, r, s);
-        require(signer != address(0), "Signature: Invalid signer");
-
-        return signer;
     }
 
     /**
@@ -261,11 +229,6 @@ contract SignatureChecker is LowLevelHelpers {
         bytes memory originalSignature,
         bytes memory signature
     ) internal view {
-        // Declare r, s, and v signature parameters.
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
         if (signer.code.length > 0) {
             // If signer is a contract, try verification via EIP-1271.
             if (
@@ -279,7 +242,22 @@ contract SignatureChecker is LowLevelHelpers {
 
             // Return early if the ERC-1271 signature check succeeded.
             return;
-        } else if (signature.length == 64) {
+        } else {
+            _assertValidSignatureHelper(signer, digest, signature);
+        }
+    }
+
+    function _assertValidSignatureHelper(
+        address signer,
+        bytes32 digest,
+        bytes memory signature
+    ) internal pure {
+        // Declare r, s, and v signature parameters.
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        if (signature.length == 64) {
             // If signature contains 64 bytes, parse as EIP-2098 sig. (r+s&v)
             // Declare temporary vs that will be decomposed into s and v.
             bytes32 vs;
@@ -310,7 +288,6 @@ contract SignatureChecker is LowLevelHelpers {
         // Disallow invalid signers.
         if (recoveredSigner == address(0) || recoveredSigner != signer) {
             revert InvalidSigner();
-            // Should a signer be recovered, but it doesn't match the signer...
         }
     }
 }

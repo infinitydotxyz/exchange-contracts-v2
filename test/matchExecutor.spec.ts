@@ -538,7 +538,7 @@ describe("Match_Executor", () => {
       numTokens: 1
     });
     await flowSellOrder.sign(seller);
-    // await flowSellOrder.checkFillability(ethers.provider);
+    // todo await flowSellOrder.checkFillability(ethers.provider);
 
     // seaport listing
     await nft.approve(seller, Seaport.Addresses.Exchange[chainId]);
@@ -650,10 +650,68 @@ describe("Match_Executor", () => {
         ]
       }
     ];
-    const flowListings = await orderClientBySigner
-      .get(owner)!
-      .batchCreateListings(flowOrderItems);
-    const signedFlowListings = await flowListings.batchPrepare();
+
+    const signedFlowListings = [];
+
+    const signedIntermediaryListing1 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId1, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing1);
+
+    const signedIntermediaryListing2 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId2, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing2);
+
+    const signedIntermediaryListing3 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId3, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing3);
+
+    const signedIntermediaryListing4 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId4, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing4);
+
+    const signedIntermediaryListing5 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId5, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing5);
+
+    const signedIntermediaryListing6 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId6, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedFlowListings.push(signedIntermediaryListing6);
 
     // create flow offers
     const weth = new Common.Helpers.Weth(ethers.provider, chainId);
@@ -829,7 +887,7 @@ describe("Match_Executor", () => {
       numTokens: 1
     });
     await flowSellOrder.sign(seller);
-    // await flowSellOrder.checkFillability(ethers.provider);
+    // todo await flowSellOrder.checkFillability(ethers.provider);
 
     // seaport listing
     await nft.approve(seller, Seaport.Addresses.Exchange[chainId]);
@@ -917,10 +975,38 @@ describe("Match_Executor", () => {
         ]
       }
     ];
-    const intermediaryListings123 = await orderClientBySigner
-      .get(owner)!
-      .batchCreateListings(flowOrderItems123);
-    const signedIntermediaryListings123 = await intermediaryListings123.batchPrepare();
+
+    const signedIntermediaryListings123 = [];
+
+    const signedIntermediaryListing1 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId1, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedIntermediaryListings123.push(signedIntermediaryListing1);
+
+    const signedIntermediaryListing2 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId2, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedIntermediaryListings123.push(signedIntermediaryListing2);
+
+    const signedIntermediaryListing3 = await(
+      await orderClientBySigner.get(owner)!.createListing([
+        {
+          collection: erc721.address,
+          tokens: [{ tokenId: tokenId3, numTokens: "1" }]
+        }
+      ])
+    ).prepare();
+    signedIntermediaryListings123.push(signedIntermediaryListing3);
 
     const flowOrderItems4: OrderItem[] = [
       {
@@ -1105,7 +1191,7 @@ describe("Match_Executor", () => {
 
     // Sign the order
     await flowSellOrder.sign(seller);
-    // await flowSellOrder.checkFillability(ethers.provider);
+    // todo await flowSellOrder.checkFillability(ethers.provider);
 
     const ownerBefore = await nft.getOwner(tokenId);
     expect(ownerBefore).to.eq(seller.address);
