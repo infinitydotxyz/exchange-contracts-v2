@@ -538,7 +538,7 @@ describe("Match_Executor", () => {
       numTokens: 1
     });
     await flowSellOrder.sign(seller);
-    // todo await flowSellOrder.checkFillability(ethers.provider);
+    await flowSellOrder.checkFillability(ethers.provider);
 
     // seaport listing
     await nft.approve(seller, Seaport.Addresses.Exchange[chainId]);
@@ -887,7 +887,7 @@ describe("Match_Executor", () => {
       numTokens: 1
     });
     await flowSellOrder.sign(seller);
-    // todo await flowSellOrder.checkFillability(ethers.provider);
+    await flowSellOrder.checkFillability(ethers.provider);
 
     // seaport listing
     await nft.approve(seller, Seaport.Addresses.Exchange[chainId]);

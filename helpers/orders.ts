@@ -346,13 +346,6 @@ export async function signFormattedOrder(
   try {
     const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
     return sig;
-    // const splitSig = splitSignature(sig ?? "");
-
-    // const encodedSig = defaultAbiCoder.encode(
-    //   ["bytes32", "bytes32", "uint8"],
-    //   [splitSig.r, splitSig.s, splitSig.v]
-    // );
-    // return encodedSig; todo remove
   } catch (e) {
     console.error("Error signing order", e);
   }
@@ -404,11 +397,6 @@ async function signOBOrder(
   // sign order
   try {
     const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
-    // const splitSig = splitSignature(sig ?? "");
-    // const encodedSig = defaultAbiCoder.encode(
-    //   ["bytes32", "bytes32", "uint8"],
-    //   [splitSig.r, splitSig.s, splitSig.v]
-    // ); todo remove
     const signedOrder: SignedOBOrder = { ...orderToSign, sig };
     return signedOrder;
   } catch (e) {
