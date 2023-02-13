@@ -13,13 +13,22 @@ import { FlowMatchExecutorTypes } from "../libs/FlowMatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
+import { EIP2098_allButHighestBitMask } from "../libs/Constants.sol";
+
+import "hardhat/console.sol";
 
 /**
 @title FlowMatchExecutor
 @author Joe
 @notice The contract that is called to execute order matches
 */
-contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
+contract FlowMatchExecutor is
+    IERC1271,
+    IERC721Receiver,
+    Ownable,
+    Pausable,
+    SignatureChecker
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /*//////////////////////////////////////////////////////////////
@@ -70,18 +79,69 @@ contract FlowMatchExecutor is IERC1271, IERC721Receiver, Ownable, Pausable {
         bytes32 message,
         bytes calldata signature
     ) external view override returns (bytes4) {
-        (bytes32 r, bytes32 s, bytes32 vBytes) = _decodePackedSig(
-            signature,
-            32,
-            32,
-            1
-        );
-        uint8 v = uint8(uint256(vBytes));
-        if (SignatureChecker.recover(message, r, s, v) == owner()) {
-            return 0x1626ba7e; // EIP-1271 magic value
+        // (bytes32 r, bytes32 s, bytes32 vBytes) = _decodePackedSig(
+        //     signature,
+        //     32,
+        //     32,
+        //     1
+        // );
+        // uint8 v = uint8(uint256(vBytes));
+        // if (SignatureChecker.recover(message, r, s, v) == owner()) {
+        //     return 0x1626ba7e; // EIP-1271 magic value
+        // } else {
+        //     return 0xffffffff;
+        // }
+
+        console.logBytes(signature);
+        console.log(signature.length);
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        if (signature.length == 64) {
+            // If signature contains 64 bytes, parse as EIP-2098 sig. (r+s&v)
+            // Declare temporary vs that will be decomposed into s and v.
+            bytes32 vs;
+
+            // Decode signature into r, vs.
+            (r, vs) = abi.decode(signature, (bytes32, bytes32));
+
+            // Decompose vs into s and v.
+            s = vs & EIP2098_allButHighestBitMask;
+
+            // If the highest bit is set, v = 28, otherwise v = 27.
+            v = uint8(uint256(vs >> 255)) + 27;
+        } else if (signature.length == 65) {
+            (r, s) = abi.decode(signature, (bytes32, bytes32));
+            v = uint8(signature[64]);
+
+            // Ensure v value is properly formatted.
+            if (v != 27 && v != 28) {
+                revert BadSignatureV(v);
+            }
+        } else if (signature.length == 96) {
+            // If signature contains 96 bytes, parse as EIP-2098 sig. (r+s+v)
+            (r, s, v) = abi.decode(signature, (bytes32, bytes32, uint8));
+            require(
+                uint256(s) <=
+                    0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+                "Signature: Invalid s parameter"
+            );
+            require(v == 27 || v == 28, "Signature: Invalid v parameter");
         } else {
-            return 0xffffffff;
+            revert InvalidSignature();
         }
+
+        // Attempt to recover signer using the digest and signature parameters.
+        address recoveredSigner = ecrecover(message, v, r, s);
+
+        // Disallow invalid signers.
+        if (recoveredSigner == address(0) || recoveredSigner != owner()) {
+            revert InvalidSigner();
+            // Should a signer be recovered, but it doesn't match the signer...
+        }
+
+        return 0x1626ba7e; // EIP-1271 magic value
     }
 
     function onERC721Received(
