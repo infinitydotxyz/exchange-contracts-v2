@@ -21,12 +21,7 @@ import { IFlowComplication } from "../interfaces/IFlowComplication.sol";
 @dev This contract can be extended via 'complications' - strategies that let the exchange execute various types of orders
       like dutch auctions, reverse dutch auctions, floor price orders, private sales, etc.
 */
-contract FlowExchange is
-    IFlowExchange,
-    ReentrancyGuard,
-    Ownable,
-    Pausable
-{
+contract FlowExchange is IFlowExchange, ReentrancyGuard, Ownable, Pausable {
     /// @dev WETH address of a chain; set at deploy time to the WETH address of the chain that this contract is deployed to
     // solhint-disable-next-line var-name-mixedcase
     address public immutable WETH;
@@ -508,12 +503,17 @@ contract FlowExchange is
             buy = makerOrder1;
         }
 
+        require(
+            sell.execParams[0] == buy.execParams[0],
+            "complication mismatch"
+        );
+
         (
             bool canExec,
             bytes32 sellOrderHash,
             bytes32 buyOrderHash,
             uint256 execPrice
-        ) = IFlowComplication(makerOrder1.execParams[0]).canExecMatchOneToOne(
+        ) = IFlowComplication(sell.execParams[0]).canExecMatchOneToOne(
                 sell,
                 buy
             );
@@ -563,6 +563,11 @@ contract FlowExchange is
         uint32 _wethTransferGasUnits,
         address weth
     ) internal {
+        require(
+            sell.execParams[0] == buy.execParams[0],
+            "complication mismatch"
+        );
+
         (bool verified, bytes32 buyOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(false, sell, buy);
@@ -599,6 +604,11 @@ contract FlowExchange is
         OrderTypes.MakerOrder calldata buy,
         uint32 _protocolFeeBps
     ) internal returns (uint256) {
+        require(
+            sell.execParams[0] == buy.execParams[0],
+            "complication mismatch"
+        );
+
         (bool verified, bytes32 sellOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(true, sell, buy);
@@ -641,6 +651,10 @@ contract FlowExchange is
         uint32 _wethTransferGasUnits,
         address weth
     ) internal {
+        require(
+            sell.execParams[0] == buy.execParams[0],
+            "complication mismatch"
+        );
         (
             bool executionValid,
             bytes32 sellOrderHash,
