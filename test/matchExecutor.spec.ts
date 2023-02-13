@@ -1191,7 +1191,7 @@ describe("Match_Executor", () => {
 
     // Sign the order
     await flowSellOrder.sign(seller);
-    // todo await flowSellOrder.checkFillability(ethers.provider);
+    await flowSellOrder.checkFillability(ethers.provider);
 
     const ownerBefore = await nft.getOwner(tokenId);
     expect(ownerBefore).to.eq(seller.address);
