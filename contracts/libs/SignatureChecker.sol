@@ -9,8 +9,7 @@ import { LowLevelHelpers } from "./LowLevelHelpers.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { TypehashDirectory } from "./TypehashDirectory.sol";
-import { FreeMemoryPointerSlot, OneWord, OneWordShift, ThirtyOneBytes, BulkOrderProof_keyShift, TwoWords, ECDSA_MaxLength, BulkOrderProof_keySize, BulkOrderProof_lengthAdjustmentBeforeMask, BulkOrderProof_lengthRangeAfterMask, BulkOrderProof_minSize, BulkOrderProof_rangeSize } from "./Constants.sol";
-import { ECDSA_MaxLength, ECDSA_signature_s_offset, ECDSA_signature_v_offset, ECDSA_twentySeventhAndTwentyEighthBytesSet, Ecrecover_args_size, Ecrecover_precompile, EIP1271_isValidSignature_calldata_baseLength, EIP1271_isValidSignature_digest_negativeOffset, EIP1271_isValidSignature_selector_negativeOffset, EIP1271_isValidSignature_selector, EIP1271_isValidSignature_signature_head_offset, EIP2098_allButHighestBitMask, MaxUint8, OneWord, Signature_lower_v, BadContractSignature_error_length, BadContractSignature_error_selector, BadSignatureV_error_length, BadSignatureV_error_selector, BadSignatureV_error_v_ptr, Error_selector_offset, InvalidSignature_error_length, InvalidSignature_error_selector, InvalidSigner_error_length, InvalidSigner_error_selector } from "./Constants.sol";
+import { EIP2098_allButHighestBitMask, OneWord, OneWordShift } from "./Constants.sol";
 
 import "hardhat/console.sol";
 
