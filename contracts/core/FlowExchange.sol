@@ -608,7 +608,7 @@ contract FlowExchange is IFlowExchange, ReentrancyGuard, Ownable, Pausable {
             sell.execParams[0] == buy.execParams[0],
             "complication mismatch"
         );
-        
+
         (bool verified, bytes32 sellOrderHash) = IFlowComplication(
             sell.execParams[0]
         ).verifyMatchOneToManyOrders(true, sell, buy);
