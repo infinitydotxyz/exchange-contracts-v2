@@ -10,7 +10,8 @@ const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 let flowToken: Contract, infinityTreasurer: string;
 
 const UNIT = toBN(1e18);
-const INITIAL_SUPPLY = toBN(1_000_000_000).mul(UNIT);
+const FLOW_SUPPLY = toBN(1_000_000_000).mul(UNIT);
+const FLUR_SUPPLY = toBN(3_000_000_000).mul(UNIT);
 
 function toBN(val: any) {
   return ethers.BigNumber.from(val.toString());
@@ -46,13 +47,42 @@ task("deployAll", "Deploy all contracts")
     });
   });
 
-task("deployFlowToken", "Deploy Infinity token contract")
+  task("deployFlurToken", "Deploy Flur token contract")
+    .addFlag("verify", "verify contracts on etherscan")
+    .addParam("admin", "admin address")
+    .setAction(async (args, { ethers, run }) => {
+      const signer1 = (await ethers.getSigners())[0];
+
+      const tokenArgs = [args.admin, FLUR_SUPPLY.toString()];
+
+      const flurToken = await deployContract(
+        "FlurToken",
+        await ethers.getContractFactory("FlurToken"),
+        signer1,
+        tokenArgs
+      );
+
+      // verify etherscan
+      if (args.verify) {
+        // console.log('Verifying source on etherscan');
+        await flurToken.deployTransaction.wait(5);
+        await run("verify:verify", {
+          address: flurToken.address,
+          contract: "contracts/token/FlurToken.sol:FlurToken",
+          constructorArguments: tokenArgs
+        });
+      }
+
+      return flurToken;
+    });
+
+task("deployFlowToken", "Deploy Flow token contract")
   .addFlag("verify", "verify contracts on etherscan")
   .addParam("admin", "admin address")
   .setAction(async (args, { ethers, run }) => {
     const signer1 = (await ethers.getSigners())[0];
 
-    const tokenArgs = [args.admin, INITIAL_SUPPLY.toString()];
+    const tokenArgs = [args.admin, FLOW_SUPPLY.toString()];
 
     const flowToken = await deployContract(
       "FlowToken",
