@@ -51,6 +51,59 @@ task("deployAll", "Deploy all contracts")
     });
   });
 
+task("deployGowlDescriptor", "Deploy Gowl descriptor contract")
+  .addFlag("verify", "verify contracts on etherscan")
+  .setAction(async (args, { ethers, run }) => {
+    const signer1 = (await ethers.getSigners())[0];
+
+    const gowlDescriptor = await deployContract(
+      "GowlDescriptor",
+      await ethers.getContractFactory("GowlDescriptor"),
+      signer1
+    );
+
+    // verify etherscan
+    if (args.verify) {
+      // console.log('Verifying source on etherscan');
+      await gowlDescriptor.deployTransaction.wait(5);
+      await run("verify:verify", {
+        address: gowlDescriptor.address,
+        contract: "contracts/nfts/GowlDescriptor.sol:GowlDescriptor"
+      });
+    }
+
+    return gowlDescriptor;
+  });
+
+  task("deployGowls", "Deploy Gowls contract")
+    .addFlag("verify", "verify contracts on etherscan")
+    .addParam("descriptor", "descriptor address")
+    .setAction(async (args, { ethers, run }) => {
+      const signer1 = (await ethers.getSigners())[0];
+
+      const constructorArgs = [args.descriptor];
+
+      const gowls = await deployContract(
+        "Gowls",
+        await ethers.getContractFactory("Gowls"),
+        signer1,
+        constructorArgs
+      );
+
+      // verify etherscan
+      if (args.verify) {
+        // console.log('Verifying source on etherscan');
+        await gowls.deployTransaction.wait(5);
+        await run("verify:verify", {
+          address: gowls.address,
+          contract: "contracts/nfts/Gowls.sol:Gowls",
+          constructorArguments: constructorArgs
+        });
+      }
+
+      return gowls;
+    });
+
 task("deployFlurToken", "Deploy Flur token contract")
   .addFlag("verify", "verify contracts on etherscan")
   .addParam("admin", "admin address")

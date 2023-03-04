@@ -24,7 +24,8 @@ export default {
     },
     goerli: {
       url: "https://eth-goerli.alchemyapi.io/v2/" + process.env.ALCHEMY_GOERLI_KEY,
-      accounts: [process.env.ETH_GOERLI_PRIV_KEY, process.env.ETH_GOERLI_PRIV_KEY_2]
+      accounts: [process.env.ETH_GOERLI_PRIV_KEY, process.env.ETH_GOERLI_PRIV_KEY_2],
+      gasPrice: parseUnits("70", "gwei").toNumber()
     },
     mainnet: {
       url: "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_MAINNET_KEY,
