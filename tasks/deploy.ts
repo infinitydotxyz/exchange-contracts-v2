@@ -51,34 +51,34 @@ task("deployAll", "Deploy all contracts")
     });
   });
 
-  task("deployFlurToken", "Deploy Flur token contract")
-    .addFlag("verify", "verify contracts on etherscan")
-    .addParam("admin", "admin address")
-    .setAction(async (args, { ethers, run }) => {
-      const signer1 = (await ethers.getSigners())[0];
+task("deployFlurToken", "Deploy Flur token contract")
+  .addFlag("verify", "verify contracts on etherscan")
+  .addParam("admin", "admin address")
+  .setAction(async (args, { ethers, run }) => {
+    const signer1 = (await ethers.getSigners())[0];
 
-      const tokenArgs = [args.admin, FLUR_SUPPLY.toString()];
+    const tokenArgs = [args.admin, FLUR_SUPPLY.toString()];
 
-      const flurToken = await deployContract(
-        "FlurToken",
-        await ethers.getContractFactory("FlurToken"),
-        signer1,
-        tokenArgs
-      );
+    const flurToken = await deployContract(
+      "FlurToken",
+      await ethers.getContractFactory("FlurToken"),
+      signer1,
+      tokenArgs
+    );
 
-      // verify etherscan
-      if (args.verify) {
-        // console.log('Verifying source on etherscan');
-        await flurToken.deployTransaction.wait(5);
-        await run("verify:verify", {
-          address: flurToken.address,
-          contract: "contracts/token/FlurToken.sol:FlurToken",
-          constructorArguments: tokenArgs
-        });
-      }
+    // verify etherscan
+    if (args.verify) {
+      // console.log('Verifying source on etherscan');
+      await flurToken.deployTransaction.wait(5);
+      await run("verify:verify", {
+        address: flurToken.address,
+        contract: "contracts/token/FlurToken.sol:FlurToken",
+        constructorArguments: tokenArgs
+      });
+    }
 
-      return flurToken;
-    });
+    return flurToken;
+  });
 
 task("deployFlowToken", "Deploy Flow token contract")
   .addFlag("verify", "verify contracts on etherscan")
