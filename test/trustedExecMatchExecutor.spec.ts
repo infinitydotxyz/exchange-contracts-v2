@@ -329,22 +329,6 @@
 
 //     await flowExchange.contract.connect(owner).updateMatchExecutor(matchExecutor.contract.address);
 
-//     // add enabled exchanges
-//     await matchExecutor.contract.addEnabledExchange(Infinity.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(CryptoPunks.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Blur.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(LooksRare.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(X2Y2.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Element.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Foundation.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Forward.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Rarible.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Manifold.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Universe.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(ZeroExV4.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Zora.Addresses.Exchange[chainId]);
-
 //     orderClientBySigner.set(bob, getInfinityOrderClient(bob, flowExchange));
 //     orderClientBySigner.set(
 //       owner,
@@ -700,37 +684,37 @@
 //           data: infinityTxData.data,
 //           value: infinityTxData.value ?? 0,
 //           to: infinityTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: seaportTxData.data,
 //           value: seaportTxData.value ?? 0,
 //           to: seaportTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: blurTxData.data,
 //           value: blurTxData.value ?? 0,
 //           to: blurTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: blurTxData1.data,
 //           value: blurTxData1.value ?? 0,
 //           to: blurTxData1.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: blurTxData2.data,
 //           value: blurTxData2.value ?? 0,
 //           to: blurTxData2.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: lrTxData.data,
 //           value: lrTxData.value ?? 0,
 //           to: lrTxData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -996,25 +980,25 @@
 //           data: infinityTxData.data,
 //           value: infinityTxData.value ?? 0,
 //           to: infinityTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: seaportTxData.data,
 //           value: seaportTxData.value ?? 0,
 //           to: seaportTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: blurTxData.data,
 //           value: blurTxData.value ?? 0,
 //           to: blurTxData.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: lrTxData.data,
 //           value: lrTxData.value ?? 0,
 //           to: lrTxData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems123.concat(flowOrderItems4)
@@ -1140,7 +1124,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1244,7 +1228,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1362,7 +1346,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1484,7 +1468,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1601,7 +1585,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1754,7 +1738,7 @@
 //           data: txData1.data,
 //           value: txData1.value ?? 0,
 //           to: txData1.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems1
@@ -1766,7 +1750,7 @@
 //           data: txData2.data,
 //           value: txData2.value ?? 0,
 //           to: txData2.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems2
@@ -1932,13 +1916,13 @@
 //           data: txData1.data,
 //           value: txData1.value ?? 0,
 //           to: txData1.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: txData2.data,
 //           value: txData2.value ?? 0,
 //           to: txData2.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems1.concat(flowOrderItems2)
@@ -2042,7 +2026,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2144,7 +2128,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2261,7 +2245,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2373,7 +2357,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2485,7 +2469,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2588,7 +2572,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2701,7 +2685,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2806,7 +2790,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -2907,7 +2891,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -3018,7 +3002,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -3115,7 +3099,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -3211,7 +3195,7 @@
 //   //         data: txData.data,
 //   //         value: txData.value ?? 0,
 //   //         to: txData.to,
-//   //         isPayable: true
+//   //
 //   //       }
 //   //     ],
 //   //     nftsToTransfer: flowOrderItems
@@ -3323,7 +3307,7 @@
 //   //         data: txData.data,
 //   //         value: txData.value ?? 0,
 //   //         to: txData.to,
-//   //         isPayable: true
+//   //
 //   //       }
 //   //     ],
 //   //     nftsToTransfer: flowOrderItems

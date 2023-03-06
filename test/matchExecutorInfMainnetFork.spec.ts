@@ -224,22 +224,6 @@
 //       .connect(impersonatedInfinityMainnetOwner)
 //       .updateMatchExecutor(matchExecutor.contract.address);
 
-//     // add enabled exchanges
-//     await matchExecutor.contract.addEnabledExchange(Infinity.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(CryptoPunks.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Blur.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(LooksRare.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(X2Y2.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Element.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Foundation.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Forward.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Rarible.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Manifold.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Universe.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(ZeroExV4.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Zora.Addresses.Exchange[chainId]);
-
 //     orderClientBySigner.set(bob, getInfinityOrderClient(bob));
 //     orderClientBySigner.set(owner, getInfinityOrderClient(owner, matchExecutor.contract.address));
 //     orderClientBySigner.set(alice, getInfinityOrderClient(alice));
@@ -368,7 +352,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -474,7 +458,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -584,7 +568,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -737,7 +721,7 @@
 //           data: txData1.data,
 //           value: txData1.value ?? 0,
 //           to: txData1.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems1
@@ -749,7 +733,7 @@
 //           data: txData2.data,
 //           value: txData2.value ?? 0,
 //           to: txData2.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems2
@@ -915,13 +899,13 @@
 //           data: txData1.data,
 //           value: txData1.value ?? 0,
 //           to: txData1.to,
-//           isPayable: true
+//
 //         },
 //         {
 //           data: txData2.data,
 //           value: txData2.value ?? 0,
 //           to: txData2.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems1.concat(flowOrderItems2)
@@ -1027,7 +1011,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
@@ -1131,7 +1115,7 @@
 //           data: txData.data,
 //           value: txData.value ?? 0,
 //           to: txData.to,
-//           isPayable: true
+//
 //         }
 //       ],
 //       nftsToTransfer: flowOrderItems
