@@ -329,22 +329,6 @@
 
 //     await flowExchange.contract.connect(owner).updateMatchExecutor(matchExecutor.contract.address);
 
-//     // add enabled exchanges
-//     await matchExecutor.contract.addEnabledExchange(Infinity.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(CryptoPunks.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Blur.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(LooksRare.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(X2Y2.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Element.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Foundation.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Forward.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Rarible.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Manifold.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Universe.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(ZeroExV4.Addresses.Exchange[chainId]);
-//     await matchExecutor.contract.addEnabledExchange(Zora.Addresses.Exchange[chainId]);
-
 //     orderClientBySigner.set(bob, getInfinityOrderClient(bob, flowExchange));
 //     orderClientBySigner.set(
 //       owner,

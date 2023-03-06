@@ -43,10 +43,7 @@ import { MatchExecutorConfig, setupMatchExecutor } from "../utils/setupMatchExec
 
 let matchExecutor: MatchExecutorConfig<Contract>;
 let flowExchange: FlowExchangeConfig;
-let orderClientBySigner: Map<
-  SignerWithAddress,
-  ReturnType<typeof getFlowOrderClient>
-> = new Map();
+let orderClientBySigner: Map<SignerWithAddress, ReturnType<typeof getFlowOrderClient>> = new Map();
 
 const getFlowOrderClient = (
   signer: SignerWithAddress,
@@ -327,22 +324,6 @@ describe("Match_Executor", () => {
 
     await flowExchange.contract.connect(owner).updateMatchExecutor(matchExecutor.contract.address);
 
-    // add enabled exchanges
-    await matchExecutor.contract.addEnabledExchange(Flow.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Seaport.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(CryptoPunks.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Blur.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(LooksRare.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(X2Y2.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Element.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Foundation.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Forward.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Rarible.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Manifold.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Universe.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(ZeroExV4.Addresses.Exchange[chainId]);
-    await matchExecutor.contract.addEnabledExchange(Zora.Addresses.Exchange[chainId]);
-
     orderClientBySigner.set(bob, getFlowOrderClient(bob, flowExchange));
     orderClientBySigner.set(
       owner,
@@ -445,9 +426,7 @@ describe("Match_Executor", () => {
         ]
       }
     ];
-    const flowListings = await orderClientBySigner
-      .get(seller)!
-      .batchCreateListings(flowOrderItems);
+    const flowListings = await orderClientBySigner.get(seller)!.batchCreateListings(flowOrderItems);
     const signedFlowListings = await flowListings.batchPrepare();
 
     // create flow offers
@@ -653,7 +632,7 @@ describe("Match_Executor", () => {
 
     const signedFlowListings = [];
 
-    const signedIntermediaryListing1 = await(
+    const signedIntermediaryListing1 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -663,7 +642,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedFlowListings.push(signedIntermediaryListing1);
 
-    const signedIntermediaryListing2 = await(
+    const signedIntermediaryListing2 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -673,7 +652,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedFlowListings.push(signedIntermediaryListing2);
 
-    const signedIntermediaryListing3 = await(
+    const signedIntermediaryListing3 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -683,7 +662,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedFlowListings.push(signedIntermediaryListing3);
 
-    const signedIntermediaryListing4 = await(
+    const signedIntermediaryListing4 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -693,7 +672,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedFlowListings.push(signedIntermediaryListing4);
 
-    const signedIntermediaryListing5 = await(
+    const signedIntermediaryListing5 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -703,7 +682,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedFlowListings.push(signedIntermediaryListing5);
 
-    const signedIntermediaryListing6 = await(
+    const signedIntermediaryListing6 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -951,17 +930,15 @@ describe("Match_Executor", () => {
     await lrSellOrder.checkFillability(ethers.provider);
 
     // native bulk signed listings
-    const flowNativeBulkSellOrders = await orderClientBySigner
-      .get(seller)!
-      .batchCreateListings([
-        {
-          collection: erc721.address,
-          tokens: [
-            { tokenId: tokenId5, numTokens: "1" },
-            { tokenId: tokenId6, numTokens: "1" }
-          ]
-        }
-      ]);
+    const flowNativeBulkSellOrders = await orderClientBySigner.get(seller)!.batchCreateListings([
+      {
+        collection: erc721.address,
+        tokens: [
+          { tokenId: tokenId5, numTokens: "1" },
+          { tokenId: tokenId6, numTokens: "1" }
+        ]
+      }
+    ]);
     const signedFlowNativeBulkSellOrders = await flowNativeBulkSellOrders.batchPrepare();
 
     // create flow listings
@@ -978,7 +955,7 @@ describe("Match_Executor", () => {
 
     const signedIntermediaryListings123 = [];
 
-    const signedIntermediaryListing1 = await(
+    const signedIntermediaryListing1 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -988,7 +965,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedIntermediaryListings123.push(signedIntermediaryListing1);
 
-    const signedIntermediaryListing2 = await(
+    const signedIntermediaryListing2 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
@@ -998,7 +975,7 @@ describe("Match_Executor", () => {
     ).prepare();
     signedIntermediaryListings123.push(signedIntermediaryListing2);
 
-    const signedIntermediaryListing3 = await(
+    const signedIntermediaryListing3 = await (
       await orderClientBySigner.get(owner)!.createListing([
         {
           collection: erc721.address,
