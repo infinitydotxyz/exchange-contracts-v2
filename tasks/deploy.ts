@@ -199,7 +199,7 @@ task("deployFlowMatchExecutor", "Deploy")
       "FlowMatchExecutor",
       await ethers.getContractFactory("FlowMatchExecutor"),
       signer1,
-      [args.exchange, args.initiator,, args.weth]
+      [args.exchange, args.initiator, args.weth]
     );
 
     // verify source
