@@ -175,18 +175,11 @@ contract FlowMatchExecutor is
     function _call(
         FlowMatchExecutorTypes.Call memory params
     ) internal returns (bytes memory) {
-        if (params.isPayable) {
-            (bool _success, bytes memory _result) = params.to.call{
-                value: params.value
-            }(params.data);
-            require(_success, "external call failed");
-            return _result;
-        } else {
-            require(params.value == 0, "value not 0 in non-payable call");
-            (bool _success, bytes memory _result) = params.to.call(params.data);
-            require(_success, "external call failed");
-            return _result;
-        }
+        (bool _success, bytes memory _result) = params.to.call{
+            value: params.value
+        }(params.data);
+        require(_success, "external call failed");
+        return _result;
     }
 
     /**
