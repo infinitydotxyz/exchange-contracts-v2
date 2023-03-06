@@ -21,6 +21,7 @@ describe("Owner_Functions", () => {
   let ted: SignerWithAddress;
   let carol: SignerWithAddress;
   let owner: SignerWithAddress;
+  let initiator: SignerWithAddress;
 
   let erc20: MockERC20Config;
 
@@ -37,7 +38,7 @@ describe("Owner_Functions", () => {
       ]
     });
 
-    [deployer, alice, bob, ted, carol, owner] = await ethers.getSigners();
+    [deployer, alice, bob, ted, carol, owner, initiator] = await ethers.getSigners();
 
     erc20 = await setupMockERC20(ethers.getContractFactory, deployer);
 
@@ -51,6 +52,7 @@ describe("Owner_Functions", () => {
     matchExecutor = await setupMatchExecutor(
       ethers.getContractFactory,
       owner,
+      initiator,
       flowExchange.contract
     );
 
@@ -220,9 +222,9 @@ describe("Owner_Functions", () => {
   });
 
   it("non-owner should not be able to update initiator on the match executor", async () => {
-    await expect(matchExecutor.contract.connect(alice).updateInitiator(alice.address)).to.be.revertedWith(
-      "Ownable: caller is not the owner"
-    );
+    await expect(
+      matchExecutor.contract.connect(alice).updateInitiator(alice.address)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   it("owner should be able to set fees on the flow exchange", async () => {
@@ -236,40 +238,16 @@ describe("Owner_Functions", () => {
     );
   });
 
-  it("owner should be able to add/remove enabled exchanges to the match executor", async () => {
-    await matchExecutor.contract.connect(owner).addEnabledExchange(flowExchange.contract.address);
-    expect(await matchExecutor.contract.isExchangeEnabled(flowExchange.contract.address)).to.equal(
+  it("owner should be able to add/remove enabled currencies to the complication", async () => {
+    await flowExchange.obComplication.connect(owner).addCurrency(erc20.contract.address);
+    expect(await flowExchange.obComplication.isValidCurrency(erc20.contract.address)).to.equal(
       true
     );
 
-    await matchExecutor.contract
-      .connect(owner)
-      .removeEnabledExchange(flowExchange.contract.address);
-    expect(await matchExecutor.contract.isExchangeEnabled(flowExchange.contract.address)).to.equal(
+    await flowExchange.obComplication.connect(owner).removeCurrency(erc20.contract.address);
+    expect(await flowExchange.obComplication.isValidCurrency(erc20.contract.address)).to.equal(
       false
     );
-  });
-
-  it("non-owner should not be able to add/remove enabled exchanges to the match executor", async () => {
-    await expect(
-      matchExecutor.contract.connect(alice).addEnabledExchange(flowExchange.contract.address)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-
-    await expect(
-      matchExecutor.contract.connect(alice).removeEnabledExchange(flowExchange.contract.address)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-  });
-
-  it("owner should be able to add/remove enabled currencies to the complication", async () => {
-    await flowExchange.obComplication.connect(owner).addCurrency(erc20.contract.address);
-    expect(
-      await flowExchange.obComplication.isValidCurrency(erc20.contract.address)
-    ).to.equal(true);
-
-    await flowExchange.obComplication.connect(owner).removeCurrency(erc20.contract.address);
-    expect(
-      await flowExchange.obComplication.isValidCurrency(erc20.contract.address)
-    ).to.equal(false);
   });
 
   it("non-owner should not be able to add/remove enabled currencies to the complication", async () => {

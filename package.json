@@ -25,7 +25,7 @@
   "homepage": "https://github.com/infinitydotxyz/exchange-contracts-v2#readme",
   "dependencies": {
     "@openzeppelin/contracts": "4.5.0",
-    "@reservoir0x/sdk": "^0.0.315",
+    "@reservoir0x/sdk": "^0.0.324",
     "@uniswap/lib": "^4.0.1-alpha",
     "merkletreejs": "^0.3.9"
   },
