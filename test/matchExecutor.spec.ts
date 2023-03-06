@@ -290,6 +290,7 @@ describe("Match_Executor", () => {
   let ted: SignerWithAddress;
   let carol: SignerWithAddress;
   let owner: SignerWithAddress;
+  let initiator: SignerWithAddress;
 
   let erc20: Contract;
   let erc721: Contract;
@@ -307,7 +308,7 @@ describe("Match_Executor", () => {
       ]
     });
 
-    [deployer, alice, bob, ted, carol, owner] = await ethers.getSigners();
+    [deployer, alice, bob, ted, carol, owner, initiator] = await ethers.getSigners();
 
     ({ erc20 } = await setupTokens(deployer));
     ({ erc721 } = await setupNFTs(deployer));
@@ -322,6 +323,7 @@ describe("Match_Executor", () => {
     matchExecutor = await setupMatchExecutor(
       ethers.getContractFactory,
       owner,
+      initiator,
       flowExchange.contract
     );
 
@@ -345,8 +347,8 @@ describe("Match_Executor", () => {
 
     orderClientBySigner.set(bob, getFlowOrderClient(bob, flowExchange));
     orderClientBySigner.set(
-      owner,
-      getFlowOrderClient(owner, flowExchange, matchExecutor.contract.address)
+      initiator,
+      getFlowOrderClient(initiator, flowExchange, matchExecutor.contract.address)
     );
     orderClientBySigner.set(alice, getFlowOrderClient(alice, flowExchange));
   });
@@ -397,7 +399,7 @@ describe("Match_Executor", () => {
 
     console.log("Executing native matches");
     try {
-      await matchExecutor.contract.connect(owner).executeNativeMatches([matchOrders]);
+      await matchExecutor.contract.connect(initiator).executeNativeMatches([matchOrders]);
     } catch (err) {
       console.error(err);
     }
@@ -406,7 +408,7 @@ describe("Match_Executor", () => {
     expect(ownerAfter).to.eq(buyer.address);
   });
 
-  it("snipes a ETH <=> ERC721 single token bulk signed native listings", async () => {
+  it("snipes ETH <=> ERC721 single token bulk signed native listings", async () => {
     const buyer = alice;
     const seller = bob;
     const price = parseEther("1");
@@ -471,7 +473,7 @@ describe("Match_Executor", () => {
 
     console.log("Executing bulk signed native matches");
     try {
-      await matchExecutor.contract.connect(owner).executeNativeMatches([matchOrders]);
+      await matchExecutor.contract.connect(initiator).executeNativeMatches([matchOrders]);
     } catch (err) {
       console.error(err);
     }
@@ -654,7 +656,7 @@ describe("Match_Executor", () => {
     const signedFlowListings = [];
 
     const signedIntermediaryListing1 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -664,7 +666,7 @@ describe("Match_Executor", () => {
     signedFlowListings.push(signedIntermediaryListing1);
 
     const signedIntermediaryListing2 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -674,7 +676,7 @@ describe("Match_Executor", () => {
     signedFlowListings.push(signedIntermediaryListing2);
 
     const signedIntermediaryListing3 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId3, numTokens: "1" }]
@@ -684,7 +686,7 @@ describe("Match_Executor", () => {
     signedFlowListings.push(signedIntermediaryListing3);
 
     const signedIntermediaryListing4 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId4, numTokens: "1" }]
@@ -694,7 +696,7 @@ describe("Match_Executor", () => {
     signedFlowListings.push(signedIntermediaryListing4);
 
     const signedIntermediaryListing5 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId5, numTokens: "1" }]
@@ -704,7 +706,7 @@ describe("Match_Executor", () => {
     signedFlowListings.push(signedIntermediaryListing5);
 
     const signedIntermediaryListing6 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId6, numTokens: "1" }]
@@ -816,7 +818,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: parseEther("100")
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -979,7 +981,7 @@ describe("Match_Executor", () => {
     const signedIntermediaryListings123 = [];
 
     const signedIntermediaryListing1 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId1, numTokens: "1" }]
@@ -989,7 +991,7 @@ describe("Match_Executor", () => {
     signedIntermediaryListings123.push(signedIntermediaryListing1);
 
     const signedIntermediaryListing2 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId2, numTokens: "1" }]
@@ -999,7 +1001,7 @@ describe("Match_Executor", () => {
     signedIntermediaryListings123.push(signedIntermediaryListing2);
 
     const signedIntermediaryListing3 = await(
-      await orderClientBySigner.get(owner)!.createListing([
+      await orderClientBySigner.get(initiator)!.createListing([
         {
           collection: erc721.address,
           tokens: [{ tokenId: tokenId3, numTokens: "1" }]
@@ -1014,7 +1016,7 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId: tokenId4, numTokens: "1" }]
       }
     ];
-    const intermediaryListing4 = await orderClientBySigner.get(owner)!.createListing([
+    const intermediaryListing4 = await orderClientBySigner.get(initiator)!.createListing([
       {
         collection: erc721.address,
         tokens: [{ tokenId: tokenId4, numTokens: "1" }]
@@ -1140,8 +1142,8 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: parseEther("100")
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
-      await matchExecutor.contract.connect(owner).executeNativeMatches([matchOrdersNative]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeNativeMatches([matchOrdersNative]);
     } catch (err) {
       console.error(err);
     }
@@ -1203,7 +1205,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -1254,7 +1258,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -1304,7 +1308,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -1358,7 +1364,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -1422,7 +1428,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -1481,7 +1489,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -1544,7 +1552,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -1598,7 +1608,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -1661,7 +1671,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -1715,7 +1727,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -1792,7 +1804,7 @@ describe("Match_Executor", () => {
       }
     ];
     const intermediaryListing1 = await orderClientBySigner
-      .get(owner)!
+      .get(initiator)!
       .createListing(flowOrderItems1);
     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
@@ -1803,7 +1815,7 @@ describe("Match_Executor", () => {
       }
     ];
     const intermediaryListing2 = await orderClientBySigner
-      .get(owner)!
+      .get(initiator)!
       .createListing(flowOrderItems2);
     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
@@ -1890,8 +1902,8 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: bn(txData1.value ?? 0).add(txData2.value ?? 0)
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch1]);
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch2]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch1]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch2]);
     } catch (err) {
       console.error(err);
     }
@@ -1970,7 +1982,7 @@ describe("Match_Executor", () => {
       }
     ];
     const intermediaryListing1 = await orderClientBySigner
-      .get(owner)!
+      .get(initiator)!
       .createListing(flowOrderItems1);
     const signedIntermediaryListing1 = await intermediaryListing1.prepare();
 
@@ -1981,7 +1993,7 @@ describe("Match_Executor", () => {
       }
     ];
     const intermediaryListing2 = await orderClientBySigner
-      .get(owner)!
+      .get(initiator)!
       .createListing(flowOrderItems2);
     const signedIntermediaryListing2 = await intermediaryListing2.prepare();
 
@@ -2050,7 +2062,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: bn(txData1.value ?? 0).add(txData2.value ?? 0)
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2102,7 +2114,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2156,7 +2170,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2204,7 +2218,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2258,7 +2274,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2321,7 +2337,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2375,7 +2393,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2433,7 +2451,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2487,7 +2507,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2545,7 +2565,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2599,7 +2621,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2650,7 +2672,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2705,7 +2729,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2763,7 +2787,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2815,7 +2841,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2868,7 +2894,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -2920,7 +2948,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -2967,7 +2995,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -3021,7 +3051,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -3078,7 +3108,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -3132,7 +3164,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
@@ -3180,7 +3212,9 @@ describe("Match_Executor", () => {
         tokens: [{ tokenId, numTokens: "1" }]
       }
     ];
-    const intermediaryListing = await orderClientBySigner.get(owner)!.createListing(flowOrderItems);
+    const intermediaryListing = await orderClientBySigner
+      .get(initiator)!
+      .createListing(flowOrderItems);
     const signedIntermediaryListing = await intermediaryListing.prepare();
 
     // create flow offer
@@ -3229,7 +3263,7 @@ describe("Match_Executor", () => {
         to: matchExecutor.contract.address,
         value: txData.value ?? 0
       });
-      await matchExecutor.contract.connect(owner).executeBrokerMatches([batch]);
+      await matchExecutor.contract.connect(initiator).executeBrokerMatches([batch]);
     } catch (err) {
       console.error(err);
     }
