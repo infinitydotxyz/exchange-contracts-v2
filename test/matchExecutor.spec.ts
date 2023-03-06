@@ -1651,6 +1651,10 @@ describe("Match_Executor", () => {
     expect(ownerAfter).to.eq(buyer.address);
   });
 
+  /**
+   * This test is not currently working
+   * // TODO future fix this when we need to support blur
+   */
   // it("snipes a ETH <=> ERC721 single token non-bulk signed blur listing with fees", async () => {
   //   const buyer = alice;
   //   const seller = bob;
@@ -2802,6 +2806,9 @@ describe("Match_Executor", () => {
     expect(ownerAfter).to.eq(buyer.address);
   });
 
+  /**
+   * Universe tests are disabled due to a bug in the reservoir sdk https://github.com/reservoirprotocol/indexer/pull/3514
+   */
   // it("snipes a ETH <=> ERC721 single token universe listing", async () => {
   //   const buyer = alice;
   //   const seller = bob;
