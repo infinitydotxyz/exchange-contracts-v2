@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "./Address.sol";
+import "../libs/Address.sol";
 
 abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     using Address for address;

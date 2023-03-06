@@ -21,6 +21,7 @@ describe("Owner_Functions", () => {
   let ted: SignerWithAddress;
   let carol: SignerWithAddress;
   let owner: SignerWithAddress;
+  let initiator: SignerWithAddress;
 
   let erc20: MockERC20Config;
 
@@ -37,7 +38,7 @@ describe("Owner_Functions", () => {
       ]
     });
 
-    [deployer, alice, bob, ted, carol, owner] = await ethers.getSigners();
+    [deployer, alice, bob, ted, carol, owner, initiator] = await ethers.getSigners();
 
     erc20 = await setupMockERC20(ethers.getContractFactory, deployer);
 
@@ -51,6 +52,7 @@ describe("Owner_Functions", () => {
     matchExecutor = await setupMatchExecutor(
       ethers.getContractFactory,
       owner,
+      initiator,
       flowExchange.contract
     );
 

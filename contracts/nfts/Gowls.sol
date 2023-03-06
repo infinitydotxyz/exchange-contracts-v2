@@ -9,7 +9,7 @@
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../libs/ERC721Enumerable.sol";
+import "./ERC721Enumerable.sol";
 import "./IGowlDescriptor.sol";
 
 contract Gowls is ERC721Enumerable, Ownable {
