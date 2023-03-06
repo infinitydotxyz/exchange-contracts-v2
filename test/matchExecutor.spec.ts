@@ -23,7 +23,7 @@ import { expect } from "chai";
 import { BigNumberish as ethersBigNumberish } from "ethers";
 import { ethers, network } from "hardhat";
 import { batchPrepareOBOrders, prepareOBOrder } from "../helpers/orders";
-import { ExecParams, ExtraParams, OBOrder, OrderItem } from "../helpers/orderTypes";
+import { ExecParams, ExtraParams, OBOrder, OrderItem, SignedOBOrder } from "../helpers/orderTypes";
 import { nowSeconds } from "../tasks/utils";
 import {
   Batch,
@@ -88,8 +88,8 @@ const getFlowOrderClient = (
       extraParams
     };
 
-    const prepare = () => {
-      return prepareOBOrder(
+    const prepare = async () => {
+      const result = await prepareOBOrder(
         { address: order.signerAddress },
         chainId,
         signer as any as JsonRpcSigner,
@@ -98,6 +98,10 @@ const getFlowOrderClient = (
         flowExchange.obComplication,
         true
       );
+      if (!result) {
+        throw new Error("expected order to be prepared");
+      }
+      return result;
     };
 
     orderNonce += 1;
@@ -630,7 +634,7 @@ describe("Match_Executor", () => {
       }
     ];
 
-    const signedFlowListings = [];
+    const signedFlowListings: SignedOBOrder[] = [];
 
     const signedIntermediaryListing1 = await (
       await orderClientBySigner.get(owner)!.createListing([
@@ -734,38 +738,32 @@ describe("Match_Executor", () => {
         {
           data: flowTxData.data,
           value: flowTxData.value ?? 0,
-          to: flowTxData.to,
-          isPayable: true
+          to: flowTxData.to
         },
         {
           data: seaportTxData.data,
           value: seaportTxData.value ?? 0,
-          to: seaportTxData.to,
-          isPayable: true
+          to: seaportTxData.to
         },
         {
           data: blurTxData.data,
           value: blurTxData.value ?? 0,
-          to: blurTxData.to,
-          isPayable: true
+          to: blurTxData.to
         },
         {
           data: blurTxData1.data,
           value: blurTxData1.value ?? 0,
-          to: blurTxData1.to,
-          isPayable: true
+          to: blurTxData1.to
         },
         {
           data: blurTxData2.data,
           value: blurTxData2.value ?? 0,
-          to: blurTxData2.to,
-          isPayable: true
+          to: blurTxData2.to
         },
         {
           data: lrTxData.data,
           value: lrTxData.value ?? 0,
-          to: lrTxData.to,
-          isPayable: true
+          to: lrTxData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1015,7 +1013,7 @@ describe("Match_Executor", () => {
 
     const signedIntermediaryListings1234 = signedIntermediaryListings123!.concat(
       signedIntermediaryListing4!
-    );
+    ) as SignedOBOrder[];
 
     // create flow offers
     const allFlowOrderItems = flowOrderItems123.concat(
@@ -1056,26 +1054,22 @@ describe("Match_Executor", () => {
         {
           data: flowTxData.data,
           value: flowTxData.value ?? 0,
-          to: flowTxData.to,
-          isPayable: true
+          to: flowTxData.to
         },
         {
           data: seaportTxData.data,
           value: seaportTxData.value ?? 0,
-          to: seaportTxData.to,
-          isPayable: true
+          to: seaportTxData.to
         },
         {
           data: blurTxData.data,
           value: blurTxData.value ?? 0,
-          to: blurTxData.to,
-          isPayable: true
+          to: blurTxData.to
         },
         {
           data: lrTxData.data,
           value: lrTxData.value ?? 0,
-          to: lrTxData.to,
-          isPayable: true
+          to: lrTxData.to
         }
       ],
       nftsToTransfer: flowOrderItems123.concat(flowOrderItems4)
@@ -1092,7 +1086,7 @@ describe("Match_Executor", () => {
         allBatchSignedFlowOffers![2],
         allBatchSignedFlowOffers![3]
       ],
-      sells: signedIntermediaryListings1234!,
+      sells: signedIntermediaryListings1234,
       constructs: [],
       matchType: MatchOrdersTypes.OneToOneSpecific
     };
@@ -1200,8 +1194,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1304,8 +1297,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1422,8 +1414,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1544,8 +1535,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1661,8 +1651,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -1814,8 +1803,7 @@ describe("Match_Executor", () => {
         {
           data: txData1.data,
           value: txData1.value ?? 0,
-          to: txData1.to,
-          isPayable: true
+          to: txData1.to
         }
       ],
       nftsToTransfer: flowOrderItems1
@@ -1826,8 +1814,7 @@ describe("Match_Executor", () => {
         {
           data: txData2.data,
           value: txData2.value ?? 0,
-          to: txData2.to,
-          isPayable: true
+          to: txData2.to
         }
       ],
       nftsToTransfer: flowOrderItems2
@@ -1992,14 +1979,12 @@ describe("Match_Executor", () => {
         {
           data: txData1.data,
           value: txData1.value ?? 0,
-          to: txData1.to,
-          isPayable: true
+          to: txData1.to
         },
         {
           data: txData2.data,
           value: txData2.value ?? 0,
-          to: txData2.to,
-          isPayable: true
+          to: txData2.to
         }
       ],
       nftsToTransfer: flowOrderItems1.concat(flowOrderItems2)
@@ -2102,8 +2087,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2204,8 +2188,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2321,8 +2304,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2433,8 +2415,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2545,8 +2526,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2648,8 +2628,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2761,8 +2740,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2866,8 +2844,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -2967,8 +2944,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -3078,8 +3054,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -3175,8 +3150,7 @@ describe("Match_Executor", () => {
         {
           data: txData.data,
           value: txData.value ?? 0,
-          to: txData.to,
-          isPayable: true
+          to: txData.to
         }
       ],
       nftsToTransfer: flowOrderItems
@@ -3272,7 +3246,7 @@ describe("Match_Executor", () => {
   //         data: txData.data,
   //         value: txData.value ?? 0,
   //         to: txData.to,
-  //         isPayable: true
+  //
   //       }
   //     ],
   //     nftsToTransfer: flowOrderItems
@@ -3384,7 +3358,7 @@ describe("Match_Executor", () => {
   //         data: txData.data,
   //         value: txData.value ?? 0,
   //         to: txData.to,
-  //         isPayable: true
+  //
   //       }
   //     ],
   //     nftsToTransfer: flowOrderItems

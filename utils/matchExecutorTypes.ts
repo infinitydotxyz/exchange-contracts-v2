@@ -1,11 +1,10 @@
 import { BigNumberish } from "ethers";
-import { OrderItem, SignedOBOrder } from "../helpers/orders";
+import { OrderItem, SignedOBOrder } from "../helpers/orderTypes";
 
 export interface Call {
   data: string;
   value: BigNumberish;
   to: string;
-  isPayable: boolean;
 }
 
 export interface ExternalFulfillments {
