@@ -34,6 +34,7 @@ contract FlowMatchExecutor is
     //////////////////////////////////////////////////////////////*/
 
     IFlowExchange public immutable exchange;
+    IERC20 public immutable weth;
 
     /*//////////////////////////////////////////////////////////////
                               EXCHANGE STATES
@@ -60,11 +61,33 @@ contract FlowMatchExecutor is
     address public initiator;
 
     /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+    modifier netPositive() {
+        uint256 initialBalance = address(this).balance +
+            weth.balanceOf(address(this));
+        _;
+        uint256 finalBalance = address(this).balance +
+            weth.balanceOf(address(this));
+
+        require(
+            finalBalance >= initialBalance,
+            "Transaction must be net positive"
+        );
+    }
+
+    modifier onlyInitiator() {
+        require(msg.sender == initiator, "only initiator can call");
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(IFlowExchange _exchange, address _initiator) {
+    constructor(IFlowExchange _exchange, address _initiator, address _weth) {
         exchange = _exchange;
         initiator = _initiator;
+        weth = IERC20(_weth);
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -98,8 +121,7 @@ contract FlowMatchExecutor is
      */
     function executeBrokerMatches(
         FlowMatchExecutorTypes.Batch[] calldata batches
-    ) external whenNotPaused {
-        require(msg.sender == initiator, "only initiator can call");
+    ) external whenNotPaused onlyInitiator netPositive {
         uint256 numBatches = batches.length;
         for (uint256 i; i < numBatches; ) {
             _broker(batches[i].externalFulfillments);
@@ -116,8 +138,7 @@ contract FlowMatchExecutor is
      */
     function executeNativeMatches(
         FlowMatchExecutorTypes.MatchOrders[] calldata matches
-    ) external whenNotPaused {
-        require(msg.sender == initiator, "only initiator can call");
+    ) external whenNotPaused onlyInitiator netPositive {
         _matchOrders(matches);
     }
 
