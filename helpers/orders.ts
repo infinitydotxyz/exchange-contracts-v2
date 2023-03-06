@@ -17,6 +17,7 @@ import { erc721Abi } from "../abi/erc721";
 import { nowSeconds, trimLowerCase } from "../tasks/utils";
 import { bn, lc } from "../utils/reservoirUtils";
 import { OBOrder, OrderItem, ORDER_EIP712_TYPES, SignedOBOrder, User } from "./orderTypes";
+import { Flow } from "@reservoir0x/sdk";
 
 // constants
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -397,6 +398,7 @@ async function signOBOrder(
   // sign order
   try {
     const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
+
     const signedOrder: SignedOBOrder = { ...orderToSign, sig };
     return signedOrder;
   } catch (e) {
