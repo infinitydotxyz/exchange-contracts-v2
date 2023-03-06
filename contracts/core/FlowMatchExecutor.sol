@@ -59,7 +59,7 @@ contract FlowMatchExecutor is
 
         require(
             finalBalance >= initialBalance,
-            "Transaction must be net non-negative"
+            "Transaction not non-negative"
         );
     }
 
