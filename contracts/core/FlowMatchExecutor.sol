@@ -8,12 +8,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { FlowMatchExecutorTypes } from "../libs/FlowMatchExecutorTypes.sol";
 import { OrderTypes } from "../libs/OrderTypes.sol";
 import { SignatureChecker } from "../libs/SignatureChecker.sol";
 import { IFlowExchange } from "../interfaces/IFlowExchange.sol";
-import { EIP2098_allButHighestBitMask } from "../libs/Constants.sol";
 
 /**
 @title FlowMatchExecutor
@@ -27,8 +25,6 @@ contract FlowMatchExecutor is
     Pausable,
     SignatureChecker
 {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
@@ -37,17 +33,8 @@ contract FlowMatchExecutor is
     IERC20 public immutable weth;
 
     /*//////////////////////////////////////////////////////////////
-                              EXCHANGE STATES
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Mapping to keep track of which exchanges are enabled
-    EnumerableSet.AddressSet private _enabledExchanges;
-
-    /*//////////////////////////////////////////////////////////////
                                 EVENTS
       //////////////////////////////////////////////////////////////*/
-    event EnabledExchangeAdded(address indexed exchange);
-    event EnabledExchangeRemoved(address indexed exchange);
     event InitiatorChanged(address indexed oldVal, address indexed newVal);
 
     ///@notice admin events
@@ -63,7 +50,7 @@ contract FlowMatchExecutor is
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
-    modifier netPositive() {
+    modifier netNonNegative() {
         uint256 initialBalance = address(this).balance +
             weth.balanceOf(address(this));
         _;
@@ -72,7 +59,7 @@ contract FlowMatchExecutor is
 
         require(
             finalBalance >= initialBalance,
-            "Transaction must be net positive"
+            "Transaction must be net non-negative"
         );
     }
 
@@ -121,7 +108,7 @@ contract FlowMatchExecutor is
      */
     function executeBrokerMatches(
         FlowMatchExecutorTypes.Batch[] calldata batches
-    ) external whenNotPaused onlyInitiator netPositive {
+    ) external whenNotPaused onlyInitiator netNonNegative {
         uint256 numBatches = batches.length;
         for (uint256 i; i < numBatches; ) {
             _broker(batches[i].externalFulfillments);
@@ -138,7 +125,7 @@ contract FlowMatchExecutor is
      */
     function executeNativeMatches(
         FlowMatchExecutorTypes.MatchOrders[] calldata matches
-    ) external whenNotPaused onlyInitiator netPositive {
+    ) external whenNotPaused onlyInitiator netNonNegative {
         _matchOrders(matches);
     }
 
@@ -162,8 +149,9 @@ contract FlowMatchExecutor is
             }
         }
 
-        if (externalFulfillments.nftsToTransfer.length > 0) {
-            for (uint256 i; i < externalFulfillments.nftsToTransfer.length; ) {
+        uint256 numNftsToTransfer = externalFulfillments.nftsToTransfer.length;
+        if (numNftsToTransfer > 0) {
+            for (uint256 i; i < numNftsToTransfer; ) {
                 bool isApproved = IERC721(
                     externalFulfillments.nftsToTransfer[i].collection
                 ).isApprovedForAll(address(this), address(exchange));
@@ -188,19 +176,15 @@ contract FlowMatchExecutor is
         FlowMatchExecutorTypes.Call memory params
     ) internal returns (bytes memory) {
         if (params.isPayable) {
-            require(
-                _enabledExchanges.contains(params.to),
-                "contract is not enabled"
-            );
             (bool _success, bytes memory _result) = params.to.call{
                 value: params.value
             }(params.data);
-            require(_success, "external MP call failed");
+            require(_success, "external call failed");
             return _result;
         } else {
             require(params.value == 0, "value not 0 in non-payable call");
             (bool _success, bytes memory _result) = params.to.call(params.data);
-            require(_success, "external MP call failed");
+            require(_success, "external call failed");
             return _result;
         }
     }
@@ -261,22 +245,6 @@ contract FlowMatchExecutor is
         }
     }
 
-    // ======================================================= VIEW FUNCTIONS ============================================================
-
-    function numEnabledExchanges() external view returns (uint256) {
-        return _enabledExchanges.length();
-    }
-
-    function getEnabledExchangeAt(
-        uint256 index
-    ) external view returns (address) {
-        return _enabledExchanges.at(index);
-    }
-
-    function isExchangeEnabled(address _exchange) external view returns (bool) {
-        return _enabledExchanges.contains(_exchange);
-    }
-
     //////////////////////////////////////////////////// ADMIN FUNCTIONS ///////////////////////////////////////////////////////
 
     function withdrawETH(address destination) external onlyOwner {
@@ -294,24 +262,6 @@ contract FlowMatchExecutor is
     ) external onlyOwner {
         IERC20(currency).transfer(destination, amount);
         emit ERC20Withdrawn(destination, currency, amount);
-    }
-
-    /**
-     * @notice Enable an exchange
-     * @param _exchange The exchange to enable
-     */
-    function addEnabledExchange(address _exchange) external onlyOwner {
-        _enabledExchanges.add(_exchange);
-        emit EnabledExchangeAdded(_exchange);
-    }
-
-    /**
-     * @notice Disable an exchange
-     * @param _exchange The exchange to disable
-     */
-    function removeEnabledExchange(address _exchange) external onlyOwner {
-        _enabledExchanges.remove(_exchange);
-        emit EnabledExchangeRemoved(_exchange);
     }
 
     function updateInitiator(address _initiator) external onlyOwner {
