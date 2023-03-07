@@ -1653,7 +1653,7 @@ describe("Match_Executor", () => {
 
   /**
    * This test is not currently working
-   * // TODO future fix this when we need to support blur
+   * // future-todo fix this when we need to support blur
    */
   // it("snipes a ETH <=> ERC721 single token non-bulk signed blur listing with fees", async () => {
   //   const buyer = alice;
