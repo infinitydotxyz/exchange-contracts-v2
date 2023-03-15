@@ -19,7 +19,7 @@ export default {
       chainId: 1,
       forking: {
         url: "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_MAINNET_KEY,
-        blockNumber: 16769000
+        blockNumber: 16833600
       }
     },
     goerli: {
