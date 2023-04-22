@@ -57,10 +57,7 @@ contract FlowMatchExecutor is
         uint256 finalBalance = address(this).balance +
             weth.balanceOf(address(this));
 
-        require(
-            finalBalance >= initialBalance,
-            "Transaction not non-negative"
-        );
+        require(finalBalance >= initialBalance, "Transaction not non-negative");
     }
 
     modifier onlyInitiator() {

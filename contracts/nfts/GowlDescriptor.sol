@@ -2,9 +2,9 @@
 // solhint-disable quotes
 
 /*********************************
-*                                *
-*               0,0              *
-*                                *
+ *                                *
+ *               0,0              *
+ *                                *
  *********************************/
 
 pragma solidity 0.8.14;
@@ -25,14 +25,25 @@ contract GowlDescriptor is IGowlDescriptor {
     }
     using Strings for uint256;
 
-    string private constant SVG_END_TAG = '</svg>';
+    string private constant SVG_END_TAG = "</svg>";
 
-    function tokenURI(uint256 tokenId, uint256 seed) external pure override returns (string memory) {
-        uint256[4] memory colors = [seed % 100000000000000 / 1000000000000, seed % 10000000000 / 100000000, seed % 1000000 / 10000, seed % 100];
+    function tokenURI(
+        uint256 tokenId,
+        uint256 seed
+    ) external pure override returns (string memory) {
+        uint256[4] memory colors = [
+            (seed % 100000000000000) / 1000000000000,
+            (seed % 10000000000) / 100000000,
+            (seed % 1000000) / 10000,
+            seed % 100
+        ];
         Trait memory head = getHead(seed / 100000000000000, colors[0]);
-        Trait memory face = getFace(seed % 1000000000000 / 10000000000, colors[1]);
-        Trait memory body = getBody(seed % 100000000 / 1000000, colors[2]);
-        Trait memory feet = getFeet(seed % 10000 / 100, colors[3]);
+        Trait memory face = getFace(
+            (seed % 1000000000000) / 10000000000,
+            colors[1]
+        );
+        Trait memory body = getBody((seed % 100000000) / 1000000, colors[2]);
+        Trait memory feet = getFeet((seed % 10000) / 100, colors[3]);
         string memory colorCount = calculateColorCount(colors);
 
         string memory rawSvg = string(
@@ -44,35 +55,66 @@ contract GowlDescriptor is IGowlDescriptor {
                 face.content,
                 body.content,
                 feet.content,
-                '</text>',
+                "</text>",
                 SVG_END_TAG
             )
         );
 
         string memory encodedSvg = Base64.encode(bytes(rawSvg));
-        string memory description = 'Hoot';
+        string memory description = "Hoot";
 
-        return string(
-            abi.encodePacked(
-                'data:application/json;base64,',
-                Base64.encode(
-                    bytes(
-                        abi.encodePacked(
-                            '{',
-                            '"name":"GOWL #', tokenId.toString(), '",',
-                            '"description":"', description, '",',
-                            '"image": "', 'data:image/svg+xml;base64,', encodedSvg, '",',
-                            '"attributes": [{"trait_type": "Head", "value": "', head.name,' (',head.color.name,')', '"},',
-                            '{"trait_type": "Face", "value": "', face.name,' (',face.color.name,')', '"},',
-                            '{"trait_type": "Body", "value": "', body.name,' (',body.color.name,')', '"},',
-                            '{"trait_type": "Feet", "value": "', feet.name,' (',feet.color.name,')', '"},',
-                            '{"trait_type": "Colors", "value": ', colorCount, '}',
-                            ']',
-                            '}')
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                "{",
+                                '"name":"GOWL #',
+                                tokenId.toString(),
+                                '",',
+                                '"description":"',
+                                description,
+                                '",',
+                                '"image": "',
+                                "data:image/svg+xml;base64,",
+                                encodedSvg,
+                                '",',
+                                '"attributes": [{"trait_type": "Head", "value": "',
+                                head.name,
+                                " (",
+                                head.color.name,
+                                ")",
+                                '"},',
+                                '{"trait_type": "Face", "value": "',
+                                face.name,
+                                " (",
+                                face.color.name,
+                                ")",
+                                '"},',
+                                '{"trait_type": "Body", "value": "',
+                                body.name,
+                                " (",
+                                body.color.name,
+                                ")",
+                                '"},',
+                                '{"trait_type": "Feet", "value": "',
+                                feet.name,
+                                " (",
+                                feet.color.name,
+                                ")",
+                                '"},',
+                                '{"trait_type": "Colors", "value": ',
+                                colorCount,
+                                "}",
+                                "]",
+                                "}"
+                            )
+                        )
                     )
                 )
-            )
-        );
+            );
     }
 
     function getColor(uint256 seed) private pure returns (Color memory) {
@@ -137,10 +179,13 @@ contract GowlDescriptor is IGowlDescriptor {
             return Color("#7f766d", "Sonic Silver");
         }
 
-        return Color('','');
+        return Color("", "");
     }
 
-    function getHead(uint256 seed, uint256 colorSeed) private pure returns (Trait memory) {
+    function getHead(
+        uint256 seed,
+        uint256 colorSeed
+    ) private pure returns (Trait memory) {
         Color memory color = getColor(colorSeed);
         string memory content;
         string memory name;
@@ -173,10 +218,26 @@ contract GowlDescriptor is IGowlDescriptor {
             name = "Curly hair";
         }
 
-        return Trait(string(abi.encodePacked('<tspan fill="', color.value, '">', content, '</tspan>')), name, color);
+        return
+            Trait(
+                string(
+                    abi.encodePacked(
+                        '<tspan fill="',
+                        color.value,
+                        '">',
+                        content,
+                        "</tspan>"
+                    )
+                ),
+                name,
+                color
+            );
     }
 
-    function getFace(uint256 seed, uint256 colorSeed) private pure returns (Trait memory) {
+    function getFace(
+        uint256 seed,
+        uint256 colorSeed
+    ) private pure returns (Trait memory) {
         Color memory color = getColor(colorSeed);
         string memory content;
         string memory name;
@@ -205,10 +266,26 @@ contract GowlDescriptor is IGowlDescriptor {
             name = "Glasses";
         }
 
-        return Trait(string(abi.encodePacked('<tspan dy="20" x="160" fill="', color.value, '">', content, '</tspan>')), name, color);
+        return
+            Trait(
+                string(
+                    abi.encodePacked(
+                        '<tspan dy="20" x="160" fill="',
+                        color.value,
+                        '">',
+                        content,
+                        "</tspan>"
+                    )
+                ),
+                name,
+                color
+            );
     }
 
-    function getBody(uint256 seed, uint256 colorSeed) private pure returns (Trait memory) {
+    function getBody(
+        uint256 seed,
+        uint256 colorSeed
+    ) private pure returns (Trait memory) {
         Color memory color = getColor(colorSeed);
         string memory content;
         string memory name;
@@ -241,16 +318,32 @@ contract GowlDescriptor is IGowlDescriptor {
             name = "Tuxedo";
         }
 
-        return Trait(string(abi.encodePacked('<tspan dy="25" x="160" fill="', color.value, '">', content, '</tspan>')), name, color);
+        return
+            Trait(
+                string(
+                    abi.encodePacked(
+                        '<tspan dy="25" x="160" fill="',
+                        color.value,
+                        '">',
+                        content,
+                        "</tspan>"
+                    )
+                ),
+                name,
+                color
+            );
     }
 
-    function getFeet(uint256 seed, uint256 colorSeed) private pure returns (Trait memory) {
+    function getFeet(
+        uint256 seed,
+        uint256 colorSeed
+    ) private pure returns (Trait memory) {
         Color memory color = getColor(colorSeed);
         string memory content;
         string memory name;
         uint256 y;
         if (seed == 10) {
-            content = "-\"-\"-";
+            content = '-"-"-';
             name = "Sitting";
             y = 25;
         }
@@ -260,10 +353,27 @@ contract GowlDescriptor is IGowlDescriptor {
             y = 22;
         }
 
-        return Trait(string(abi.encodePacked('<tspan dy="',y.toString(),'" x="160" fill="', color.value, '">', content, '</tspan>')), name, color);
+        return
+            Trait(
+                string(
+                    abi.encodePacked(
+                        '<tspan dy="',
+                        y.toString(),
+                        '" x="160" fill="',
+                        color.value,
+                        '">',
+                        content,
+                        "</tspan>"
+                    )
+                ),
+                name,
+                color
+            );
     }
 
-    function calculateColorCount(uint256[4] memory colors) private pure returns (string memory) {
+    function calculateColorCount(
+        uint256[4] memory colors
+    ) private pure returns (string memory) {
         uint256 count;
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 4; j++) {
@@ -274,18 +384,18 @@ contract GowlDescriptor is IGowlDescriptor {
         }
 
         if (count == 4) {
-            return '4';
+            return "4";
         }
         if (count == 6) {
-            return '3';
+            return "3";
         }
         if (count == 8 || count == 10) {
-            return '2';
+            return "2";
         }
         if (count == 16) {
-            return '1';
+            return "1";
         }
 
-        return '0';
+        return "0";
     }
 }
