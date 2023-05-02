@@ -2,10 +2,10 @@ const { expect } = require("chai");
 const { parseEther, formatEther } = require("ethers/lib/utils");
 const { ethers, network } = require("hardhat");
 
-describe("Flow_Token", function () {
+describe("XFL_Token", function () {
   let signers, signer1, signer2, token;
   const UNIT = toBN(1e18);
-  const MAX_SUPPLY = toBN(1_000_000_000).mul(UNIT);
+  const MAX_SUPPLY = toBN(10_000_000_000).mul(UNIT);
 
   function toBN(val) {
     return ethers.BigNumber.from(val.toString());
@@ -22,15 +22,15 @@ describe("Flow_Token", function () {
     signers = await ethers.getSigners();
     signer1 = signers[0];
     signer2 = signers[1];
-    const FlowToken = await ethers.getContractFactory("FlowToken");
-    token = await FlowToken.deploy(signers[0].address, MAX_SUPPLY.toString());
+    const XFLToken = await ethers.getContractFactory("XFLToken");
+    token = await XFLToken.deploy(signers[0].address, MAX_SUPPLY.toString());
     await token.deployed();
   });
 
   describe("Setup", () => {
     it("Should init properly", async function () {
-      expect(await token.name()).to.equal("Flow");
-      expect(await token.symbol()).to.equal("FLOW");
+      expect(await token.name()).to.equal("XFL Token");
+      expect(await token.symbol()).to.equal("XFL");
       expect(await token.decimals()).to.equal(18);
       expect(await token.admin()).to.equal(signers[0].address);
       expect(await token.totalSupply()).to.equal(MAX_SUPPLY);
