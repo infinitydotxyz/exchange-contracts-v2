@@ -90,8 +90,8 @@ describe("Old_Staker", function () {
 
     // Infinity Staker
     flowStaker = await deployContract(
-      "FlowStaker",
-      await ethers.getContractFactory("FlowStaker"),
+      "FlowStakerOld",
+      await ethers.getContractFactory("FlowStakerOld"),
       signer1,
       [token.address, infinityTreasury]
     );

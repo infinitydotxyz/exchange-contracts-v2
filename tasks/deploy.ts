@@ -272,7 +272,7 @@ task("deployFlowOrderBookComplication", "Deploy")
 
 task("deployFlowStaker", "Deploy")
   .addFlag("verify", "verify contracts on etherscan")
-  .addParam("token", "infinity token address")
+  .addParam("token", "flow token address")
   .addParam("treasurer", "treasurer address")
   .setAction(async (args, { ethers, run, network }) => {
     const signer1 = (await ethers.getSigners())[0];
@@ -295,3 +295,29 @@ task("deployFlowStaker", "Deploy")
     }
     return staker;
   });
+
+  task("deployXFLStaker", "Deploy")
+    .addFlag("verify", "verify contracts on etherscan")
+    .addParam("token", "xfl token address")
+    .addParam("unlockblock", "unlockblock number")
+    .setAction(async (args, { ethers, run, network }) => {
+      const signer1 = (await ethers.getSigners())[0];
+      const staker = await deployContract(
+        "XFLStaker",
+        await ethers.getContractFactory("XFLStaker"),
+        signer1,
+        [args.token, args.unlockblock]
+      );
+
+      // verify source
+      if (args.verify) {
+        // console.log('Verifying source on etherscan');
+        await staker.deployTransaction.wait(5);
+        await run("verify:verify", {
+          address: staker.address,
+          contract: "contracts/staking/XFLStaker.sol:XFLStaker",
+          constructorArguments: [args.token, args.unlockblock]
+        });
+      }
+      return staker;
+    });

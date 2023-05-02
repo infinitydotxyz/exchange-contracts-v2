@@ -7,11 +7,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
- * @title FlowStaker
+ * @title XFLStaker
  * @author nneverlander. Twitter @nneverlander
  * @notice This allows people to stake tokens for reward boosts
  */
-contract FlowStaker is Ownable, Pausable {
+contract XFLStaker is Ownable, Pausable {
     enum StakeLevel {
         NONE,
         BRONZE,
@@ -23,9 +23,9 @@ contract FlowStaker is Ownable, Pausable {
     ///@dev Storage variable to keep track of the staker's amounts
     mapping(address => uint256) public userStakedAmounts;
 
-    ///@dev Flow token address
+    ///@dev XFL token address
     // solhint-disable var-name-mixedcase
-    address public immutable FLOW_TOKEN;
+    address public immutable XFL_TOKEN;
 
     uint256 public unlockBlock = 17778462;
 
@@ -42,10 +42,11 @@ contract FlowStaker is Ownable, Pausable {
     event UnlockBlockUpdated(uint256 oldValue, uint256 newValue);
 
     /**
-    @param _tokenAddress The address of the Flow token contract
+    @param _tokenAddress The address of the XFL token
+    @param _unlockBlock The block number after which users can unstake
    */
     constructor(address _tokenAddress, uint256 _unlockBlock) {
-        FLOW_TOKEN = _tokenAddress;
+        XFL_TOKEN = _tokenAddress;
         unlockBlock = _unlockBlock;
     }
 
@@ -61,7 +62,7 @@ contract FlowStaker is Ownable, Pausable {
         // update storage
         userStakedAmounts[msg.sender] += amount;
         // perform transfer; no need for safeTransferFrom since we know the implementation of the token contract
-        IERC20(FLOW_TOKEN).transferFrom(msg.sender, address(this), amount);
+        IERC20(XFL_TOKEN).transferFrom(msg.sender, address(this), amount);
         // emit event
         emit Staked(msg.sender, amount);
     }
@@ -81,7 +82,7 @@ contract FlowStaker is Ownable, Pausable {
         // update storage
         userStakedAmounts[msg.sender] -= amount;
         // perform transfer
-        IERC20(FLOW_TOKEN).transfer(msg.sender, amount);
+        IERC20(XFL_TOKEN).transfer(msg.sender, amount);
         // emit event
         emit UnStaked(msg.sender, amount);
     }
