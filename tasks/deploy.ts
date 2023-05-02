@@ -15,6 +15,7 @@ let flowToken: Contract, infinityTreasurer: string;
 
 const UNIT = toBN(1e18);
 const FLOW_SUPPLY = toBN(1_000_000_000).mul(UNIT);
+const XFL_SUPPLY = toBN(10_000_000_000).mul(UNIT);
 const FLUR_SUPPLY = toBN(3_000_000_000).mul(UNIT);
 
 function toBN(val: any) {
@@ -161,6 +162,35 @@ task("deployFlowToken", "Deploy Flow token contract")
 
     return flowToken;
   });
+
+  task("deployXFLToken", "Deploy XFL token contract")
+    .addFlag("verify", "verify contracts on etherscan")
+    .addParam("admin", "admin address")
+    .setAction(async (args, { ethers, run }) => {
+      const signer1 = (await ethers.getSigners())[0];
+
+      const tokenArgs = [args.admin, XFL_SUPPLY.toString()];
+
+      const xflToken = await deployContract(
+        "XFLToken",
+        await ethers.getContractFactory("XFLToken"),
+        signer1,
+        tokenArgs
+      );
+
+      // verify etherscan
+      if (args.verify) {
+        // console.log('Verifying source on etherscan');
+        await xflToken.deployTransaction.wait(5);
+        await run("verify:verify", {
+          address: xflToken.address,
+          contract: "contracts/token/XFLToken.sol:XFLToken",
+          constructorArguments: tokenArgs
+        });
+      }
+
+      return xflToken;
+    });
 
 task("deployFlowExchange", "Deploy")
   .addFlag("verify", "verify contracts on etherscan")
