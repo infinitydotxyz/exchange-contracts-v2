@@ -32,17 +32,17 @@ describe("Exchange_Take_One_To_One_ETH_Mainnet", function () {
   }
 
   before(async () => {
-    sellerPrivKey = process.env.ETH_MAINNET_PRIV_KEY_3;
-    buyerPrivKey = process.env.ETH_MAINNET_PRIV_KEY;
+    sellerPrivKey = process.env.ETH_MAINNET_PRIV_KEY;
+    buyerPrivKey = process.env.ETH_MAINNET_PRIV_KEY_3;
     if (!sellerPrivKey || !buyerPrivKey) {
       throw new Error("Please set SELLER_PRIVATE_KEY and BUYER_PRIVATE_KEY env vars");
     }
 
     seller = new ethers.Wallet(sellerPrivKey, ethers.provider);
     buyer = new ethers.Wallet(buyerPrivKey, ethers.provider);
-    sellerNonce = 4;
+    sellerNonce = 6;
 
-    priceETH = "1";
+    priceETH = "20";
 
     chainId = 1;
     flowExchange = new ethers.Contract(
@@ -207,4 +207,4 @@ describe("Exchange_Take_One_To_One_ETH_Mainnet", function () {
       expect(buyerBalanceAfter).to.be.lessThanOrEqual(buyerBalanceAfter); // to account for gas
     });
   });
-});
+}).timeout(1_000_000);
