@@ -366,6 +366,8 @@ async function signOBOrder(
   ];
   if (order.isTrustedExec) {
     constraints.push(1);
+  } else {
+    constraints.push(0);
   }
 
   const execParams = [order.execParams.complicationAddress, order.execParams.currencyAddress];
