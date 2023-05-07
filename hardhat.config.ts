@@ -19,7 +19,7 @@ export default {
       chainId: 1,
       forking: {
         url: "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_MAINNET_KEY,
-        blockNumber: 17104000
+        blockNumber: 17205000
       }
     },
     goerli: {
@@ -29,8 +29,7 @@ export default {
     },
     mainnet: {
       url: "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_MAINNET_KEY,
-      accounts: [process.env.ETH_MAINNET_PRIV_KEY, process.env.ETH_MAINNET_PRIV_KEY_2],
-      gasPrice: parseUnits("70", "gwei").toNumber()
+      accounts: [process.env.ETH_MAINNET_PRIV_KEY, process.env.ETH_MAINNET_PRIV_KEY_2]
     }
   },
   solidity: {

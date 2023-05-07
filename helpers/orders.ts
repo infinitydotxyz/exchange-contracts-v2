@@ -121,19 +121,14 @@ export async function prepareOBOrder(
   obComplication: Contract,
   skipOnChainOwnershipCheck: boolean = false
 ): Promise<SignedOBOrder | undefined> {
-  const validOrder = await isOrderValid(
-    user,
-    order,
-    flowExchange,
-    signer,
-    skipOnChainOwnershipCheck
-  );
+  const validOrder = await isOrderValid(order, flowExchange, signer, skipOnChainOwnershipCheck);
   if (!validOrder) {
+    console.log("Order is not valid");
     return undefined;
   }
 
   // grant approvals
-  const approvals = await grantApprovals(user, order, signer, flowExchange.address);
+  const approvals = await grantApprovals(order, signer, flowExchange.address);
   if (!approvals) {
     return undefined;
   }
@@ -153,19 +148,13 @@ export async function batchPrepareOBOrders(
   skipOnChainOwnershipCheck: boolean = false
 ): Promise<SignedOBOrder[] | undefined> {
   for (const order of orders) {
-    const validOrder = await isOrderValid(
-      user,
-      order,
-      flowExchange,
-      signer,
-      skipOnChainOwnershipCheck
-    );
+    const validOrder = await isOrderValid(order, flowExchange, signer, skipOnChainOwnershipCheck);
     if (!validOrder) {
       return undefined;
     }
 
     // grant approvals
-    const approvals = await grantApprovals(user, order, signer, flowExchange.address);
+    const approvals = await grantApprovals(order, signer, flowExchange.address);
     if (!approvals) {
       return undefined;
     }
@@ -177,7 +166,6 @@ export async function batchPrepareOBOrders(
 }
 
 export async function isOrderValid(
-  user: User,
   order: OBOrder,
   flowExchange: Contract,
   signer: JsonRpcSigner,
@@ -193,7 +181,9 @@ export async function isOrderValid(
   }
 
   // check if nonce is valid
-  const isNonceValid = await flowExchange.isNonceValid(user.address, order.nonce);
+  const signerAddress = await signer.getAddress();
+  console.log("Checking nonce for user", signerAddress, "and nonce", order.nonce);
+  const isNonceValid = await flowExchange.isNonceValid(signerAddress, order.nonce);
 
   if (!isNonceValid) {
     console.error("Order nonce is not valid");
@@ -202,8 +192,9 @@ export async function isOrderValid(
 
   // check on chain ownership
   if (order.isSellOrder && !skipOnChainOwnershipCheck) {
-    const isCurrentOwner = await checkOnChainOwnership(user, order, signer);
+    const isCurrentOwner = await checkOnChainOwnership(order, signer);
     if (!isCurrentOwner) {
+      console.log("User is not the current owner of the nft");
       return false;
     }
   }
@@ -213,7 +204,6 @@ export async function isOrderValid(
 }
 
 export async function grantApprovals(
-  user: User,
   order: OBOrder,
   signer: JsonRpcSigner,
   exchange: string
@@ -222,16 +212,10 @@ export async function grantApprovals(
     if (!order.isSellOrder) {
       // approve currencies
       const currentPrice = getCurrentOrderPrice(order);
-      await approveERC20(
-        user.address,
-        order.execParams.currencyAddress,
-        currentPrice,
-        signer,
-        exchange
-      );
+      await approveERC20(order.execParams.currencyAddress, currentPrice, signer, exchange);
     } else {
       // approve collections
-      await approveERC721(user.address, order.nfts, signer, exchange);
+      await approveERC721(order.nfts, signer, exchange);
     }
     return true;
   } catch (e) {
@@ -241,76 +225,80 @@ export async function grantApprovals(
 }
 
 export async function approveERC20(
-  user: string,
   currencyAddress: string,
   price: BigNumberish,
   signer: JsonRpcSigner,
   grantee: string
 ) {
   try {
+    const signerAddress = await signer.getAddress();
     if (currencyAddress !== ZERO_ADDRESS) {
       const contract = new Contract(currencyAddress, erc20Abi, signer);
-      const allowance = BigNumber.from(await contract.allowance(user, grantee));
+      const allowance = BigNumber.from(await contract.allowance(signerAddress, grantee));
       if (allowance.lt(price)) {
-        await contract.approve(grantee, constants.MaxUint256);
+        const txHash = await contract.connect(signer).approve(grantee, constants.MaxUint256);
+        await txHash.wait();
       } else {
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
-    console.error("failed granting erc20 approvals");
+    console.error("Failed granting erc20 approvals");
     throw new Error(e);
   }
 }
 
-export async function approveERC721(
-  user: string,
-  items: OrderItem[],
-  signer: JsonRpcSigner,
-  exchange: string
-) {
+export async function approveERC721(items: OrderItem[], signer: JsonRpcSigner, exchange: string) {
   try {
+    const signerAddress = await signer.getAddress();
     for (const item of items) {
       const collection = item.collection;
       const contract = new Contract(collection, erc721Abi, signer);
-      const isApprovedForAll = await contract.isApprovedForAll(user, exchange);
+      const isApprovedForAll = await contract.isApprovedForAll(signerAddress, exchange);
       if (!isApprovedForAll) {
-        await contract.setApprovalForAll(exchange, true);
+        const txHash = await contract.connect(signer).setApprovalForAll(exchange, true);
+        await txHash.wait();
       } else {
+        console.log("ERC721 already approved");
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
-    console.error("failed granting erc721 approvals");
+    console.error("Failed granting erc721 approvals");
     throw new Error(e);
   }
 }
 
 export async function checkOnChainOwnership(
-  user: User,
   order: OBOrder,
   signer: JsonRpcSigner
 ): Promise<boolean> {
   let result = true;
+  const signerAddress = await signer.getAddress();
   for (const nft of order.nfts) {
     const collection = nft.collection;
     const contract = new Contract(collection, erc721Abi, signer);
     for (const token of nft.tokens) {
-      result = result && (await checkERC721Ownership(user, contract, token.tokenId));
+      result = result && (await checkERC721Ownership(signerAddress, contract, token.tokenId));
+      if (!result) {
+        console.log("Failed on chain ownership check");
+        break;
+      }
     }
   }
   return result;
 }
 
 export async function checkERC721Ownership(
-  user: User,
+  user: string,
   contract: Contract,
   tokenId: BigNumberish
 ): Promise<boolean> {
   try {
+    console.log("Checking on chain ownership");
     const owner = trimLowerCase(await contract.ownerOf(tokenId));
-    if (owner !== trimLowerCase(user.address)) {
-      console.error("Order on chain ownership check failed");
+    if (owner !== trimLowerCase(user)) {
+      console.error(`User ${user} is not the owner of the nft`, tokenId, "Owner is ", owner);
       return false;
     }
   } catch (e) {
@@ -398,7 +386,6 @@ async function signOBOrder(
   // sign order
   try {
     const sig = await signer._signTypedData(domain, ORDER_EIP712_TYPES, orderToSign);
-
     const signedOrder: SignedOBOrder = { ...orderToSign, sig };
     return signedOrder;
   } catch (e) {
