@@ -35,14 +35,14 @@ describe("Exchange_Take_One_To_One_ETH_Mainnet", function () {
     sellerPrivKey = process.env.ETH_MAINNET_PRIV_KEY;
     buyerPrivKey = process.env.ETH_MAINNET_PRIV_KEY_3;
     if (!sellerPrivKey || !buyerPrivKey) {
-      throw new Error("Please set SELLER_PRIVATE_KEY and BUYER_PRIVATE_KEY env vars");
+      throw new Error("Please set seller and buyer priv key env vars");
     }
 
     seller = new ethers.Wallet(sellerPrivKey, ethers.provider);
     buyer = new ethers.Wallet(buyerPrivKey, ethers.provider);
-    sellerNonce = 6;
+    sellerNonce = 43;
 
-    priceETH = "20";
+    priceETH = "15";
 
     chainId = 1;
     flowExchange = new ethers.Contract(
@@ -57,9 +57,9 @@ describe("Exchange_Take_One_To_One_ETH_Mainnet", function () {
     );
 
     // nakamigos
-    collectionAddress = "0xd774557b647330c91bf44cfeab205095f7e6c367";
+    collectionAddress = "0x08da8a11c9b3a35d715b5da5b3e4661929490f53";
     erc721Contract = new ethers.Contract(collectionAddress, erc721Abi, ethers.provider);
-    sellTokenId = 4693;
+    sellTokenId = 12670;
 
     totalProtocolFees = await ethers.provider.getBalance(flowExchange.address);
     console.log("totalProtocolFees before sale", ethers.utils.formatEther(totalProtocolFees));
