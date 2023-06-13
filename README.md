@@ -1,7 +1,5 @@
 ![Infinity](./static/infinitySmallerLogo.png)
 
-Beta coming soon - https://flow.so
-
 # Infinity Exchange Contracts V2
 
 These contracts will be used in production. They are gas optimized and a subset of our Certik audited [v1 contracts](https://github.com/infinitydotxyz/exchange-contracts-v1). These are also reviewed by an independent auditor that helped us patch a few vulnerabilities and helped us optimize them for gas efficiency. We tested a version of these contracts with ERC721 and ERC20 transfer functions written in assembly for gas optimization. We've found that the gains are not significant (esp when compared to gas savings offered by batching orders) and decided to favor code readability over these optimizations. We hope to write them in [Vyper](https://vyper.readthedocs.io/en/stable/) with the help of Vyper community in the future. Contributions welcome.
@@ -33,17 +31,6 @@ Contracts are designed to be extensible. The main contract is `FlowExchange.sol`
 ![Exchange graph](./static/contractGraphExchange.svg?sanitize-true)
 ![OB Complication graph](./static/contractGraphOBComplication.svg?sanitize-true)
 
-# Staking and Token contracts
-
-This repo also includes our Staking and Token contracts.
-
-Staking contract allows people to stake Infinity tokens to earn voting power. Votes are needed to curate collections on the Infinity marketplace. Curation helps surface upcoming/prominent collections. All exchange fees generated from the trading activity of curated collections go to curators in proportion to how many votes they used to curate a collection. As an example: if Doodles was curated with a total of 100 votes (for a given time period) and a curator used 10 of his votes to curate it, they will get 10% of the trading fee for that time period.
-
-Token contract defines the Flow ($FLOW) token. It comes with a timelock config that allows gradual supply increase overtime. There is a max supply of 1B tokens. Initial supply will be 250M. There are 3 inflation epochs, each with a time gap of 6 months. Each inflation epoch adds 250M tokens to the supply. After 1B max supply is reached there won't be any more supply unless the max number of epochs is increased. Any change to timelock config requires a thawing period of 30 days so that the community has enough time to be updated on any changes.
-
-- [FlowStaker.sol](./contracts/staking/FlowStaker.sol)
-- [FlowToken.sol](./contracts/token/FlowToken.sol)
-
 # Gas costs
 
 Our contracts are the most efficient NFT exchange contracts in the world. Users save upto 60% gas compared to Opensea and Looksrare. We achieve these gas savings via contract supported batch execution.
@@ -71,14 +58,10 @@ The contracts have been extensively tested. All tests can be found in the `test`
 
 # Links
 
-[App](https://flow.so)
+[App](https://pixelpack.io)
 
-[Twitter](https://twitter.com/flowdotso)
+[Twitter](https://twitter.com/pixelpackio)
 
-[Discord](https://discord.gg/invite/flowdotso)
+[Discord](https://discord.gg/invite/pixelpackio)
 
 [Github](https://github.com/infinitydotxyz)
-
-[Medium](https://flowdotso.medium.com)
-
-[Instagram](https://instagram.com/theflowso)
